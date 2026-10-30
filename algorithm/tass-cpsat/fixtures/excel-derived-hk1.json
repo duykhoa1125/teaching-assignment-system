@@ -1,0 +1,493 @@
+{
+  "schemaVersion": "tass-solver/1",
+  "identity": {
+    "schoolId": "DEMO-SCHOOL",
+    "semesterId": "2026-HK1",
+    "roundId": "R1",
+    "planId": "P1",
+    "versionId": "V1",
+    "baseRevision": 0,
+    "snapshotId": "E26-HK1-ANON-10-DEMANDS",
+    "sourceRevisionToken": "E26-VERIFIED-CELLS-2026-10-30",
+    "ruleSetVersion": "EXCEL-DEMO-NOT-APPROVED",
+    "optimizationConfigVersion": "EXCEL-DEMO-1"
+  },
+  "period": {
+    "startsOn": "2026-09-01",
+    "endsOn": "2027-01-15"
+  },
+  "normalization": {
+    "integerScale": 100,
+    "unit": "PERIODS_PER_WEEK",
+    "basis": "FIXED_WEEKLY",
+    "roundingRule": "EXACT"
+  },
+  "config": {
+    "coverageMode": "COMPONENTS",
+    "deviationBasis": "W",
+    "preservePolicy": "REOPTIMIZE",
+    "loadWeight": 1,
+    "experienceWeight": 0,
+    "changeWeight": 0,
+    "totalSeconds": 20,
+    "phaseOneSeconds": 8,
+    "phaseTwoSeconds": 8,
+    "workers": 1,
+    "seed": 42,
+    "decisionSource": "Toy solver test using E26 cells. Qualifications, semester dates, B/R/C mapping and caps are unapproved assumptions.",
+    "demoAssumptions": true
+  },
+  "scopes": [
+    {
+      "classId": "6A3",
+      "className": "Lớp 6A3",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "6",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "8A5",
+      "className": "Lớp 8A5",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "8",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "8A6",
+      "className": "Lớp 8A6",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "8",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "8A8",
+      "className": "Lớp 8A8",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "8",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "8A9",
+      "className": "Lớp 8A9",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "8",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "9A2",
+      "className": "Lớp 9A2",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "9",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "9A3",
+      "className": "Lớp 9A3",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "9",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "9A4",
+      "className": "Lớp 9A4",
+      "subjectId": "SCIENCE",
+      "subjectName": "Khoa học tự nhiên",
+      "gradeId": "9",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "12A1",
+      "className": "Lớp 12A1",
+      "subjectId": "PHYSICS",
+      "subjectName": "Vật lý",
+      "gradeId": "12",
+      "levelId": "THPT",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "12A4",
+      "className": "Lớp 12A4",
+      "subjectId": "PHYSICS",
+      "subjectName": "Vật lý",
+      "gradeId": "12",
+      "levelId": "THPT",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    }
+  ],
+  "demands": [
+    {
+      "id": "D-6A3",
+      "classId": "6A3",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 4,
+      "source": "E26 teacher sheet D8/E8/G8/H8"
+    },
+    {
+      "id": "D-8A5",
+      "classId": "8A5",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.25,
+      "source": "E26 teacher sheet D10/E10/F10/G10/H10"
+    },
+    {
+      "id": "D-8A6",
+      "classId": "8A6",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.25,
+      "source": "E26 teacher sheet D10/E10/F10/G10/H10"
+    },
+    {
+      "id": "D-8A8",
+      "classId": "8A8",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.25,
+      "source": "E26 teacher sheet D10/E10/F10/G10/H10"
+    },
+    {
+      "id": "D-8A9",
+      "classId": "8A9",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.25,
+      "source": "E26 teacher sheet D10/E10/F10/G10/H10"
+    },
+    {
+      "id": "D-9A2",
+      "classId": "9A2",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.4,
+      "source": "E26 teacher sheet D12/E12/F12/G12/H12"
+    },
+    {
+      "id": "D-9A3",
+      "classId": "9A3",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.4,
+      "source": "E26 teacher sheet D12/E12/F12/G12/H12"
+    },
+    {
+      "id": "D-9A4",
+      "classId": "9A4",
+      "subjectId": "SCIENCE",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1.4,
+      "source": "E26 teacher sheet D12/E12/F12/G12/H12"
+    },
+    {
+      "id": "D-12A1",
+      "classId": "12A1",
+      "subjectId": "PHYSICS",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 2,
+      "source": "E26 teacher sheet D64/E64/F64/G64/H64"
+    },
+    {
+      "id": "D-12A4",
+      "classId": "12A4",
+      "subjectId": "PHYSICS",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 2,
+      "source": "E26 teacher sheet D64/E64/F64/G64/H64"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "E26-T1",
+      "name": "E26-T1",
+      "employments": [
+        {
+          "schoolId": "DEMO-SCHOOL",
+          "semesterId": "2026-HK1",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "status": "ACTIVE",
+          "source": "E26 teacher sheet F7=8,H7=13.2,H8=4,H10=5,H12=4.2,J7=4,N7=17.2,S7=19; ACTIVE is unverified toy assumption"
+        }
+      ],
+      "qualifications": [
+        {
+          "subjectId": "SCIENCE",
+          "levelId": "THCS",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "verified": true,
+          "source": "E26 teacher sheet F7=8,H7=13.2,H8=4,H10=5,H12=4.2,J7=4,N7=17.2,S7=19; qualification is unverified toy assumption"
+        }
+      ],
+      "workload": {
+        "base": 19,
+        "reduction": 0,
+        "fixedOutside": 0,
+        "converted": 4,
+        "targetApplicable": true,
+        "source": "E26 teacher sheet F7=8,H7=13.2,H8=4,H10=5,H12=4.2,J7=4,N7=17.2,S7=19; B/R/F/C mapping is a toy assumption",
+        "selectedBaseline": "E26-T1-DEMO-BASELINE",
+        "outsideDemandIds": []
+      },
+      "experiencePenalties": {
+        "D-6A3": 0,
+        "D-8A5": 0,
+        "D-8A6": 0,
+        "D-8A8": 0,
+        "D-8A9": 0,
+        "D-9A2": 0,
+        "D-9A3": 0,
+        "D-9A4": 0,
+        "D-12A1": 0,
+        "D-12A4": 0
+      },
+      "hardChecks": [
+        {
+          "id": "WEEKLY-DEMO",
+          "ruleId": "BR-06",
+          "period": "WEEKLY",
+          "calculationPeriod": "each teaching week in 2026-HK1",
+          "unit": "PERIODS_PER_WEEK",
+          "dataStatus": "PASS",
+          "fixed": 0,
+          "converted": 4,
+          "coefficients": {
+            "D-6A3": 4,
+            "D-8A5": 1.25,
+            "D-8A6": 1.25,
+            "D-8A8": 1.25,
+            "D-8A9": 1.25,
+            "D-9A2": 1.4,
+            "D-9A3": 1.4,
+            "D-9A4": 1.4,
+            "D-12A1": 0,
+            "D-12A4": 0
+          },
+          "limit": 25,
+          "missingData": [],
+          "source": "E26 teacher sheet F7=8,H7=13.2,H8=4,H10=5,H12=4.2,J7=4,N7=17.2,S7=19; limit 25 is an unapproved toy cap"
+        },
+        {
+          "id": "ANNUAL",
+          "ruleId": "BR-06",
+          "period": "ANNUAL",
+          "calculationPeriod": "2026-2027",
+          "unit": "OVERTIME_HOURS",
+          "dataStatus": "INSUFFICIENT_DATA",
+          "fixed": null,
+          "converted": null,
+          "coefficients": {},
+          "limit": null,
+          "missingData": [
+            "Annual actual workload and approved hour-to-period conversion"
+          ],
+          "source": "Annual rule is unknown in source Excel; no zero substitution"
+        }
+      ]
+    },
+    {
+      "id": "E26-T7",
+      "name": "E26-T7",
+      "employments": [
+        {
+          "schoolId": "DEMO-SCHOOL",
+          "semesterId": "2026-HK1",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "status": "ACTIVE",
+          "source": "E26 teacher sheet H57=12,H64=4,J57=4,L57=4,N57=20,S57=17; ACTIVE is unverified toy assumption"
+        }
+      ],
+      "qualifications": [
+        {
+          "subjectId": "PHYSICS",
+          "levelId": "THPT",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "verified": true,
+          "source": "E26 teacher sheet H57=12,H64=4,J57=4,L57=4,N57=20,S57=17; qualification is unverified toy assumption"
+        }
+      ],
+      "workload": {
+        "base": 17,
+        "reduction": 0,
+        "fixedOutside": 8,
+        "converted": 8,
+        "targetApplicable": true,
+        "source": "E26 teacher sheet H57=12,H64=4,J57=4,L57=4,N57=20,S57=17; B/R/F/C mapping is a toy assumption",
+        "selectedBaseline": "E26-T7-DEMO-BASELINE",
+        "outsideDemandIds": [
+          "E26-T7-OTHER-CLASSES"
+        ]
+      },
+      "experiencePenalties": {
+        "D-6A3": 0,
+        "D-8A5": 0,
+        "D-8A6": 0,
+        "D-8A8": 0,
+        "D-8A9": 0,
+        "D-9A2": 0,
+        "D-9A3": 0,
+        "D-9A4": 0,
+        "D-12A1": 0,
+        "D-12A4": 0
+      },
+      "hardChecks": [
+        {
+          "id": "WEEKLY-DEMO",
+          "ruleId": "BR-06",
+          "period": "WEEKLY",
+          "calculationPeriod": "each teaching week in 2026-HK1",
+          "unit": "PERIODS_PER_WEEK",
+          "dataStatus": "PASS",
+          "fixed": 8,
+          "converted": 8,
+          "coefficients": {
+            "D-6A3": 0,
+            "D-8A5": 0,
+            "D-8A6": 0,
+            "D-8A8": 0,
+            "D-8A9": 0,
+            "D-9A2": 0,
+            "D-9A3": 0,
+            "D-9A4": 0,
+            "D-12A1": 2,
+            "D-12A4": 2
+          },
+          "limit": 25,
+          "missingData": [],
+          "source": "E26 teacher sheet H57=12,H64=4,J57=4,L57=4,N57=20,S57=17; limit 25 is an unapproved toy cap"
+        },
+        {
+          "id": "ANNUAL",
+          "ruleId": "BR-06",
+          "period": "ANNUAL",
+          "calculationPeriod": "2026-2027",
+          "unit": "OVERTIME_HOURS",
+          "dataStatus": "INSUFFICIENT_DATA",
+          "fixed": null,
+          "converted": null,
+          "coefficients": {},
+          "limit": null,
+          "missingData": [
+            "Annual actual workload and approved hour-to-period conversion"
+          ],
+          "source": "Annual rule is unknown in source Excel; no zero substitution"
+        }
+      ]
+    }
+  ],
+  "previousAssignments": [],
+  "previousSource": null,
+  "prechecks": [
+    {
+      "ruleId": "BR-04",
+      "status": "PASS",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-16",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-17",
+      "status": "PASS",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-18",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-19",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-20",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-21",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    }
+  ],
+  "hardCheckInventorySource": "Toy inventory: one weekly demo cap and unknown annual rule per teacher"
+}

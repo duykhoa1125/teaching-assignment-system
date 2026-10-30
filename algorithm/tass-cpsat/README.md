@@ -51,8 +51,12 @@ Mỗi lượt xuất:
 | `shortage.json` | 1/2 nhu cầu, thiếu 1 tiết; DRAFT một phần, không ép gán quá tải |
 | `component-consistency.json` | 1/2 thành phần; tổng năng lực hai GV đủ nhưng không được chia GV trong cùng lớp–môn–kỳ |
 | `decimal-load.json` | 2/2; A=3.125, F=0.5, C=0.375, W=Q=4, scale=1000 |
+| `excel-derived-hk1.json` | 10/10 nhu cầu ẩn danh lấy số tiết từ bảng E26: 8 lớp KHTN và 2 lớp Vật lý; kiểm tra `A=13.2`, `W=17.2` cho giáo viên T1 |
+| `excel-derived-hk2-stale-summary.json` | 2/2 chuyên đề từ dòng chi tiết 71–72; không dùng tổng số lớp sai `U65=0`, kiểm tra `A=6`, `W=10` |
 
 Mọi fixture là dữ liệu giả. Người dùng đã chọn ngày 25/10/2026: một GV cho các thành phần cùng nhóm; coverage theo số thành phần; lệch tải tính theo W. Trọng số 1/1/0, giới hạn tải nhỏ và ngân sách 20s/8s/8s là giả định kỹ thuật của fixture, có nhãn. Các cấu hình khác được yêu cầu tường minh, không suy ra từ dữ liệu.
+
+Hai fixture `excel-derived-*` được kiểm tra bởi `ExcelDerivedSolverTest`; xem [ô nguồn và giả định](docs/EXCEL-FIXTURES.md) và [bộ test case](tests/excel/README.md). Tạo lại chúng từ thư mục module bằng `node tests/excel/generate-branch-fixtures.mjs`. Năng lực, ngày kỳ, ánh xạ định mức/kiêm nhiệm và trần tải chỉ là giả định kiểm thử, không phải quy tắc trường đã duyệt.
 
 ## Mô hình hiện thực
 

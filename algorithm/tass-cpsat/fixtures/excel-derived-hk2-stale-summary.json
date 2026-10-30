@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "tass-solver/1",
+  "identity": {
+    "schoolId": "DEMO-SCHOOL",
+    "semesterId": "2026-HK2",
+    "roundId": "R1",
+    "planId": "P1",
+    "versionId": "V1",
+    "baseRevision": 0,
+    "snapshotId": "E26-HK2-ANON-STALE-U65",
+    "sourceRevisionToken": "E26-VERIFIED-CELLS-2026-10-30",
+    "ruleSetVersion": "EXCEL-DEMO-NOT-APPROVED",
+    "optimizationConfigVersion": "EXCEL-DEMO-1"
+  },
+  "period": {
+    "startsOn": "2027-01-16",
+    "endsOn": "2027-05-31"
+  },
+  "normalization": {
+    "integerScale": 100,
+    "unit": "PERIODS_PER_WEEK",
+    "basis": "FIXED_WEEKLY",
+    "roundingRule": "EXACT"
+  },
+  "config": {
+    "coverageMode": "COMPONENTS",
+    "deviationBasis": "W",
+    "preservePolicy": "REOPTIMIZE",
+    "loadWeight": 1,
+    "experienceWeight": 0,
+    "changeWeight": 0,
+    "totalSeconds": 20,
+    "phaseOneSeconds": 8,
+    "phaseTwoSeconds": 8,
+    "workers": 1,
+    "seed": 42,
+    "decisionSource": "Toy solver test using E26 cells. Qualifications, semester dates, B/R/C mapping and caps are unapproved assumptions.",
+    "demoAssumptions": true
+  },
+  "scopes": [
+    {
+      "classId": "12A3",
+      "className": "Lớp 12A3",
+      "subjectId": "PHYSICS",
+      "subjectName": "Vật lý",
+      "gradeId": "12",
+      "levelId": "THPT",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "SPECIALIZED_TOPIC"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    },
+    {
+      "classId": "12TH",
+      "className": "Lớp 12TH",
+      "subjectId": "PHYSICS",
+      "subjectName": "Vật lý",
+      "gradeId": "12",
+      "levelId": "THPT",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "SPECIALIZED_TOPIC"
+      ],
+      "confirmationSource": "E26 cell references; applicability is a toy assumption pending school confirmation"
+    }
+  ],
+  "demands": [
+    {
+      "id": "D-12A3-TOPIC",
+      "classId": "12A3",
+      "subjectId": "PHYSICS",
+      "semesterId": "2026-HK2",
+      "type": "SPECIALIZED_TOPIC",
+      "periods": 3,
+      "source": "E26 teacher sheet T71/U71/V71/W71"
+    },
+    {
+      "id": "D-12TH-TOPIC",
+      "classId": "12TH",
+      "subjectId": "PHYSICS",
+      "semesterId": "2026-HK2",
+      "type": "SPECIALIZED_TOPIC",
+      "periods": 3,
+      "source": "E26 teacher sheet T72/U72/V72/W72"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "E26-T8",
+      "name": "E26-T8",
+      "employments": [
+        {
+          "schoolId": "DEMO-SCHOOL",
+          "semesterId": "2026-HK2",
+          "startsOn": "2027-01-16",
+          "endsOn": "2027-05-31",
+          "status": "ACTIVE",
+          "source": "E26 teacher sheet U65=0 stale,W65=6,Y65=4,AC65=10,U71=1,U72=1; B=10 toy; ACTIVE is unverified toy assumption"
+        }
+      ],
+      "qualifications": [
+        {
+          "subjectId": "PHYSICS",
+          "levelId": "THPT",
+          "startsOn": "2027-01-16",
+          "endsOn": "2027-05-31",
+          "verified": true,
+          "source": "E26 teacher sheet U65=0 stale,W65=6,Y65=4,AC65=10,U71=1,U72=1; B=10 toy; qualification is unverified toy assumption"
+        }
+      ],
+      "workload": {
+        "base": 10,
+        "reduction": 0,
+        "fixedOutside": 0,
+        "converted": 4,
+        "targetApplicable": true,
+        "source": "E26 teacher sheet U65=0 stale,W65=6,Y65=4,AC65=10,U71=1,U72=1; B=10 toy; B/R/F/C mapping is a toy assumption",
+        "selectedBaseline": "E26-T8-DEMO-BASELINE",
+        "outsideDemandIds": []
+      },
+      "experiencePenalties": {
+        "D-12A3-TOPIC": 0,
+        "D-12TH-TOPIC": 0
+      },
+      "hardChecks": [
+        {
+          "id": "WEEKLY-DEMO",
+          "ruleId": "BR-06",
+          "period": "WEEKLY",
+          "calculationPeriod": "each teaching week in 2026-HK2",
+          "unit": "PERIODS_PER_WEEK",
+          "dataStatus": "PASS",
+          "fixed": 0,
+          "converted": 4,
+          "coefficients": {
+            "D-12A3-TOPIC": 3,
+            "D-12TH-TOPIC": 3
+          },
+          "limit": 10,
+          "missingData": [],
+          "source": "E26 teacher sheet U65=0 stale,W65=6,Y65=4,AC65=10,U71=1,U72=1; B=10 toy; limit 10 is an unapproved toy cap"
+        },
+        {
+          "id": "ANNUAL",
+          "ruleId": "BR-06",
+          "period": "ANNUAL",
+          "calculationPeriod": "2026-2027",
+          "unit": "OVERTIME_HOURS",
+          "dataStatus": "INSUFFICIENT_DATA",
+          "fixed": null,
+          "converted": null,
+          "coefficients": {},
+          "limit": null,
+          "missingData": [
+            "Annual actual workload and approved hour-to-period conversion"
+          ],
+          "source": "Annual rule is unknown in source Excel; no zero substitution"
+        }
+      ]
+    }
+  ],
+  "previousAssignments": [],
+  "previousSource": null,
+  "prechecks": [
+    {
+      "ruleId": "BR-04",
+      "status": "PASS",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-16",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-17",
+      "status": "PASS",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-18",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-19",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-20",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    },
+    {
+      "ruleId": "BR-21",
+      "status": "NOT_APPLICABLE",
+      "source": "EXCEL-DEMO-NOT-APPROVED",
+      "explanation": "Synthetic test only; no verified school policy or legal evidence is claimed"
+    }
+  ],
+  "hardCheckInventorySource": "Toy inventory: one weekly demo cap and unknown annual rule per teacher"
+}
