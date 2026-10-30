@@ -9,6 +9,6 @@ Hai fixture `fixtures/excel-derived-*.json` dùng số liệu từ workbook `tes
 
 `B/R/F/C` là cách ánh xạ **demo** để kiểm tra đường đi của solver: HK I dùng `S7/S57` làm `B`, `R=0`, `J7` và `J57+L57` làm `C`; T7 có `F=8` là phần dạy khác ngoài 2 lớp fixture. HK II đặt `B=10` demo vì `AG65` trống. Năng lực môn/cấp, trạng thái công tác, ngày học kỳ, trần hard check và điểm phạt cũng là giả định kiểm thử. Những giá trị này không chứng minh quy tắc trường hay điều kiện pháp lý đã được xác nhận.
 
-`ExcelDerivedSolverTest` chạy native CP-SAT với hai fixture, so gán, tải, hard check và scale. Tệp [verify-excel.ps1](../tests/excel/verify-excel.ps1) đối chiếu ô nguồn nếu truyền đường dẫn đến thư mục chứa Excel; workbook không nằm trong repo. Từ thư mục module chạy `node tests/excel/generate-branch-fixtures.mjs`, sau đó `mvn verify`.
+`ExcelDerivedSolverTest` chạy native CP-SAT với hai fixture, so gán, tải, hard check và scale. `ExcelWorkbookEvidenceTest` (JUnit) đọc trực tiếp ô nguồn từ ba workbook khi truyền `-Dtass.excel.dir=<thư-mục-chứa-Excel>`. Workbook gốc không nằm trong repo. Từ thư mục module chạy `mvn verify` để kiểm tra solver; thêm tham số trên để kiểm tra cả nguồn Excel.
 
 Trên snapshot demo đã chạy ngày 30/10/2026, hai fixture trả `OPTIMAL`, nhưng annual check vẫn `INSUFFICIENT_DATA`. `dataReadyForOpening=true` từ module chỉ phản ánh phủ đủ nhu cầu demo; không dùng làm quyết định mở hoặc phát hành phương án thật.

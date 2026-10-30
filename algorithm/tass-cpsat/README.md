@@ -56,7 +56,7 @@ Mỗi lượt xuất:
 
 Mọi fixture là dữ liệu giả. Người dùng đã chọn ngày 25/10/2026: một GV cho các thành phần cùng nhóm; coverage theo số thành phần; lệch tải tính theo W. Trọng số 1/1/0, giới hạn tải nhỏ và ngân sách 20s/8s/8s là giả định kỹ thuật của fixture, có nhãn. Các cấu hình khác được yêu cầu tường minh, không suy ra từ dữ liệu.
 
-Hai fixture `excel-derived-*` được kiểm tra bởi `ExcelDerivedSolverTest`; xem [ô nguồn và giả định](docs/EXCEL-FIXTURES.md) và [bộ test case](tests/excel/README.md). Tạo lại chúng từ thư mục module bằng `node tests/excel/generate-branch-fixtures.mjs`. Năng lực, ngày kỳ, ánh xạ định mức/kiêm nhiệm và trần tải chỉ là giả định kiểm thử, không phải quy tắc trường đã duyệt.
+Hai fixture `excel-derived-*` được kiểm tra bởi JUnit `ExcelDerivedSolverTest`; xem [ô nguồn và giả định](docs/EXCEL-FIXTURES.md) và [bộ test case](tests/excel/README.md). `ExcelWorkbookEvidenceTest` đối chiếu ba workbook gốc khi chạy `mvn verify "-Dtass.excel.dir=C:\Users\MyPC\Desktop\DACN\test"` (thay đường dẫn theo máy). Năng lực, ngày kỳ, ánh xạ định mức/kiêm nhiệm và trần tải chỉ là giả định kiểm thử, không phải quy tắc trường đã duyệt.
 
 ## Mô hình hiện thực
 
