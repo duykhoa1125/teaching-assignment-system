@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Grade;
+import vn.edu.tass.backend.mapper.GradeMapper;
 import vn.edu.tass.backend.payload.dto.GradeDto;
 import vn.edu.tass.backend.payload.request.GradeRequest;
 import vn.edu.tass.backend.repository.GradeRepository;
@@ -14,9 +15,11 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class GradeServiceImpl implements GradeService {
     private final GradeRepository repository;
+    private final GradeMapper mapper;
 
-    public GradeServiceImpl(GradeRepository repository) {
+    public GradeServiceImpl(GradeRepository repository, GradeMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
@@ -24,29 +27,28 @@ public class GradeServiceImpl implements GradeService {
     public List<GradeDto> retrieveAllGrade(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(this::toDto).toList();
+            .map(mapper::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public GradeDto retrieveById(long id) {
-        return toDto(find(id));
+        return mapper.toDto(find(id));
     }
 
     @Override
     @Transactional
     public GradeDto createGrade(GradeRequest request) {
-        Grade entity = new Grade();
-        applyRequest(request, entity);
-        return toDto(repository.saveAndFlush(entity));
+        Grade entity = mapper.toEntity(request);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public GradeDto updateGrade(long id, GradeRequest request) {
         Grade entity = find(id);
-        applyRequest(request, entity);
-        return toDto(repository.saveAndFlush(entity));
+        mapper.applyRequest(request, entity);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -54,21 +56,6 @@ public class GradeServiceImpl implements GradeService {
     public void deleteGrade(long id) {
         repository.delete(find(id));
         repository.flush();
-    }
-
-    private GradeDto toDto(Grade entity) {
-        GradeDto dto = new GradeDto();
-        dto.setId(entity.getId());
-        dto.setEducationLevelId(entity.getEducationLevelId());
-        dto.setGradeCode(entity.getGradeCode());
-        dto.setName(entity.getName());
-        return dto;
-    }
-
-    private void applyRequest(GradeRequest request, Grade entity) {
-        entity.setEducationLevelId(request.getEducationLevelId());
-        entity.setGradeCode(request.getGradeCode());
-        entity.setName(request.getName());
     }
 
     private Grade find(long id) {

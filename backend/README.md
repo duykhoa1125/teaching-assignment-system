@@ -10,6 +10,7 @@ Mã nguồn nằm tại `src/main/java/vn/edu/tass/backend` và được tổ ch
 | --- | --- |
 | `controller` | 16 controller, mỗi tài nguyên một file |
 | `entity` | 16 JPA entity, mỗi bảng một file |
+| `mapper` | 16 mapper thủ công, mỗi bảng một file; ánh xạ request/entity/DTO theo từng trường |
 | `exception` | Ngoại lệ và ánh xạ lỗi HTTP |
 | `payload/request` | 16 request class có validation |
 | `payload/dto` | 16 response DTO và DTO lỗi |
@@ -18,7 +19,7 @@ Mã nguồn nằm tại `src/main/java/vn/edu/tass/backend` và được tổ ch
 | `service/impl` | 16 service implementation; CRUD dùng repository tương ứng trực tiếp |
 | `utils` | Kiểm tra tham số và phân trang theo `limit`/`offset` |
 
-Ví dụ: `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `Teacher`. Mỗi service tự ánh xạ tường minh từng trường giữa request, entity và DTO; hàm `applyRequest` trong service dùng chung cho tạo mới và cập nhật. JPA chỉ truy cập schema có sẵn; `spring.jpa.hibernate.ddl-auto=none`, nên ứng dụng không tự tạo hoặc sửa bảng PostgreSQL.
+Ví dụ: `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `Teacher`; `TeacherServiceImpl` dùng `TeacherMapper` để ánh xạ thủ công từng trường. Mapper có `toEntity`, `applyRequest` và `toDto`; `applyRequest` dùng cho cả tạo mới và cập nhật. JPA chỉ truy cập schema có sẵn; `spring.jpa.hibernate.ddl-auto=none`, nên ứng dụng không tự tạo hoặc sửa bảng PostgreSQL.
 
 ## Chạy local
 

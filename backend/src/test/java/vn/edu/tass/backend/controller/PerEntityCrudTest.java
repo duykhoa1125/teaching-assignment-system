@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
+import org.springframework.stereotype.Component;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -43,12 +44,14 @@ class PerEntityCrudTest {
         Class<?> requestType = type("payload.request", name + "Request");
         Class<?> dtoType = type("payload.dto", name + "Dto");
         Class<?> repositoryType = type("repository", name + "Repository");
+        Class<?> mapperType = type("mapper", name + "Mapper");
         Class<?> serviceType = type("service", name + "Service");
         Class<?> serviceImplType = type("service.impl", name + "ServiceImpl");
         Class<?> controllerType = type("controller", name + "Controller");
         assertTrue(entityType.isAnnotationPresent(Entity.class));
         assertEquals(table, entityType.getAnnotation(Table.class).name());
         assertTrue(JpaRepository.class.isAssignableFrom(repositoryType));
+        assertTrue(mapperType.isAnnotationPresent(Component.class));
         assertTrue(serviceType.isInterface() && serviceType.isAssignableFrom(serviceImplType));
         assertFalse(requestType.isRecord());
         assertFalse(dtoType.isRecord());
@@ -68,7 +71,9 @@ class PerEntityCrudTest {
             id.set(saved, 1L);
             return saved;
         }).when(repository).saveAndFlush(any());
-        Object service = serviceImplType.getConstructor(repositoryType).newInstance(repository);
+        Object mapper = mapperType.getConstructor().newInstance();
+        Object service = serviceImplType.getConstructor(repositoryType, mapperType)
+            .newInstance(repository, mapper);
         Object controller = controllerType.getConstructor(serviceType).newInstance(service);
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
@@ -103,9 +108,11 @@ class PerEntityCrudTest {
         Object createdDto = serviceType.getMethod("create" + name, requestType)
             .invoke(service, changedRequest);
         assertSameFields(changedRequest, createdDto);
+        assertEquals(1L, dtoType.getMethod("getId").invoke(createdDto));
         Object updatedDto = serviceType.getMethod("update" + name, long.class, requestType)
             .invoke(service, 1L, changedRequest);
         assertSameFields(changedRequest, updatedDto);
+        assertEquals(1L, dtoType.getMethod("getId").invoke(updatedDto));
         validator.destroy();
     }
 

@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Department;
+import vn.edu.tass.backend.mapper.DepartmentMapper;
 import vn.edu.tass.backend.payload.dto.DepartmentDto;
 import vn.edu.tass.backend.payload.request.DepartmentRequest;
 import vn.edu.tass.backend.repository.DepartmentRepository;
@@ -14,9 +15,11 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository repository;
+    private final DepartmentMapper mapper;
 
-    public DepartmentServiceImpl(DepartmentRepository repository) {
+    public DepartmentServiceImpl(DepartmentRepository repository, DepartmentMapper mapper) {
         this.repository = repository;
+        this.mapper = mapper;
     }
 
     @Override
@@ -24,29 +27,28 @@ public class DepartmentServiceImpl implements DepartmentService {
     public List<DepartmentDto> retrieveAllDepartment(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(this::toDto).toList();
+            .map(mapper::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public DepartmentDto retrieveById(long id) {
-        return toDto(find(id));
+        return mapper.toDto(find(id));
     }
 
     @Override
     @Transactional
     public DepartmentDto createDepartment(DepartmentRequest request) {
-        Department entity = new Department();
-        applyRequest(request, entity);
-        return toDto(repository.saveAndFlush(entity));
+        Department entity = mapper.toEntity(request);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public DepartmentDto updateDepartment(long id, DepartmentRequest request) {
         Department entity = find(id);
-        applyRequest(request, entity);
-        return toDto(repository.saveAndFlush(entity));
+        mapper.applyRequest(request, entity);
+        return mapper.toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -54,25 +56,6 @@ public class DepartmentServiceImpl implements DepartmentService {
     public void deleteDepartment(long id) {
         repository.delete(find(id));
         repository.flush();
-    }
-
-    private DepartmentDto toDto(Department entity) {
-        DepartmentDto dto = new DepartmentDto();
-        dto.setId(entity.getId());
-        dto.setSchoolId(entity.getSchoolId());
-        dto.setDepartmentCode(entity.getDepartmentCode());
-        dto.setName(entity.getName());
-        dto.setValidFrom(entity.getValidFrom());
-        dto.setValidTo(entity.getValidTo());
-        return dto;
-    }
-
-    private void applyRequest(DepartmentRequest request, Department entity) {
-        entity.setSchoolId(request.getSchoolId());
-        entity.setDepartmentCode(request.getDepartmentCode());
-        entity.setName(request.getName());
-        entity.setValidFrom(request.getValidFrom());
-        entity.setValidTo(request.getValidTo());
     }
 
     private Department find(long id) {
