@@ -20,9 +20,11 @@ docs/             Tài liệu dự án
 
 - [Mô tả đề tài](docs/project.md)
 - [Phân tích đề tài](docs/project-analysis.md)
+- [Đặc tả yêu cầu phần mềm SRS v1.3](docs/srs/srs_v1_3.pdf) ([Mã nguồn TeX](docs/srs/srs_v1_3.tex))
+- [Báo cáo mô hình hóa CP-SAT v1.2](docs/algorithm/algorithm_v1_2.pdf) ([Mã nguồn TeX](docs/algorithm/algorithm_v1_2.tex))
+- [Câu hỏi làm việc cùng GVHD](docs/srs/CAU_HOI_GVHD.md)
 - [Quy trình Git](docs/git-flow.md)
 
 ## Quy mô nhóm
 
 Dự án được thực hiện bởi 03 thành viên. Trách nhiệm chính của từng thành viên được mô tả trong tài liệu phân tích đề tài.
-

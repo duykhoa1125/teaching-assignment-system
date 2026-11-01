@@ -1,0 +1,105 @@
+# ==========================================
+# LaTeX Build Artifacts & Temporary Files
+# ==========================================
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.brf
+*.fdb_latexmk
+*.fls
+*.glg
+*.glo
+*.gls
+*.idx
+*.ilg
+*.ind
+*.ist
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex
+*.synctex.gz
+*.synctex(busy)
+*.synctex.gz(busy)
+*.toc
+*.vrb
+*.xdv
+*.dvi
+*.acn
+*.acr
+*.alg
+*.xdy
+
+# LaTeX Output Directories
+out/
+build/
+latex.out/
+
+# Local LaTeX Deployment, Evidence & Archives
+evidence/
+miktex-*/
+*.zip
+
+# ==========================================
+# Explicit Whitelist for Documentation
+# ==========================================
+!*.pdf
+!*.png
+!*.jpg
+!*.jpeg
+!*.svg
+!*.tex
+!*.md
+
+# ==========================================
+# Java / Spring Boot / Algorithm Modules
+# ==========================================
+target/
+*.class
+.runtime/
+*.jar
+*.war
+*.ear
+
+# ==========================================
+# Frontend (Node / React)
+# ==========================================
+node_modules/
+dist/
+.npm/
+
+# ==========================================
+# IDE & Editor Settings
+# ==========================================
+.idea/
+*.iml
+.classpath
+.project
+.settings/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/tasks.json
+*.code-workspace
+
+# ==========================================
+# Operating System Files
+# ==========================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+
+# Only publish the final report and diagrams from docs/
+/docs/*
+!/docs/report.pdf
+!/docs/diagrams/
+!/docs/diagrams/**
+
