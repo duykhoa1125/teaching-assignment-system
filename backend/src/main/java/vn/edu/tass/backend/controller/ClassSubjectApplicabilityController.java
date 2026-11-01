@@ -2,7 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
-
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import vn.edu.tass.backend.entity.ClassSubjectApplicability;
 import vn.edu.tass.backend.payload.dto.ClassSubjectApplicabilityDto;
 import vn.edu.tass.backend.payload.request.ClassSubjectApplicabilityRequest;
 import vn.edu.tass.backend.service.ClassSubjectApplicabilityService;
@@ -24,32 +22,35 @@ import vn.edu.tass.backend.service.ClassSubjectApplicabilityService;
 public class ClassSubjectApplicabilityController {
     private final ClassSubjectApplicabilityService service;
 
-    public ClassSubjectApplicabilityController(ClassSubjectApplicabilityService service) { this.service = service; }
+    public ClassSubjectApplicabilityController(ClassSubjectApplicabilityService service) {
+        this.service = service;
+    }
 
     @GetMapping
-    public List<ClassSubjectApplicabilityDto> list(@RequestParam(defaultValue = "20") int limit,
+    public List<ClassSubjectApplicabilityDto> retrieveAllClassSubjectApplicability(@RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        return service.list(limit, offset).stream().map(ClassSubjectApplicabilityDto::from).toList();
+        return service.retrieveAllClassSubjectApplicability(limit, offset);
     }
 
     @GetMapping("/{id}")
-    public ClassSubjectApplicabilityDto get(@PathVariable long id) { return ClassSubjectApplicabilityDto.from(service.get(id)); }
+    public ClassSubjectApplicabilityDto retrieveById(@PathVariable long id) {
+        return service.retrieveById(id);
+    }
 
     @PostMapping
-    public ResponseEntity<ClassSubjectApplicabilityDto> create(@RequestBody ClassSubjectApplicabilityRequest request) {
-        ClassSubjectApplicability created = service.create(request);
-        return ResponseEntity.created(URI.create("/api/class-subject-applicabilities/" + created.id()))
-            .body(ClassSubjectApplicabilityDto.from(created));
+    public ResponseEntity<ClassSubjectApplicabilityDto> createClassSubjectApplicability(@Valid @RequestBody ClassSubjectApplicabilityRequest request) {
+        ClassSubjectApplicabilityDto created = service.createClassSubjectApplicability(request);
+        return ResponseEntity.created(URI.create("/api/class-subject-applicabilities/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public ClassSubjectApplicabilityDto replace(@PathVariable long id, @RequestBody ClassSubjectApplicabilityRequest request) {
-        return ClassSubjectApplicabilityDto.from(service.replace(id, request));
+    public ClassSubjectApplicabilityDto updateClassSubjectApplicability(@PathVariable long id, @Valid @RequestBody ClassSubjectApplicabilityRequest request) {
+        return service.updateClassSubjectApplicability(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id) {
-        service.delete(id);
+    public ResponseEntity<Void> deleteClassSubjectApplicability(@PathVariable long id) {
+        service.deleteClassSubjectApplicability(id);
         return ResponseEntity.noContent().build();
     }
 }

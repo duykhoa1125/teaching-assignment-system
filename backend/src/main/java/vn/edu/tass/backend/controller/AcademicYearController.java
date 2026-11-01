@@ -2,7 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
-
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import vn.edu.tass.backend.entity.AcademicYear;
 import vn.edu.tass.backend.payload.dto.AcademicYearDto;
 import vn.edu.tass.backend.payload.request.AcademicYearRequest;
 import vn.edu.tass.backend.service.AcademicYearService;
@@ -24,32 +22,35 @@ import vn.edu.tass.backend.service.AcademicYearService;
 public class AcademicYearController {
     private final AcademicYearService service;
 
-    public AcademicYearController(AcademicYearService service) { this.service = service; }
+    public AcademicYearController(AcademicYearService service) {
+        this.service = service;
+    }
 
     @GetMapping
-    public List<AcademicYearDto> list(@RequestParam(defaultValue = "20") int limit,
+    public List<AcademicYearDto> retrieveAllAcademicYear(@RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        return service.list(limit, offset).stream().map(AcademicYearDto::from).toList();
+        return service.retrieveAllAcademicYear(limit, offset);
     }
 
     @GetMapping("/{id}")
-    public AcademicYearDto get(@PathVariable long id) { return AcademicYearDto.from(service.get(id)); }
+    public AcademicYearDto retrieveById(@PathVariable long id) {
+        return service.retrieveById(id);
+    }
 
     @PostMapping
-    public ResponseEntity<AcademicYearDto> create(@RequestBody AcademicYearRequest request) {
-        AcademicYear created = service.create(request);
-        return ResponseEntity.created(URI.create("/api/academic-years/" + created.id()))
-            .body(AcademicYearDto.from(created));
+    public ResponseEntity<AcademicYearDto> createAcademicYear(@Valid @RequestBody AcademicYearRequest request) {
+        AcademicYearDto created = service.createAcademicYear(request);
+        return ResponseEntity.created(URI.create("/api/academic-years/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public AcademicYearDto replace(@PathVariable long id, @RequestBody AcademicYearRequest request) {
-        return AcademicYearDto.from(service.replace(id, request));
+    public AcademicYearDto updateAcademicYear(@PathVariable long id, @Valid @RequestBody AcademicYearRequest request) {
+        return service.updateAcademicYear(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id) {
-        service.delete(id);
+    public ResponseEntity<Void> deleteAcademicYear(@PathVariable long id) {
+        service.deleteAcademicYear(id);
         return ResponseEntity.noContent().build();
     }
 }

@@ -14,20 +14,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.transaction.annotation.Transactional;
 
 import vn.edu.tass.backend.exception.NotFoundException;
 
 /** Run with: mvn test -Ddb.integration=true (requires the seeded PostgreSQL from compose.yaml). */
 @EnabledIfSystemProperty(named = "db.integration", matches = "true")
+@SpringBootTest
 class PostgresCrudIntegrationTest {
-    private static final DriverManagerDataSource DATA_SOURCE = new DriverManagerDataSource(
-        System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/tass"),
-        System.getenv().getOrDefault("DB_USER", "tass"),
-        System.getenv().getOrDefault("DB_PASSWORD", "tass_dev"));
+    @Autowired ApplicationContext context;
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
     private static final Map<String, String> NAMES = Map.ofEntries(
         Map.entry("schools", "School"), Map.entry("academic-years", "AcademicYear"),
@@ -42,69 +40,62 @@ class PostgresCrudIntegrationTest {
         Map.entry("round-subject-scopes", "RoundSubjectScope"),
         Map.entry("class-subject-applicabilities", "ClassSubjectApplicability")
     );
-    private static final TransactionTemplate TRANSACTION = new TransactionTemplate(new DataSourceTransactionManager(DATA_SOURCE));
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("resources")
+    @Transactional
     void createReadListUpdateAndDeleteAgainstPostgres(String resource) {
-        TRANSACTION.execute(status -> {
-            Map<String, Object> body = new HashMap<>(body(resource));
-            Object created = create(resource, body);
-            long id = ((Number) value(created, "id")).longValue();
+        Map<String, Object> body = new HashMap<>(body(resource));
+        Object created = create(resource, body);
+        long id = ((Number) value(created, "id")).longValue();
 
-            assertEquals(id, ((Number) value(get(resource, id), "id")).longValue());
-            assertTrue(list(resource).stream()
-                .anyMatch(row -> ((Number) value(row, "id")).longValue() == id));
+        assertEquals(id, ((Number) value(get(resource, id), "id")).longValue());
+        assertTrue(list(resource).stream()
+            .anyMatch(row -> ((Number) value(row, "id")).longValue() == id));
 
-            Map.Entry<String, Object> change = update(resource);
-            body.put(change.getKey(), change.getValue());
-            Object updated = replace(resource, id, body);
-            Object expected = change.getValue();
-            Object actual = value(updated, camelCase(change.getKey()));
-            if (expected instanceof Number) {
-                assertEquals(0, new BigDecimal(expected.toString())
-                    .compareTo(new BigDecimal(actual.toString())));
-            } else {
-                assertEquals(expected, actual);
-            }
+        Map.Entry<String, Object> change = update(resource);
+        body.put(change.getKey(), change.getValue());
+        Object updated = replace(resource, id, body);
+        Object expected = change.getValue();
+        Object actual = value(updated, camelCase(change.getKey()));
+        if (expected instanceof Number) {
+            assertEquals(0, new BigDecimal(expected.toString())
+                .compareTo(new BigDecimal(actual.toString())));
+        } else {
+            assertEquals(expected, actual);
+        }
 
-            invoke(service(resource), "delete", new Class<?>[]{long.class}, id);
-            assertThrows(NotFoundException.class, () -> get(resource, id));
-            status.setRollbackOnly();
-            return null;
-        });
+        invoke(service(resource), "delete" + NAMES.get(resource), new Class<?>[]{long.class}, id);
+        assertThrows(NotFoundException.class, () -> get(resource, id));
     }
 
     private static Stream<String> resources() { return NAMES.keySet().stream(); }
 
-    private static Object create(String resource, Map<String, Object> body) {
+    private Object create(String resource, Map<String, Object> body) {
         Class<?> requestType = requestType(resource);
-        return invoke(service(resource), "create", new Class<?>[]{requestType}, JSON.convertValue(body, requestType));
+        return invoke(service(resource), "create" + NAMES.get(resource), new Class<?>[]{requestType}, JSON.convertValue(body, requestType));
     }
 
-    private static Object replace(String resource, long id, Map<String, Object> body) {
+    private Object replace(String resource, long id, Map<String, Object> body) {
         Class<?> requestType = requestType(resource);
-        return invoke(service(resource), "replace", new Class<?>[]{long.class, requestType},
+        return invoke(service(resource), "update" + NAMES.get(resource), new Class<?>[]{long.class, requestType},
             id, JSON.convertValue(body, requestType));
     }
 
-    private static Object get(String resource, long id) {
-        return invoke(service(resource), "get", new Class<?>[]{long.class}, id);
+    private Object get(String resource, long id) {
+        return invoke(service(resource), "retrieveById", new Class<?>[]{long.class}, id);
     }
 
     @SuppressWarnings("unchecked")
-    private static java.util.List<Object> list(String resource) {
-        return (java.util.List<Object>) invoke(service(resource), "list", new Class<?>[]{int.class, int.class}, 100, 0);
+    private java.util.List<Object> list(String resource) {
+        return (java.util.List<Object>) invoke(service(resource), "retrieveAll" + NAMES.get(resource), new Class<?>[]{int.class, int.class}, 100, 0);
     }
 
-    private static Object service(String resource) {
+    private Object service(String resource) {
         try {
             String name = NAMES.get(resource);
-            Class<?> repositoryType = Class.forName("vn.edu.tass.backend.repository." + name + "Repository");
-            Class<?> serviceType = Class.forName("vn.edu.tass.backend.service.impl." + name + "ServiceImpl");
-            Object repository = repositoryType.getConstructor(NamedParameterJdbcTemplate.class)
-                .newInstance(new NamedParameterJdbcTemplate(DATA_SOURCE));
-            return serviceType.getConstructor(repositoryType).newInstance(repository);
+            Class<?> serviceType = Class.forName("vn.edu.tass.backend.service." + name + "Service");
+            return context.getBean(serviceType);
         } catch (ReflectiveOperationException e) {
             throw new IllegalStateException(e);
         }
@@ -130,7 +121,7 @@ class PostgresCrudIntegrationTest {
     }
 
     private static Object value(Object entity, String field) {
-        return invoke(entity, field, new Class<?>[0]);
+        return invoke(entity, "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1), new Class<?>[0]);
     }
 
     private static String camelCase(String sqlName) {
@@ -142,7 +133,7 @@ class PostgresCrudIntegrationTest {
         return result.toString();
     }
 
-    private static Map<String, Object> body(String resource) {
+    private Map<String, Object> body(String resource) {
         return switch (resource) {
             case "schools" -> Map.of("school_code", "TEST_SCHOOL", "name", "Test School", "status", "ACTIVE");
             case "academic-years" -> Map.of("school_id", 1, "year_code", "TEST_YEAR", "starts_on", "2099-08-01", "ends_on", "2100-07-31");

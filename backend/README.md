@@ -1,26 +1,29 @@
-# TASS backend CRUD
+# TASS backend: CRUD dữ liệu đầu vào
 
-## Cấu trúc mã nguồn
+Backend cung cấp REST API cho 16 bảng dữ liệu đầu vào trong `sql/01_schema.sql`.
 
-`src/main/java/vn/edu/tass/backend` được chia theo trách nhiệm:
+## Cấu trúc
 
-| Package | Vai trò |
+Mã nguồn nằm tại `src/main/java/vn/edu/tass/backend` và được tổ chức theo mẫu Blog App API:
+
+| Package | Nội dung |
 | --- | --- |
-| `controller` | 16 controller, mỗi bảng một file và một URL riêng |
-| `payload/request` | 16 request DTO, mỗi bảng một file |
-| `payload/dto` | 16 response DTO, mỗi bảng một file; thêm DTO lỗi chung |
-| `entity` | 16 class entity, mỗi bảng đầu vào một file; khai báo tên bảng, cột và kiểu dữ liệu |
-| `service` | 16 service interface; `service/impl` có 16 implementation; `service/support` chứa phần kiểm tra CRUD lặp lại |
-| `repository` | 16 repository riêng; `repository/support` chứa SQL và ánh xạ entity dùng chung |
-| `exception` | Lỗi nghiệp vụ và ánh xạ sang HTTP status |
+| `config` | Cấu hình `ModelMapper` |
+| `controller` | 16 controller, mỗi tài nguyên một file |
+| `entity` | 16 JPA entity, mỗi bảng một file |
+| `exception` | Ngoại lệ và ánh xạ lỗi HTTP |
+| `payload/request` | 16 request class có validation |
+| `payload/dto` | 16 response DTO và DTO lỗi |
+| `repository` | 16 interface riêng, mỗi interface kế thừa `JpaRepository` |
+| `service` | 16 service interface |
+| `service/impl` | 16 service implementation; CRUD dùng repository tương ứng trực tiếp |
+| `utils` | Kiểm tra tham số và phân trang theo `limit`/`offset` |
 
-Mỗi bảng có controller, service interface/implementation, repository, request DTO, response DTO và entity riêng. Ví dụ `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `teacher`. Các lớp `CrudSupport`, `JdbcCrudRepository` và `EntityMetadata` chỉ xử lý thao tác lặp lại; service/repository từng bảng có thể thêm logic và truy vấn riêng. Backend dùng JDBC, nên annotation `@SqlTable` và `@SqlColumn` là metadata của backend. URL và JSON vẫn giữ dạng mô tả bên dưới.
-
-REST API Spring Boot cho **16 bảng dữ liệu đầu vào** trong `sql/01_schema.sql`. Ba file trong `backend/sql` là bản sao của thư mục `sql` tại workspace để backend chạy được khi clone repo riêng. Schema gốc có 41 bảng; API chỉ mở CRUD cho nhóm dữ liệu đầu vào.
+Ví dụ: `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `Teacher`. Các service dùng `ModelMapper` để đổi request/entity/DTO và viết rõ thao tác cập nhật từng trường. JPA chỉ truy cập schema có sẵn; `spring.jpa.hibernate.ddl-auto=none`, nên ứng dụng không tự tạo hoặc sửa bảng PostgreSQL.
 
 ## Chạy local
 
-Yêu cầu Java 17+, Maven và Docker (hoặc PostgreSQL 15+ đã tạo schema bằng `sql/01_schema.sql`).
+Yêu cầu Java 17+, Maven và PostgreSQL 15+ hoặc Docker.
 
 ```powershell
 cd backend
@@ -28,19 +31,19 @@ docker compose up -d
 mvn spring-boot:run
 ```
 
-Compose khởi tạo schema và dữ liệu demo từ `backend/sql/01_schema.sql` và `backend/sql/02_seed.sql` **chỉ khi volume database còn trống**. API mặc định kết nối `jdbc:postgresql://localhost:5432/tass`, user `tass`, mật khẩu demo `tass_dev`. Với database riêng, đặt `DB_URL`, `DB_USER`, `DB_PASSWORD` trước khi chạy. API chỉ lắng nghe trên `127.0.0.1` và hiện chưa có đăng nhập/phân quyền.
+Compose nạp `backend/sql/01_schema.sql` và `backend/sql/02_seed.sql` khi volume mới được tạo. Mặc định API kết nối `jdbc:postgresql://localhost:5432/tass`, user `tass`, mật khẩu demo `tass_dev`. Có thể đặt `DB_URL`, `DB_USER`, `DB_PASSWORD` để dùng database khác. API lắng nghe trên `127.0.0.1` và hiện chưa có đăng nhập/phân quyền.
 
 ## Endpoint
 
-Mỗi resource hỗ trợ:
+Mỗi tài nguyên có các endpoint sau:
 
 | Method | URL | Kết quả |
 | --- | --- | --- |
 | GET | `/api/{resource}?limit=20&offset=0` | Danh sách theo `id` tăng dần; `limit` tối đa 100 |
 | GET | `/api/{resource}/{id}` | Một bản ghi hoặc 404 |
-| POST | `/api/{resource}` | Tạo, trả 201 và header `Location` |
-| PUT | `/api/{resource}/{id}` | Thay toàn bộ các cột được phép sửa, trả bản ghi mới |
-| DELETE | `/api/{resource}/{id}` | Xóa, trả 204; 409 nếu bản ghi đang được tham chiếu |
+| POST | `/api/{resource}` | Tạo bản ghi, trả 201 và header `Location` |
+| PUT | `/api/{resource}/{id}` | Thay các trường trong request, trả bản ghi mới |
+| DELETE | `/api/{resource}/{id}` | Xóa bản ghi, trả 204; 409 nếu đang được tham chiếu |
 
 | Resource | Bảng SQL | Trường body bắt buộc | Trường tùy chọn |
 | --- | --- | --- | --- |
@@ -61,18 +64,14 @@ Mỗi resource hỗ trợ:
 | `round-subject-scopes` | `round_subject_scope` | `round_id`, `grade_id`, `subject_id` | `confirmed_by`, `confirmed_at` |
 | `class-subject-applicabilities` | `class_subject_applicability` | `scope_id`, `class_id`, `status`, `updated_by` | `reason` |
 
-Body JSON dùng **tên cột SQL dạng snake_case**. Ngày dùng `YYYY-MM-DD`; thời điểm dùng ISO 8601 có múi giờ, ví dụ `2026-11-01T09:00:00+07:00`. ID và `semester_no` là số nguyên; `periods_per_week` là số. `PUT` cần đủ mọi trường bắt buộc, và trường tùy chọn bỏ qua sẽ thành `null`. `id`, `updated_at` và `recorded_at` do database/API quản lý. PostgreSQL kiểm tra khóa ngoại, tính duy nhất, ngày hợp lệ, và các trigger ngữ cảnh. `updated_by`, `recorded_by` và các trường xác nhận phải là ID một `user_account` có sẵn; dữ liệu demo có ID `1`. Giá trị `class-subject-applicabilities.status` là `APPLICABLE`, `NOT_APPLICABLE` hoặc `UNDETERMINED`; giá trị `teaching-demands.demand_type` là `STANDARD` hoặc `SPECIALIZED_TOPIC`.
+Body JSON dùng tên cột SQL dạng `snake_case`. Ngày dùng `YYYY-MM-DD`; thời điểm dùng ISO 8601 có múi giờ, ví dụ `2026-11-01T09:00:00+07:00`. `PUT` cần đủ trường bắt buộc; trường tùy chọn bỏ qua sẽ được đặt thành `null`. `id`, `updated_at` và `recorded_at` do ứng dụng quản lý. Các khóa ngoại và quy tắc dữ liệu tiếp tục do PostgreSQL kiểm tra.
 
 Ví dụ:
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:8080/api/teachers
 Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8080/api/teachers -ContentType application/json -Body '{"school_id":1,"teacher_code":"GV_NEW","full_name":"Nguyễn Văn A"}'
-Invoke-RestMethod -Method Put -Uri http://127.0.0.1:8080/api/teachers/5 -ContentType application/json -Body '{"school_id":1,"teacher_code":"GV_NEW","full_name":"Nguyễn Văn B"}'
-Invoke-RestMethod -Method Delete -Uri http://127.0.0.1:8080/api/teachers/5
 ```
-
-Nếu dùng PostgreSQL bên ngoài Docker, chạy `backend/sql/01_schema.sql`, sau đó tùy chọn chạy `backend/sql/02_seed.sql`. `backend/sql/03_queries.sql` là truy vấn kiểm tra chỉ đọc.
 
 ## Kiểm thử
 
@@ -81,7 +80,6 @@ cd backend
 mvn test
 docker compose up -d
 mvn test "-Ddb.integration=true"
-docker compose down
 ```
 
-Lệnh đầu kiểm tra 16 bộ controller/service/repository, đối chiếu entity với schema SQL và kiểm tra HTTP CRUD. Lệnh có `db.integration=true` chạy thêm 16 bài CRUD trên PostgreSQL thật, mỗi bài tạo, đọc, sửa, xóa rồi rollback để không đổi dữ liệu demo. Cần database đã được khởi tạo từ `backend/sql/01_schema.sql` và `backend/sql/02_seed.sql`.
+`mvn test` kiểm tra cấu trúc 16 bộ CRUD, mapping với schema, HTTP CRUD và thao tác JPA thật trên H2. Tùy chọn `db.integration=true` chạy thêm CRUD trên PostgreSQL đã nạp schema và seed; các thay đổi trong test được rollback.

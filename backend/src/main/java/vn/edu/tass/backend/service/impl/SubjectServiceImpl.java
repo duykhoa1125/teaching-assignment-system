@@ -1,36 +1,69 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import vn.edu.tass.backend.entity.Subject;
+import vn.edu.tass.backend.payload.dto.SubjectDto;
 import vn.edu.tass.backend.payload.request.SubjectRequest;
 import vn.edu.tass.backend.repository.SubjectRepository;
 import vn.edu.tass.backend.service.SubjectService;
-import vn.edu.tass.backend.service.support.CrudSupport;
+import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
 public class SubjectServiceImpl implements SubjectService {
-    private final CrudSupport<Subject> crud;
+    private final SubjectRepository repository;
+    private final ModelMapper mapper;
 
-    public SubjectServiceImpl(SubjectRepository repository) {
-        this.crud = new CrudSupport<>(repository);
+    public SubjectServiceImpl(SubjectRepository repository, ModelMapper mapper) {
+        this.repository = repository;
+        this.mapper = mapper;
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public List<Subject> list(int limit, int offset) { return crud.list(limit, offset); }
+    public List<SubjectDto> retrieveAllSubject(int limit, int offset) {
+        CrudParameters.requirePage(limit, offset);
+        return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
+            .map(entity -> mapper.map(entity, SubjectDto.class)).toList();
+    }
 
+    @Override
     @Transactional(readOnly = true)
-    public Subject get(long id) { return crud.get(id); }
+    public SubjectDto retrieveById(long id) {
+        return mapper.map(find(id), SubjectDto.class);
+    }
 
+    @Override
     @Transactional
-    public Subject create(SubjectRequest request) { return crud.create(request); }
+    public SubjectDto createSubject(SubjectRequest request) {
+        Subject entity = mapper.map(request, Subject.class);
+        return mapper.map(repository.saveAndFlush(entity), SubjectDto.class);
+    }
 
+    @Override
     @Transactional
-    public Subject replace(long id, SubjectRequest request) { return crud.replace(id, request); }
+    public SubjectDto updateSubject(long id, SubjectRequest request) {
+        Subject entity = find(id);
+        entity.setSubjectCode(request.getSubjectCode());
+        entity.setName(request.getName());
+        entity.setValidFrom(request.getValidFrom());
+        entity.setValidTo(request.getValidTo());
+        return mapper.map(repository.saveAndFlush(entity), SubjectDto.class);
+    }
 
+    @Override
     @Transactional
-    public void delete(long id) { crud.delete(id); }
+    public void deleteSubject(long id) {
+        repository.delete(find(id));
+        repository.flush();
+    }
+
+    private Subject find(long id) {
+        CrudParameters.requireId(id);
+        return repository.findById(id)
+            .orElseThrow(() -> new vn.edu.tass.backend.exception.NotFoundException("subject id=" + id + " does not exist"));
+    }
 }

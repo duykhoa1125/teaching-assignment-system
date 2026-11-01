@@ -1,17 +1,35 @@
 package vn.edu.tass.backend.payload.request;
 
 import java.math.BigDecimal;
-
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record TeachingDemandRequest(
-    Long semesterId,
-    Long classId,
-    Long subjectId,
-    BigDecimal periodsPerWeek,
-    String status,
-    Long updatedBy,
-    String demandType
-) {}
+@Data
+@NoArgsConstructor
+public class TeachingDemandRequest {
+    @NotNull
+    private Long semesterId;
+
+    @NotNull
+    private Long classId;
+
+    @NotNull
+    private Long subjectId;
+
+    @NotNull
+    private BigDecimal periodsPerWeek;
+
+    @NotBlank
+    private String status;
+
+    @NotNull
+    private Long updatedBy;
+
+    @NotBlank
+    private String demandType;
+}

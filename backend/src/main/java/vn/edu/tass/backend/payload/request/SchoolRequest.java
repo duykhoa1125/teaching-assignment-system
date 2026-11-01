@@ -2,10 +2,20 @@ package vn.edu.tass.backend.payload.request;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record SchoolRequest(
-    String schoolCode,
-    String name,
-    String status
-) {}
+@Data
+@NoArgsConstructor
+public class SchoolRequest {
+    @NotBlank
+    private String schoolCode;
+
+    @NotBlank
+    private String name;
+
+    @NotBlank
+    private String status;
+}

@@ -1,14 +1,7 @@
 package vn.edu.tass.backend.repository;
 
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.JpaRepository;
 import vn.edu.tass.backend.entity.ClassSubjectApplicability;
-import vn.edu.tass.backend.repository.support.JdbcCrudRepository;
 
-@Repository
-public class ClassSubjectApplicabilityRepository extends JdbcCrudRepository<ClassSubjectApplicability> {
-    public ClassSubjectApplicabilityRepository(NamedParameterJdbcTemplate jdbc) {
-        super(jdbc, ClassSubjectApplicability.class);
-    }
+public interface ClassSubjectApplicabilityRepository extends JpaRepository<ClassSubjectApplicability, Long> {
 }

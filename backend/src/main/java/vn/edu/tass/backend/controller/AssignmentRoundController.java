@@ -2,7 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
-
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import vn.edu.tass.backend.entity.AssignmentRound;
 import vn.edu.tass.backend.payload.dto.AssignmentRoundDto;
 import vn.edu.tass.backend.payload.request.AssignmentRoundRequest;
 import vn.edu.tass.backend.service.AssignmentRoundService;
@@ -24,32 +22,35 @@ import vn.edu.tass.backend.service.AssignmentRoundService;
 public class AssignmentRoundController {
     private final AssignmentRoundService service;
 
-    public AssignmentRoundController(AssignmentRoundService service) { this.service = service; }
+    public AssignmentRoundController(AssignmentRoundService service) {
+        this.service = service;
+    }
 
     @GetMapping
-    public List<AssignmentRoundDto> list(@RequestParam(defaultValue = "20") int limit,
+    public List<AssignmentRoundDto> retrieveAllAssignmentRound(@RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        return service.list(limit, offset).stream().map(AssignmentRoundDto::from).toList();
+        return service.retrieveAllAssignmentRound(limit, offset);
     }
 
     @GetMapping("/{id}")
-    public AssignmentRoundDto get(@PathVariable long id) { return AssignmentRoundDto.from(service.get(id)); }
+    public AssignmentRoundDto retrieveById(@PathVariable long id) {
+        return service.retrieveById(id);
+    }
 
     @PostMapping
-    public ResponseEntity<AssignmentRoundDto> create(@RequestBody AssignmentRoundRequest request) {
-        AssignmentRound created = service.create(request);
-        return ResponseEntity.created(URI.create("/api/assignment-rounds/" + created.id()))
-            .body(AssignmentRoundDto.from(created));
+    public ResponseEntity<AssignmentRoundDto> createAssignmentRound(@Valid @RequestBody AssignmentRoundRequest request) {
+        AssignmentRoundDto created = service.createAssignmentRound(request);
+        return ResponseEntity.created(URI.create("/api/assignment-rounds/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public AssignmentRoundDto replace(@PathVariable long id, @RequestBody AssignmentRoundRequest request) {
-        return AssignmentRoundDto.from(service.replace(id, request));
+    public AssignmentRoundDto updateAssignmentRound(@PathVariable long id, @Valid @RequestBody AssignmentRoundRequest request) {
+        return service.updateAssignmentRound(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id) {
-        service.delete(id);
+    public ResponseEntity<Void> deleteAssignmentRound(@PathVariable long id) {
+        service.deleteAssignmentRound(id);
         return ResponseEntity.noContent().build();
     }
 }

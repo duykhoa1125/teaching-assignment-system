@@ -1,14 +1,42 @@
 package vn.edu.tass.backend.entity;
 
 import java.time.OffsetDateTime;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.UpdateTimestamp;
 
-@SqlTable("class_subject_applicability")
-public record ClassSubjectApplicability(
-    @SqlColumn(writable = false) Long id,
-    @SqlColumn Long scopeId,
-    @SqlColumn Long classId,
-    @SqlColumn String status,
-    @SqlColumn(required = false) String reason,
-    @SqlColumn Long updatedBy,
-    @SqlColumn(writable = false) OffsetDateTime updatedAt
-) {}
+@Entity
+@Table(name = "class_subject_applicability")
+@Data
+@NoArgsConstructor
+public class ClassSubjectApplicability {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
+
+    @Column(name = "scope_id", nullable = false)
+    private Long scopeId;
+
+    @Column(name = "class_id", nullable = false)
+    private Long classId;
+
+    @Column(name = "status", nullable = false)
+    private String status;
+
+    @Column(name = "reason")
+    private String reason;
+
+    @Column(name = "updated_by", nullable = false)
+    private Long updatedBy;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private OffsetDateTime updatedAt;
+}

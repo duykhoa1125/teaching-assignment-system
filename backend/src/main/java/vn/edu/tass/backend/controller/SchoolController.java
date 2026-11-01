@@ -2,7 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
-
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import vn.edu.tass.backend.entity.School;
 import vn.edu.tass.backend.payload.dto.SchoolDto;
 import vn.edu.tass.backend.payload.request.SchoolRequest;
 import vn.edu.tass.backend.service.SchoolService;
@@ -24,32 +22,35 @@ import vn.edu.tass.backend.service.SchoolService;
 public class SchoolController {
     private final SchoolService service;
 
-    public SchoolController(SchoolService service) { this.service = service; }
+    public SchoolController(SchoolService service) {
+        this.service = service;
+    }
 
     @GetMapping
-    public List<SchoolDto> list(@RequestParam(defaultValue = "20") int limit,
+    public List<SchoolDto> retrieveAllSchool(@RequestParam(defaultValue = "20") int limit,
             @RequestParam(defaultValue = "0") int offset) {
-        return service.list(limit, offset).stream().map(SchoolDto::from).toList();
+        return service.retrieveAllSchool(limit, offset);
     }
 
     @GetMapping("/{id}")
-    public SchoolDto get(@PathVariable long id) { return SchoolDto.from(service.get(id)); }
+    public SchoolDto retrieveById(@PathVariable long id) {
+        return service.retrieveById(id);
+    }
 
     @PostMapping
-    public ResponseEntity<SchoolDto> create(@RequestBody SchoolRequest request) {
-        School created = service.create(request);
-        return ResponseEntity.created(URI.create("/api/schools/" + created.id()))
-            .body(SchoolDto.from(created));
+    public ResponseEntity<SchoolDto> createSchool(@Valid @RequestBody SchoolRequest request) {
+        SchoolDto created = service.createSchool(request);
+        return ResponseEntity.created(URI.create("/api/schools/" + created.getId())).body(created);
     }
 
     @PutMapping("/{id}")
-    public SchoolDto replace(@PathVariable long id, @RequestBody SchoolRequest request) {
-        return SchoolDto.from(service.replace(id, request));
+    public SchoolDto updateSchool(@PathVariable long id, @Valid @RequestBody SchoolRequest request) {
+        return service.updateSchool(id, request);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable long id) {
-        service.delete(id);
+    public ResponseEntity<Void> deleteSchool(@PathVariable long id) {
+        service.deleteSchool(id);
         return ResponseEntity.noContent().build();
     }
 }

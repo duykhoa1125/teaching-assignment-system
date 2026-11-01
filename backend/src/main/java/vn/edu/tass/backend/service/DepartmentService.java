@@ -1,14 +1,13 @@
 package vn.edu.tass.backend.service;
 
 import java.util.List;
-
-import vn.edu.tass.backend.entity.Department;
+import vn.edu.tass.backend.payload.dto.DepartmentDto;
 import vn.edu.tass.backend.payload.request.DepartmentRequest;
 
 public interface DepartmentService {
-    List<Department> list(int limit, int offset);
-    Department get(long id);
-    Department create(DepartmentRequest request);
-    Department replace(long id, DepartmentRequest request);
-    void delete(long id);
+    List<DepartmentDto> retrieveAllDepartment(int limit, int offset);
+    DepartmentDto retrieveById(long id);
+    DepartmentDto createDepartment(DepartmentRequest request);
+    DepartmentDto updateDepartment(long id, DepartmentRequest request);
+    void deleteDepartment(long id);
 }

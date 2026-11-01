@@ -2,17 +2,18 @@ package vn.edu.tass.backend.payload.dto;
 
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-
-import vn.edu.tass.backend.entity.Grade;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-public record GradeDto(
-    Long id,
-    Long educationLevelId,
-    String gradeCode,
-    String name
-) {
-    public static GradeDto from(Grade entity) {
-        return new GradeDto(entity.id(), entity.educationLevelId(), entity.gradeCode(), entity.name());
-    }
+@Data
+@NoArgsConstructor
+public class GradeDto {
+    private Long id;
+
+    private Long educationLevelId;
+
+    private String gradeCode;
+
+    private String name;
 }

@@ -1,52 +1,46 @@
 package vn.edu.tass.backend.controller;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-import java.lang.reflect.RecordComponent;
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.mockito.ArgumentCaptor;
+import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-
-import vn.edu.tass.backend.entity.SqlColumn;
+import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import vn.edu.tass.backend.exception.ApiExceptionHandler;
-import vn.edu.tass.backend.repository.support.EntityMetadata;
+import vn.edu.tass.backend.config.MapperConfig;
 
 class PerEntityCrudTest {
-    private static final ObjectMapper JSON = new ObjectMapper();
+    private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("resources")
-    void eachEntityHasOwnLayersAndAllCrudRoutes(String name, String path, String table) throws Exception {
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    void sixteenResourcesUseJpaAndExposeCrud(String name, String path, String table) throws Exception {
         Class<?> entityType = type("entity", name);
         Class<?> requestType = type("payload.request", name + "Request");
         Class<?> dtoType = type("payload.dto", name + "Dto");
@@ -54,26 +48,41 @@ class PerEntityCrudTest {
         Class<?> serviceType = type("service", name + "Service");
         Class<?> serviceImplType = type("service.impl", name + "ServiceImpl");
         Class<?> controllerType = type("controller", name + "Controller");
-        assertTrue(entityType.isRecord());
-        assertTrue(requestType.isRecord());
-        assertTrue(dtoType.isRecord());
+        assertTrue(entityType.isAnnotationPresent(Entity.class));
+        assertEquals(table, entityType.getAnnotation(Table.class).name());
+        assertTrue(JpaRepository.class.isAssignableFrom(repositoryType));
+        assertTrue(serviceType.isInterface() && serviceType.isAssignableFrom(serviceImplType));
+        assertFalse(requestType.isRecord());
+        assertFalse(dtoType.isRecord());
 
-        Object entity = exampleEntity(entityType);
-        NamedParameterJdbcTemplate jdbc = mock(NamedParameterJdbcTemplate.class);
-        doAnswer(invocation -> List.of(entity)).when(jdbc)
-            .query(anyString(), any(MapSqlParameterSource.class), any(RowMapper.class));
-        when(jdbc.update(anyString(), any(MapSqlParameterSource.class))).thenReturn(1);
-        Object repository = repositoryType.getConstructor(NamedParameterJdbcTemplate.class).newInstance(jdbc);
-        assertTrue(serviceType.isInterface());
-        assertTrue(serviceType.isAssignableFrom(serviceImplType));
-        Object service = serviceImplType.getConstructor(repositoryType).newInstance(repository);
+        Object entity = entityType.getConstructor().newInstance();
+        for (Field field : entityType.getDeclaredFields()) {
+            field.setAccessible(true);
+            field.set(entity, sample(field.getType()));
+        }
+        JpaRepository repository = (JpaRepository) mock(repositoryType);
+        when(repository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(entity)));
+        when(repository.findById(1L)).thenReturn(Optional.of(entity));
+        doAnswer(invocation -> {
+            Object saved = invocation.getArgument(0);
+            Field id = entityType.getDeclaredField("id");
+            id.setAccessible(true);
+            id.set(saved, 1L);
+            return saved;
+        }).when(repository).saveAndFlush(any());
+        Object service = serviceImplType.getConstructor(repositoryType, ModelMapper.class)
+            .newInstance(repository, new MapperConfig().modelMapper());
         Object controller = controllerType.getConstructor(serviceType).newInstance(service);
+        LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
+        validator.afterPropertiesSet();
         MockMvc mvc = MockMvcBuilders.standaloneSetup(controller)
-            .setControllerAdvice(new ApiExceptionHandler()).build();
+            .setControllerAdvice(new ApiExceptionHandler()).setValidator(validator)
+            .setMessageConverters(new MappingJackson2HttpMessageConverter(JSON)).build();
 
+        Map<String, Object> request = requestBody(requestType);
         String url = "/api/" + path;
-        String body = JSON.writeValueAsString(requestBody(entityType));
-        String firstField = requestBody(entityType).keySet().iterator().next();
+        String body = JSON.writeValueAsString(request);
+        String firstField = request.keySet().iterator().next();
         mvc.perform(get(url)).andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(1));
         mvc.perform(get(url + "/1")).andExpect(status().isOk())
             .andExpect(jsonPath("$.id").value(1)).andExpect(jsonPath("$." + firstField).exists());
@@ -85,35 +94,20 @@ class PerEntityCrudTest {
         mvc.perform(post(url).contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest());
         mvc.perform(get(url + "/0")).andExpect(status().isBadRequest());
-
-        ArgumentCaptor<String> queries = ArgumentCaptor.forClass(String.class);
-        verify(jdbc, times(4)).query(queries.capture(), any(MapSqlParameterSource.class), any(RowMapper.class));
-        assertTrue(queries.getAllValues().get(0).startsWith("SELECT * FROM " + table + " ORDER BY id"));
-        assertTrue(queries.getAllValues().get(1).startsWith("SELECT * FROM " + table + " WHERE id"));
-        assertTrue(queries.getAllValues().get(2).startsWith("INSERT INTO " + table + " ("));
-        assertTrue(queries.getAllValues().get(3).startsWith("UPDATE " + table + " SET "));
-        verify(jdbc).update(org.mockito.ArgumentMatchers.eq("DELETE FROM " + table + " WHERE id = :id"),
-            any(MapSqlParameterSource.class));
+        verify(repository).delete(entity);
+        validator.destroy();
     }
 
     private static Class<?> type(String layer, String name) throws ClassNotFoundException {
         return Class.forName("vn.edu.tass.backend." + layer + "." + name);
     }
 
-    private static Object exampleEntity(Class<?> type) throws Exception {
-        RecordComponent[] fields = type.getRecordComponents();
-        Class<?>[] types = Stream.of(fields).map(RecordComponent::getType).toArray(Class<?>[]::new);
-        Object[] values = Stream.of(fields).map(field -> sample(field.getType())).toArray();
-        return type.getConstructor(types).newInstance(values);
-    }
-
     private static Map<String, Object> requestBody(Class<?> type) {
         Map<String, Object> body = new LinkedHashMap<>();
-        for (RecordComponent field : type.getRecordComponents()) {
-            if (!field.getAnnotation(SqlColumn.class).writable()) continue;
+        for (Field field : type.getDeclaredFields()) {
             Object value = sample(field.getType());
-            if (value instanceof LocalDate || value instanceof OffsetDateTime) value = value.toString();
-            body.put(EntityMetadata.sqlName(field.getName()), value);
+            body.put(field.getName().replaceAll("([A-Z])", "_$1").toLowerCase(),
+                value instanceof LocalDate || value instanceof OffsetDateTime ? value.toString() : value);
         }
         return body;
     }
