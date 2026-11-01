@@ -1,4 +1,8 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.controller;
+
+import vn.edu.tass.backend.payload.dto.CrudRequest;
+import vn.edu.tass.backend.payload.dto.CrudResponse;
+import vn.edu.tass.backend.service.CrudService;
 
 import java.net.URI;
 import java.util.List;
@@ -23,26 +27,26 @@ public class CrudController {
     public CrudController(CrudService service) { this.service = service; }
 
     @GetMapping("/{resource}")
-    public List<Map<String, Object>> list(@PathVariable String resource,
+    public List<CrudResponse> list(@PathVariable String resource,
             @RequestParam(defaultValue = "20") int limit, @RequestParam(defaultValue = "0") int offset) {
-        return service.list(resource, limit, offset);
+        return service.list(resource, limit, offset).stream().map(CrudResponse::new).toList();
     }
 
     @GetMapping("/{resource}/{id}")
-    public Map<String, Object> get(@PathVariable String resource, @PathVariable long id) {
-        return service.get(resource, id);
+    public CrudResponse get(@PathVariable String resource, @PathVariable long id) {
+        return new CrudResponse(service.get(resource, id));
     }
 
     @PostMapping("/{resource}")
-    public ResponseEntity<Map<String, Object>> create(@PathVariable String resource, @RequestBody Map<String, Object> body) {
-        Map<String, Object> created = service.create(resource, body);
-        return ResponseEntity.created(URI.create("/api/" + resource + "/" + created.get("id"))).body(created);
+    public ResponseEntity<CrudResponse> create(@PathVariable String resource, @RequestBody CrudRequest body) {
+        Map<String, Object> created = service.create(resource, body.fields());
+        return ResponseEntity.created(URI.create("/api/" + resource + "/" + created.get("id"))).body(new CrudResponse(created));
     }
 
     @PutMapping("/{resource}/{id}")
-    public Map<String, Object> replace(@PathVariable String resource, @PathVariable long id,
-            @RequestBody Map<String, Object> body) {
-        return service.replace(resource, id, body);
+    public CrudResponse replace(@PathVariable String resource, @PathVariable long id,
+            @RequestBody CrudRequest body) {
+        return new CrudResponse(service.replace(resource, id, body.fields()));
     }
 
     @DeleteMapping("/{resource}/{id}")

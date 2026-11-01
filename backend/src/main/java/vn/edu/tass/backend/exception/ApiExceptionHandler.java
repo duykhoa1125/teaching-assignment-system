@@ -1,4 +1,6 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.exception;
+
+import vn.edu.tass.backend.payload.dto.ApiErrorResponse;
 
 import java.sql.SQLException;
 
@@ -13,25 +15,23 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    record ErrorBody(String error, String message) {}
-
     @ExceptionHandler(BadRequestException.class)
-    ResponseEntity<ErrorBody> badRequest(BadRequestException e) {
+    ResponseEntity<ApiErrorResponse> badRequest(BadRequestException e) {
         return error(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(NotFoundException.class)
-    ResponseEntity<ErrorBody> notFound(NotFoundException e) {
+    ResponseEntity<ApiErrorResponse> notFound(NotFoundException e) {
         return error(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class, MethodArgumentNotValidException.class})
-    ResponseEntity<ErrorBody> invalidRequest(Exception e) {
+    ResponseEntity<ApiErrorResponse> invalidRequest(Exception e) {
         return error(HttpStatus.BAD_REQUEST, "Yêu cầu JSON hoặc tham số không hợp lệ");
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    ResponseEntity<ErrorBody> integrity(DataIntegrityViolationException e) {
+    ResponseEntity<ApiErrorResponse> integrity(DataIntegrityViolationException e) {
         Throwable cause = e.getMostSpecificCause();
         String state = cause instanceof SQLException sql ? sql.getSQLState() : null;
         if ("23505".equals(state)) return error(HttpStatus.CONFLICT, "Dữ liệu đã tồn tại (ràng buộc UNIQUE)");
@@ -39,7 +39,7 @@ public class ApiExceptionHandler {
         return error(HttpStatus.UNPROCESSABLE_ENTITY, "Dữ liệu vi phạm ràng buộc PostgreSQL");
     }
 
-    private static ResponseEntity<ErrorBody> error(HttpStatus status, String message) {
-        return ResponseEntity.status(status).body(new ErrorBody(status.getReasonPhrase(), message));
+    private static ResponseEntity<ApiErrorResponse> error(HttpStatus status, String message) {
+        return ResponseEntity.status(status).body(new ApiErrorResponse(status.getReasonPhrase(), message));
     }
 }

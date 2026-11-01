@@ -1,4 +1,10 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.service;
+
+import vn.edu.tass.backend.exception.BadRequestException;
+import vn.edu.tass.backend.exception.NotFoundException;
+import vn.edu.tass.backend.model.ResourceCatalog;
+import vn.edu.tass.backend.repository.CrudRepository;
+import vn.edu.tass.backend.service.CrudService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -29,7 +35,7 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 
 class CrudServiceTest {
     private final NamedParameterJdbcTemplate jdbc = mock(NamedParameterJdbcTemplate.class);
-    private final CrudService service = new CrudService(jdbc);
+    private final CrudService service = new CrudService(new CrudRepository(jdbc));
 
     @Test
     void rejectsUnknownColumnBeforeSql() {

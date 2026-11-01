@@ -1,5 +1,20 @@
 # TASS backend CRUD
 
+## Cấu trúc mã nguồn
+
+`src/main/java/vn/edu/tass/backend` được chia theo trách nhiệm:
+
+| Package | Vai trò |
+| --- | --- |
+| `controller` | Nhận HTTP request và trả response |
+| `payload/dto` | DTO cho JSON request/response |
+| `service` | Kiểm tra dữ liệu và điều phối CRUD |
+| `repository` | Truy vấn PostgreSQL bằng JDBC |
+| `model` | Danh mục 16 resource, bảng và kiểu trường được phép |
+| `exception` | Lỗi nghiệp vụ và ánh xạ sang HTTP status |
+
+Các endpoint dùng chung controller/service/repository vì 16 bảng có cùng thao tác CRUD. `ResourceCatalog` giới hạn chính xác 16 bảng và các cột có thể ghi; URL và JSON vẫn giữ dạng mô tả bên dưới.
+
 REST API Spring Boot cho **16 bảng dữ liệu đầu vào** trong `sql/01_schema.sql`. Ba file trong `backend/sql` là bản sao của thư mục `sql` tại workspace để backend chạy được khi clone repo riêng. Schema gốc có 41 bảng; API chỉ mở CRUD cho nhóm dữ liệu đầu vào.
 
 ## Chạy local

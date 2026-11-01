@@ -1,4 +1,6 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.model;
+
+import vn.edu.tass.backend.model.ResourceCatalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;

@@ -1,4 +1,7 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.model;
+
+import vn.edu.tass.backend.exception.BadRequestException;
+import vn.edu.tass.backend.exception.NotFoundException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -10,11 +13,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
-final class ResourceCatalog {
-    enum Kind {
+public final class ResourceCatalog {
+    public enum Kind {
         TEXT, LONG, INT, DATE, TIMESTAMP, DECIMAL;
 
-        Object convert(Object value, String field) {
+        public Object convert(Object value, String field) {
             if (value == null) return null;
             try {
                 return switch (this) {
@@ -49,8 +52,8 @@ final class ResourceCatalog {
         }
     }
 
-    record Field(Kind kind, boolean required) {}
-    record Resource(String table, Map<String, Field> fields) {}
+    public record Field(Kind kind, boolean required) {}
+    public record Resource(String table, Map<String, Field> fields) {}
 
     private static final Map<String, Resource> RESOURCES = Map.ofEntries(
         Map.entry("schools", resource("school", "school_code", "name", "status")),
@@ -71,13 +74,13 @@ final class ResourceCatalog {
         Map.entry("class-subject-applicabilities", resource("class_subject_applicability", "scope_id", "class_id", "status", "?reason", "updated_by"))
     );
 
-    static Resource get(String name) {
+    public static Resource get(String name) {
         Resource resource = RESOURCES.get(name);
         if (resource == null) throw new NotFoundException("Không có tài nguyên: " + name);
         return resource;
     }
 
-    static Set<String> names() { return RESOURCES.keySet(); }
+    public static Set<String> names() { return RESOURCES.keySet(); }
 
     private static Resource resource(String table, String... columns) {
         Map<String, Field> fields = new LinkedHashMap<>();

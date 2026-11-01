@@ -1,4 +1,9 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.integration;
+
+import vn.edu.tass.backend.exception.NotFoundException;
+import vn.edu.tass.backend.model.ResourceCatalog;
+import vn.edu.tass.backend.repository.CrudRepository;
+import vn.edu.tass.backend.service.CrudService;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,7 +29,7 @@ class PostgresCrudIntegrationTest {
         System.getenv().getOrDefault("DB_URL", "jdbc:postgresql://localhost:5432/tass"),
         System.getenv().getOrDefault("DB_USER", "tass"),
         System.getenv().getOrDefault("DB_PASSWORD", "tass_dev"));
-    private static final CrudService SERVICE = new CrudService(new NamedParameterJdbcTemplate(DATA_SOURCE));
+    private static final CrudService SERVICE = new CrudService(new CrudRepository(new NamedParameterJdbcTemplate(DATA_SOURCE)));
     private static final TransactionTemplate TRANSACTION = new TransactionTemplate(new DataSourceTransactionManager(DATA_SOURCE));
 
     @ParameterizedTest(name = "{0}")

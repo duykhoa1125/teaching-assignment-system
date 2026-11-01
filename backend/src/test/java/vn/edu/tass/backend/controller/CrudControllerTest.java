@@ -1,8 +1,13 @@
-package vn.edu.tass.backend.crud;
+package vn.edu.tass.backend.controller;
+
+import vn.edu.tass.backend.controller.CrudController;
+import vn.edu.tass.backend.exception.ApiExceptionHandler;
+import vn.edu.tass.backend.service.CrudService;
 
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,7 +44,10 @@ class CrudControllerTest {
             .andExpect(status().isOk()).andExpect(jsonPath("$.teacher_code").value("GV5"));
         mvc.perform(post("/api/teachers").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"school_id\":1,\"teacher_code\":\"GV5\",\"full_name\":\"Lan\"}"))
-            .andExpect(status().isCreated()).andExpect(header().string("Location", "/api/teachers/5"));
+            .andExpect(status().isCreated()).andExpect(header().string("Location", "/api/teachers/5"))
+            .andExpect(jsonPath("$.id").value(5))
+            .andExpect(jsonPath("$.fields").doesNotExist());
+        verify(service).create("teachers", Map.of("school_id", 1, "teacher_code", "GV5", "full_name", "Lan"));
         mvc.perform(put("/api/teachers/5").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"school_id\":1,\"teacher_code\":\"GV5\",\"full_name\":\"Lan\"}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.id").value(5));
