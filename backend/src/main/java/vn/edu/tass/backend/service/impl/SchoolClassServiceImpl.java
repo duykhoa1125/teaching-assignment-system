@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.SchoolClass;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class SchoolClassServiceImpl implements SchoolClassService {
     private final SchoolClassRepository repository;
-    private final ModelMapper mapper;
 
-    public SchoolClassServiceImpl(SchoolClassRepository repository, ModelMapper mapper) {
+    public SchoolClassServiceImpl(SchoolClassRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,31 +24,29 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     public List<SchoolClassDto> retrieveAllSchoolClass(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, SchoolClassDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public SchoolClassDto retrieveById(long id) {
-        return mapper.map(find(id), SchoolClassDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public SchoolClassDto createSchoolClass(SchoolClassRequest request) {
-        SchoolClass entity = mapper.map(request, SchoolClass.class);
-        return mapper.map(repository.saveAndFlush(entity), SchoolClassDto.class);
+        SchoolClass entity = new SchoolClass();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public SchoolClassDto updateSchoolClass(long id, SchoolClassRequest request) {
         SchoolClass entity = find(id);
-        entity.setAcademicYearId(request.getAcademicYearId());
-        entity.setGradeId(request.getGradeId());
-        entity.setClassCode(request.getClassCode());
-        entity.setStatus(request.getStatus());
-        return mapper.map(repository.saveAndFlush(entity), SchoolClassDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -59,6 +54,23 @@ public class SchoolClassServiceImpl implements SchoolClassService {
     public void deleteSchoolClass(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private SchoolClassDto toDto(SchoolClass entity) {
+        SchoolClassDto dto = new SchoolClassDto();
+        dto.setId(entity.getId());
+        dto.setAcademicYearId(entity.getAcademicYearId());
+        dto.setGradeId(entity.getGradeId());
+        dto.setClassCode(entity.getClassCode());
+        dto.setStatus(entity.getStatus());
+        return dto;
+    }
+
+    private void applyRequest(SchoolClassRequest request, SchoolClass entity) {
+        entity.setAcademicYearId(request.getAcademicYearId());
+        entity.setGradeId(request.getGradeId());
+        entity.setClassCode(request.getClassCode());
+        entity.setStatus(request.getStatus());
     }
 
     private SchoolClass find(long id) {

@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeacherEmployment;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     private final TeacherEmploymentRepository repository;
-    private final ModelMapper mapper;
 
-    public TeacherEmploymentServiceImpl(TeacherEmploymentRepository repository, ModelMapper mapper) {
+    public TeacherEmploymentServiceImpl(TeacherEmploymentRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,34 +24,29 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     public List<TeacherEmploymentDto> retrieveAllTeacherEmployment(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, TeacherEmploymentDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TeacherEmploymentDto retrieveById(long id) {
-        return mapper.map(find(id), TeacherEmploymentDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public TeacherEmploymentDto createTeacherEmployment(TeacherEmploymentRequest request) {
-        TeacherEmployment entity = mapper.map(request, TeacherEmployment.class);
-        return mapper.map(repository.saveAndFlush(entity), TeacherEmploymentDto.class);
+        TeacherEmployment entity = new TeacherEmployment();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public TeacherEmploymentDto updateTeacherEmployment(long id, TeacherEmploymentRequest request) {
         TeacherEmployment entity = find(id);
-        entity.setTeacherId(request.getTeacherId());
-        entity.setDepartmentId(request.getDepartmentId());
-        entity.setSemesterId(request.getSemesterId());
-        entity.setEmploymentStatus(request.getEmploymentStatus());
-        entity.setPositionCode(request.getPositionCode());
-        entity.setValidFrom(request.getValidFrom());
-        entity.setValidTo(request.getValidTo());
-        return mapper.map(repository.saveAndFlush(entity), TeacherEmploymentDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -62,6 +54,29 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     public void deleteTeacherEmployment(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private TeacherEmploymentDto toDto(TeacherEmployment entity) {
+        TeacherEmploymentDto dto = new TeacherEmploymentDto();
+        dto.setId(entity.getId());
+        dto.setTeacherId(entity.getTeacherId());
+        dto.setDepartmentId(entity.getDepartmentId());
+        dto.setSemesterId(entity.getSemesterId());
+        dto.setEmploymentStatus(entity.getEmploymentStatus());
+        dto.setPositionCode(entity.getPositionCode());
+        dto.setValidFrom(entity.getValidFrom());
+        dto.setValidTo(entity.getValidTo());
+        return dto;
+    }
+
+    private void applyRequest(TeacherEmploymentRequest request, TeacherEmployment entity) {
+        entity.setTeacherId(request.getTeacherId());
+        entity.setDepartmentId(request.getDepartmentId());
+        entity.setSemesterId(request.getSemesterId());
+        entity.setEmploymentStatus(request.getEmploymentStatus());
+        entity.setPositionCode(request.getPositionCode());
+        entity.setValidFrom(request.getValidFrom());
+        entity.setValidTo(request.getValidTo());
     }
 
     private TeacherEmployment find(long id) {

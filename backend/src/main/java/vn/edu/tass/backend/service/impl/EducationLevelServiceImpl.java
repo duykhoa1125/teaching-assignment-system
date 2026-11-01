@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.EducationLevel;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class EducationLevelServiceImpl implements EducationLevelService {
     private final EducationLevelRepository repository;
-    private final ModelMapper mapper;
 
-    public EducationLevelServiceImpl(EducationLevelRepository repository, ModelMapper mapper) {
+    public EducationLevelServiceImpl(EducationLevelRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,29 +24,29 @@ public class EducationLevelServiceImpl implements EducationLevelService {
     public List<EducationLevelDto> retrieveAllEducationLevel(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, EducationLevelDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public EducationLevelDto retrieveById(long id) {
-        return mapper.map(find(id), EducationLevelDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public EducationLevelDto createEducationLevel(EducationLevelRequest request) {
-        EducationLevel entity = mapper.map(request, EducationLevel.class);
-        return mapper.map(repository.saveAndFlush(entity), EducationLevelDto.class);
+        EducationLevel entity = new EducationLevel();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public EducationLevelDto updateEducationLevel(long id, EducationLevelRequest request) {
         EducationLevel entity = find(id);
-        entity.setLevelCode(request.getLevelCode());
-        entity.setName(request.getName());
-        return mapper.map(repository.saveAndFlush(entity), EducationLevelDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -57,6 +54,19 @@ public class EducationLevelServiceImpl implements EducationLevelService {
     public void deleteEducationLevel(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private EducationLevelDto toDto(EducationLevel entity) {
+        EducationLevelDto dto = new EducationLevelDto();
+        dto.setId(entity.getId());
+        dto.setLevelCode(entity.getLevelCode());
+        dto.setName(entity.getName());
+        return dto;
+    }
+
+    private void applyRequest(EducationLevelRequest request, EducationLevel entity) {
+        entity.setLevelCode(request.getLevelCode());
+        entity.setName(request.getName());
     }
 
     private EducationLevel find(long id) {

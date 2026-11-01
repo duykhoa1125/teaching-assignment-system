@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Teacher;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class TeacherServiceImpl implements TeacherService {
     private final TeacherRepository repository;
-    private final ModelMapper mapper;
 
-    public TeacherServiceImpl(TeacherRepository repository, ModelMapper mapper) {
+    public TeacherServiceImpl(TeacherRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,30 +24,29 @@ public class TeacherServiceImpl implements TeacherService {
     public List<TeacherDto> retrieveAllTeacher(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, TeacherDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TeacherDto retrieveById(long id) {
-        return mapper.map(find(id), TeacherDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public TeacherDto createTeacher(TeacherRequest request) {
-        Teacher entity = mapper.map(request, Teacher.class);
-        return mapper.map(repository.saveAndFlush(entity), TeacherDto.class);
+        Teacher entity = new Teacher();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public TeacherDto updateTeacher(long id, TeacherRequest request) {
         Teacher entity = find(id);
-        entity.setSchoolId(request.getSchoolId());
-        entity.setTeacherCode(request.getTeacherCode());
-        entity.setFullName(request.getFullName());
-        return mapper.map(repository.saveAndFlush(entity), TeacherDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -58,6 +54,21 @@ public class TeacherServiceImpl implements TeacherService {
     public void deleteTeacher(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private TeacherDto toDto(Teacher entity) {
+        TeacherDto dto = new TeacherDto();
+        dto.setId(entity.getId());
+        dto.setSchoolId(entity.getSchoolId());
+        dto.setTeacherCode(entity.getTeacherCode());
+        dto.setFullName(entity.getFullName());
+        return dto;
+    }
+
+    private void applyRequest(TeacherRequest request, Teacher entity) {
+        entity.setSchoolId(request.getSchoolId());
+        entity.setTeacherCode(request.getTeacherCode());
+        entity.setFullName(request.getFullName());
     }
 
     private Teacher find(long id) {

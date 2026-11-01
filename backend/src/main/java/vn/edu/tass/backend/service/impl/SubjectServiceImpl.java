@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Subject;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class SubjectServiceImpl implements SubjectService {
     private final SubjectRepository repository;
-    private final ModelMapper mapper;
 
-    public SubjectServiceImpl(SubjectRepository repository, ModelMapper mapper) {
+    public SubjectServiceImpl(SubjectRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,31 +24,29 @@ public class SubjectServiceImpl implements SubjectService {
     public List<SubjectDto> retrieveAllSubject(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, SubjectDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public SubjectDto retrieveById(long id) {
-        return mapper.map(find(id), SubjectDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public SubjectDto createSubject(SubjectRequest request) {
-        Subject entity = mapper.map(request, Subject.class);
-        return mapper.map(repository.saveAndFlush(entity), SubjectDto.class);
+        Subject entity = new Subject();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public SubjectDto updateSubject(long id, SubjectRequest request) {
         Subject entity = find(id);
-        entity.setSubjectCode(request.getSubjectCode());
-        entity.setName(request.getName());
-        entity.setValidFrom(request.getValidFrom());
-        entity.setValidTo(request.getValidTo());
-        return mapper.map(repository.saveAndFlush(entity), SubjectDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -59,6 +54,23 @@ public class SubjectServiceImpl implements SubjectService {
     public void deleteSubject(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private SubjectDto toDto(Subject entity) {
+        SubjectDto dto = new SubjectDto();
+        dto.setId(entity.getId());
+        dto.setSubjectCode(entity.getSubjectCode());
+        dto.setName(entity.getName());
+        dto.setValidFrom(entity.getValidFrom());
+        dto.setValidTo(entity.getValidTo());
+        return dto;
+    }
+
+    private void applyRequest(SubjectRequest request, Subject entity) {
+        entity.setSubjectCode(request.getSubjectCode());
+        entity.setName(request.getName());
+        entity.setValidFrom(request.getValidFrom());
+        entity.setValidTo(request.getValidTo());
     }
 
     private Subject find(long id) {

@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Department;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository repository;
-    private final ModelMapper mapper;
 
-    public DepartmentServiceImpl(DepartmentRepository repository, ModelMapper mapper) {
+    public DepartmentServiceImpl(DepartmentRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,32 +24,29 @@ public class DepartmentServiceImpl implements DepartmentService {
     public List<DepartmentDto> retrieveAllDepartment(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, DepartmentDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public DepartmentDto retrieveById(long id) {
-        return mapper.map(find(id), DepartmentDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public DepartmentDto createDepartment(DepartmentRequest request) {
-        Department entity = mapper.map(request, Department.class);
-        return mapper.map(repository.saveAndFlush(entity), DepartmentDto.class);
+        Department entity = new Department();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public DepartmentDto updateDepartment(long id, DepartmentRequest request) {
         Department entity = find(id);
-        entity.setSchoolId(request.getSchoolId());
-        entity.setDepartmentCode(request.getDepartmentCode());
-        entity.setName(request.getName());
-        entity.setValidFrom(request.getValidFrom());
-        entity.setValidTo(request.getValidTo());
-        return mapper.map(repository.saveAndFlush(entity), DepartmentDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -60,6 +54,25 @@ public class DepartmentServiceImpl implements DepartmentService {
     public void deleteDepartment(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private DepartmentDto toDto(Department entity) {
+        DepartmentDto dto = new DepartmentDto();
+        dto.setId(entity.getId());
+        dto.setSchoolId(entity.getSchoolId());
+        dto.setDepartmentCode(entity.getDepartmentCode());
+        dto.setName(entity.getName());
+        dto.setValidFrom(entity.getValidFrom());
+        dto.setValidTo(entity.getValidTo());
+        return dto;
+    }
+
+    private void applyRequest(DepartmentRequest request, Department entity) {
+        entity.setSchoolId(request.getSchoolId());
+        entity.setDepartmentCode(request.getDepartmentCode());
+        entity.setName(request.getName());
+        entity.setValidFrom(request.getValidFrom());
+        entity.setValidTo(request.getValidTo());
     }
 
     private Department find(long id) {

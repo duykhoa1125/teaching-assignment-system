@@ -22,7 +22,6 @@ import jakarta.persistence.Table;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -32,7 +31,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.validation.beanvalidation.LocalValidatorFactoryBean;
 import vn.edu.tass.backend.exception.ApiExceptionHandler;
-import vn.edu.tass.backend.config.MapperConfig;
 
 class PerEntityCrudTest {
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
@@ -70,8 +68,7 @@ class PerEntityCrudTest {
             id.set(saved, 1L);
             return saved;
         }).when(repository).saveAndFlush(any());
-        Object service = serviceImplType.getConstructor(repositoryType, ModelMapper.class)
-            .newInstance(repository, new MapperConfig().modelMapper());
+        Object service = serviceImplType.getConstructor(repositoryType).newInstance(repository);
         Object controller = controllerType.getConstructor(serviceType).newInstance(service);
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
@@ -95,6 +92,20 @@ class PerEntityCrudTest {
             .andExpect(status().isBadRequest());
         mvc.perform(get(url + "/0")).andExpect(status().isBadRequest());
         verify(repository).delete(entity);
+
+        Object readDto = serviceType.getMethod("retrieveById", long.class).invoke(service, 1L);
+        assertSameFields(entity, readDto);
+        Object changedRequest = requestType.getConstructor().newInstance();
+        for (Field field : requestType.getDeclaredFields()) {
+            field.setAccessible(true);
+            field.set(changedRequest, changedSample(field.getType()));
+        }
+        Object createdDto = serviceType.getMethod("create" + name, requestType)
+            .invoke(service, changedRequest);
+        assertSameFields(changedRequest, createdDto);
+        Object updatedDto = serviceType.getMethod("update" + name, long.class, requestType)
+            .invoke(service, 1L, changedRequest);
+        assertSameFields(changedRequest, updatedDto);
         validator.destroy();
     }
 
@@ -120,6 +131,25 @@ class PerEntityCrudTest {
         if (type == OffsetDateTime.class) return OffsetDateTime.parse("2026-11-01T09:00:00+07:00");
         assertEquals(String.class, type);
         return "ACTIVE";
+    }
+
+    private static Object changedSample(Class<?> type) {
+        if (type == Long.class) return 2L;
+        if (type == Integer.class) return 2;
+        if (type == BigDecimal.class) return new BigDecimal("3.75");
+        if (type == LocalDate.class) return LocalDate.of(2027, 1, 1);
+        if (type == OffsetDateTime.class) return OffsetDateTime.parse("2027-01-01T10:00:00+07:00");
+        assertEquals(String.class, type);
+        return "UPDATED";
+    }
+
+    private static void assertSameFields(Object expected, Object actual) throws Exception {
+        for (Field source : expected.getClass().getDeclaredFields()) {
+            source.setAccessible(true);
+            Field destination = actual.getClass().getDeclaredField(source.getName());
+            destination.setAccessible(true);
+            assertEquals(source.get(expected), destination.get(actual), source.getName());
+        }
     }
 
     private static Stream<Arguments> resources() {

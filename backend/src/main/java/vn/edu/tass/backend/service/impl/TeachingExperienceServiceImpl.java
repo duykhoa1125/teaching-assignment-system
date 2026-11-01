@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingExperience;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class TeachingExperienceServiceImpl implements TeachingExperienceService {
     private final TeachingExperienceRepository repository;
-    private final ModelMapper mapper;
 
-    public TeachingExperienceServiceImpl(TeachingExperienceRepository repository, ModelMapper mapper) {
+    public TeachingExperienceServiceImpl(TeachingExperienceRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,33 +24,29 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
     public List<TeachingExperienceDto> retrieveAllTeachingExperience(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, TeachingExperienceDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TeachingExperienceDto retrieveById(long id) {
-        return mapper.map(find(id), TeachingExperienceDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public TeachingExperienceDto createTeachingExperience(TeachingExperienceRequest request) {
-        TeachingExperience entity = mapper.map(request, TeachingExperience.class);
-        return mapper.map(repository.saveAndFlush(entity), TeachingExperienceDto.class);
+        TeachingExperience entity = new TeachingExperience();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public TeachingExperienceDto updateTeachingExperience(long id, TeachingExperienceRequest request) {
         TeachingExperience entity = find(id);
-        entity.setTeacherId(request.getTeacherId());
-        entity.setSubjectId(request.getSubjectId());
-        entity.setGradeId(request.getGradeId());
-        entity.setExperienceLevel(request.getExperienceLevel());
-        entity.setExperiencePeriod(request.getExperiencePeriod());
-        entity.setRecordedBy(request.getRecordedBy());
-        return mapper.map(repository.saveAndFlush(entity), TeachingExperienceDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -61,6 +54,28 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
     public void deleteTeachingExperience(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private TeachingExperienceDto toDto(TeachingExperience entity) {
+        TeachingExperienceDto dto = new TeachingExperienceDto();
+        dto.setId(entity.getId());
+        dto.setTeacherId(entity.getTeacherId());
+        dto.setSubjectId(entity.getSubjectId());
+        dto.setGradeId(entity.getGradeId());
+        dto.setExperienceLevel(entity.getExperienceLevel());
+        dto.setExperiencePeriod(entity.getExperiencePeriod());
+        dto.setRecordedBy(entity.getRecordedBy());
+        dto.setRecordedAt(entity.getRecordedAt());
+        return dto;
+    }
+
+    private void applyRequest(TeachingExperienceRequest request, TeachingExperience entity) {
+        entity.setTeacherId(request.getTeacherId());
+        entity.setSubjectId(request.getSubjectId());
+        entity.setGradeId(request.getGradeId());
+        entity.setExperienceLevel(request.getExperienceLevel());
+        entity.setExperiencePeriod(request.getExperiencePeriod());
+        entity.setRecordedBy(request.getRecordedBy());
     }
 
     private TeachingExperience find(long id) {

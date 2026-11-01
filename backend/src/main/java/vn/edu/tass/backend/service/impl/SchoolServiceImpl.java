@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.School;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class SchoolServiceImpl implements SchoolService {
     private final SchoolRepository repository;
-    private final ModelMapper mapper;
 
-    public SchoolServiceImpl(SchoolRepository repository, ModelMapper mapper) {
+    public SchoolServiceImpl(SchoolRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,30 +24,29 @@ public class SchoolServiceImpl implements SchoolService {
     public List<SchoolDto> retrieveAllSchool(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, SchoolDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public SchoolDto retrieveById(long id) {
-        return mapper.map(find(id), SchoolDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public SchoolDto createSchool(SchoolRequest request) {
-        School entity = mapper.map(request, School.class);
-        return mapper.map(repository.saveAndFlush(entity), SchoolDto.class);
+        School entity = new School();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public SchoolDto updateSchool(long id, SchoolRequest request) {
         School entity = find(id);
-        entity.setSchoolCode(request.getSchoolCode());
-        entity.setName(request.getName());
-        entity.setStatus(request.getStatus());
-        return mapper.map(repository.saveAndFlush(entity), SchoolDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -58,6 +54,21 @@ public class SchoolServiceImpl implements SchoolService {
     public void deleteSchool(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private SchoolDto toDto(School entity) {
+        SchoolDto dto = new SchoolDto();
+        dto.setId(entity.getId());
+        dto.setSchoolCode(entity.getSchoolCode());
+        dto.setName(entity.getName());
+        dto.setStatus(entity.getStatus());
+        return dto;
+    }
+
+    private void applyRequest(SchoolRequest request, School entity) {
+        entity.setSchoolCode(request.getSchoolCode());
+        entity.setName(request.getName());
+        entity.setStatus(request.getStatus());
     }
 
     private School find(long id) {

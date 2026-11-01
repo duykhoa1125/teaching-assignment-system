@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingQualification;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class TeachingQualificationServiceImpl implements TeachingQualificationService {
     private final TeachingQualificationRepository repository;
-    private final ModelMapper mapper;
 
-    public TeachingQualificationServiceImpl(TeachingQualificationRepository repository, ModelMapper mapper) {
+    public TeachingQualificationServiceImpl(TeachingQualificationRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,26 +24,54 @@ public class TeachingQualificationServiceImpl implements TeachingQualificationSe
     public List<TeachingQualificationDto> retrieveAllTeachingQualification(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, TeachingQualificationDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TeachingQualificationDto retrieveById(long id) {
-        return mapper.map(find(id), TeachingQualificationDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public TeachingQualificationDto createTeachingQualification(TeachingQualificationRequest request) {
-        TeachingQualification entity = mapper.map(request, TeachingQualification.class);
-        return mapper.map(repository.saveAndFlush(entity), TeachingQualificationDto.class);
+        TeachingQualification entity = new TeachingQualification();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public TeachingQualificationDto updateTeachingQualification(long id, TeachingQualificationRequest request) {
         TeachingQualification entity = find(id);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
+    }
+
+    @Override
+    @Transactional
+    public void deleteTeachingQualification(long id) {
+        repository.delete(find(id));
+        repository.flush();
+    }
+
+    private TeachingQualificationDto toDto(TeachingQualification entity) {
+        TeachingQualificationDto dto = new TeachingQualificationDto();
+        dto.setId(entity.getId());
+        dto.setTeacherId(entity.getTeacherId());
+        dto.setSubjectId(entity.getSubjectId());
+        dto.setEducationLevelId(entity.getEducationLevelId());
+        dto.setVerificationStatus(entity.getVerificationStatus());
+        dto.setVerifiedBy(entity.getVerifiedBy());
+        dto.setVerifiedAt(entity.getVerifiedAt());
+        dto.setEvidenceRef(entity.getEvidenceRef());
+        dto.setValidFrom(entity.getValidFrom());
+        dto.setValidTo(entity.getValidTo());
+        return dto;
+    }
+
+    private void applyRequest(TeachingQualificationRequest request, TeachingQualification entity) {
         entity.setTeacherId(request.getTeacherId());
         entity.setSubjectId(request.getSubjectId());
         entity.setEducationLevelId(request.getEducationLevelId());
@@ -56,14 +81,6 @@ public class TeachingQualificationServiceImpl implements TeachingQualificationSe
         entity.setEvidenceRef(request.getEvidenceRef());
         entity.setValidFrom(request.getValidFrom());
         entity.setValidTo(request.getValidTo());
-        return mapper.map(repository.saveAndFlush(entity), TeachingQualificationDto.class);
-    }
-
-    @Override
-    @Transactional
-    public void deleteTeachingQualification(long id) {
-        repository.delete(find(id));
-        repository.flush();
     }
 
     private TeachingQualification find(long id) {

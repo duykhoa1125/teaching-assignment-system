@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingDemand;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class TeachingDemandServiceImpl implements TeachingDemandService {
     private final TeachingDemandRepository repository;
-    private final ModelMapper mapper;
 
-    public TeachingDemandServiceImpl(TeachingDemandRepository repository, ModelMapper mapper) {
+    public TeachingDemandServiceImpl(TeachingDemandRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,34 +24,29 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     public List<TeachingDemandDto> retrieveAllTeachingDemand(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, TeachingDemandDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public TeachingDemandDto retrieveById(long id) {
-        return mapper.map(find(id), TeachingDemandDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public TeachingDemandDto createTeachingDemand(TeachingDemandRequest request) {
-        TeachingDemand entity = mapper.map(request, TeachingDemand.class);
-        return mapper.map(repository.saveAndFlush(entity), TeachingDemandDto.class);
+        TeachingDemand entity = new TeachingDemand();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public TeachingDemandDto updateTeachingDemand(long id, TeachingDemandRequest request) {
         TeachingDemand entity = find(id);
-        entity.setSemesterId(request.getSemesterId());
-        entity.setClassId(request.getClassId());
-        entity.setSubjectId(request.getSubjectId());
-        entity.setPeriodsPerWeek(request.getPeriodsPerWeek());
-        entity.setStatus(request.getStatus());
-        entity.setUpdatedBy(request.getUpdatedBy());
-        entity.setDemandType(request.getDemandType());
-        return mapper.map(repository.saveAndFlush(entity), TeachingDemandDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -62,6 +54,30 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     public void deleteTeachingDemand(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private TeachingDemandDto toDto(TeachingDemand entity) {
+        TeachingDemandDto dto = new TeachingDemandDto();
+        dto.setId(entity.getId());
+        dto.setSemesterId(entity.getSemesterId());
+        dto.setClassId(entity.getClassId());
+        dto.setSubjectId(entity.getSubjectId());
+        dto.setPeriodsPerWeek(entity.getPeriodsPerWeek());
+        dto.setStatus(entity.getStatus());
+        dto.setUpdatedBy(entity.getUpdatedBy());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+        dto.setDemandType(entity.getDemandType());
+        return dto;
+    }
+
+    private void applyRequest(TeachingDemandRequest request, TeachingDemand entity) {
+        entity.setSemesterId(request.getSemesterId());
+        entity.setClassId(request.getClassId());
+        entity.setSubjectId(request.getSubjectId());
+        entity.setPeriodsPerWeek(request.getPeriodsPerWeek());
+        entity.setStatus(request.getStatus());
+        entity.setUpdatedBy(request.getUpdatedBy());
+        entity.setDemandType(request.getDemandType());
     }
 
     private TeachingDemand find(long id) {

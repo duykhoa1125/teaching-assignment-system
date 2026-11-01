@@ -1,7 +1,6 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.ClassSubjectApplicability;
@@ -15,11 +14,9 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 @Service
 public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplicabilityService {
     private final ClassSubjectApplicabilityRepository repository;
-    private final ModelMapper mapper;
 
-    public ClassSubjectApplicabilityServiceImpl(ClassSubjectApplicabilityRepository repository, ModelMapper mapper) {
+    public ClassSubjectApplicabilityServiceImpl(ClassSubjectApplicabilityRepository repository) {
         this.repository = repository;
-        this.mapper = mapper;
     }
 
     @Override
@@ -27,32 +24,29 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
     public List<ClassSubjectApplicabilityDto> retrieveAllClassSubjectApplicability(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
-            .map(entity -> mapper.map(entity, ClassSubjectApplicabilityDto.class)).toList();
+            .map(this::toDto).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public ClassSubjectApplicabilityDto retrieveById(long id) {
-        return mapper.map(find(id), ClassSubjectApplicabilityDto.class);
+        return toDto(find(id));
     }
 
     @Override
     @Transactional
     public ClassSubjectApplicabilityDto createClassSubjectApplicability(ClassSubjectApplicabilityRequest request) {
-        ClassSubjectApplicability entity = mapper.map(request, ClassSubjectApplicability.class);
-        return mapper.map(repository.saveAndFlush(entity), ClassSubjectApplicabilityDto.class);
+        ClassSubjectApplicability entity = new ClassSubjectApplicability();
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
     @Transactional
     public ClassSubjectApplicabilityDto updateClassSubjectApplicability(long id, ClassSubjectApplicabilityRequest request) {
         ClassSubjectApplicability entity = find(id);
-        entity.setScopeId(request.getScopeId());
-        entity.setClassId(request.getClassId());
-        entity.setStatus(request.getStatus());
-        entity.setReason(request.getReason());
-        entity.setUpdatedBy(request.getUpdatedBy());
-        return mapper.map(repository.saveAndFlush(entity), ClassSubjectApplicabilityDto.class);
+        applyRequest(request, entity);
+        return toDto(repository.saveAndFlush(entity));
     }
 
     @Override
@@ -60,6 +54,26 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
     public void deleteClassSubjectApplicability(long id) {
         repository.delete(find(id));
         repository.flush();
+    }
+
+    private ClassSubjectApplicabilityDto toDto(ClassSubjectApplicability entity) {
+        ClassSubjectApplicabilityDto dto = new ClassSubjectApplicabilityDto();
+        dto.setId(entity.getId());
+        dto.setScopeId(entity.getScopeId());
+        dto.setClassId(entity.getClassId());
+        dto.setStatus(entity.getStatus());
+        dto.setReason(entity.getReason());
+        dto.setUpdatedBy(entity.getUpdatedBy());
+        dto.setUpdatedAt(entity.getUpdatedAt());
+        return dto;
+    }
+
+    private void applyRequest(ClassSubjectApplicabilityRequest request, ClassSubjectApplicability entity) {
+        entity.setScopeId(request.getScopeId());
+        entity.setClassId(request.getClassId());
+        entity.setStatus(request.getStatus());
+        entity.setReason(request.getReason());
+        entity.setUpdatedBy(request.getUpdatedBy());
     }
 
     private ClassSubjectApplicability find(long id) {
