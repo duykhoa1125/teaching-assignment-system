@@ -1,0 +1,83 @@
+{
+  // ========================================
+  //          LATEX CONFIGURATION
+  // ========================================
+  "latex-workshop.latex.outDir": "%DIR%",
+  "latex-workshop.latex.recipe.default": "latexmk (xelatex)",
+  "latex-workshop.latex.recipes": [
+    {
+      "name": "latexmk (xelatex)",
+      "tools": [
+        "latexmk_xelatex"
+      ]
+    },
+    {
+      "name": "xelatex",
+      "tools": [
+        "latexmk_xelatex"
+      ]
+    }
+  ],
+  "latex-workshop.latex.tools": [
+    {
+      "name": "latexmk_xelatex",
+      "command": "latexmk",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "-xelatex",
+        "-outdir=%OUTDIR%",
+        "%DOC%"
+      ]
+    },
+    {
+      "name": "xelatex",
+      "command": "xelatex",
+      "args": [
+        "-synctex=1",
+        "-interaction=nonstopmode",
+        "-file-line-error",
+        "%DOC%"
+      ]
+    }
+  ],
+
+  // Tự động biên dịch khi lưu (Ctrl + S)
+  "latex-workshop.latex.autoBuild.run": "onSave",
+
+  // Tự động dọn sạch các file log thực thi sau khi biên dịch xong
+  // Lưu ý: Giữ lại .toc, .lof, .lot, .aux, .out để không làm trắng Mục lục / Danh mục hình
+  "latex-workshop.latex.autoClean.run": "onBuilt",
+  "latex-workshop.latex.clean.method": "glob",
+  "latex-workshop.latex.clean.subfolder.enabled": true,
+  "latex-workshop.latex.clean.fileTypes": [
+    "*.log",
+    "*.fls",
+    "*.fdb_latexmk",
+    "*.xdv",
+    "*.synctex(busy)",
+    "*.synctex.gz(busy)",
+    "*.synctex.gz",
+    "*.bbl",
+    "*.blg",
+    "*.bcf",
+    "*.run.xml",
+    "*.nav",
+    "*.snm",
+    "*.vrb"
+  ],
+
+  // Tự động nhận diện root file
+  "latex-workshop.latex.rootFile.useSubFile": true,
+  "latex-workshop.latex.rootFile.doNotPrompt": true,
+
+  // Cấu hình xem PDF và định dạng
+  "latex-workshop.view.pdf.viewer": "tab",
+  "latex-workshop.message.error.show": true,
+  "latex-workshop.message.warning.show": false,
+  "[latex]": {
+    "editor.defaultFormatter": "James-Yu.latex-workshop",
+    "editor.wordWrap": "on"
+  }
+}
