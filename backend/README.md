@@ -8,12 +8,13 @@
 | --- | --- |
 | `controller` | Nhận HTTP request và trả response |
 | `payload/dto` | DTO cho JSON request/response |
+| `entity` | 16 class entity, mỗi bảng đầu vào một file; khai báo tên bảng, cột và kiểu dữ liệu |
 | `service` | Kiểm tra dữ liệu và điều phối CRUD |
 | `repository` | Truy vấn PostgreSQL bằng JDBC |
-| `model` | Danh mục 16 resource, bảng và kiểu trường được phép |
+| `model` | Danh mục URL của 16 resource; đọc metadata cột từ entity |
 | `exception` | Lỗi nghiệp vụ và ánh xạ sang HTTP status |
 
-Các endpoint dùng chung controller/service/repository vì 16 bảng có cùng thao tác CRUD. `ResourceCatalog` giới hạn chính xác 16 bảng và các cột có thể ghi; URL và JSON vẫn giữ dạng mô tả bên dưới.
+Các endpoint dùng chung controller/service/repository vì 16 bảng có cùng thao tác CRUD. Mỗi bảng có một entity riêng trong `entity`; `ResourceCatalog` đọc metadata từ các entity để giới hạn các cột có thể ghi. Các entity dùng với JDBC, nên annotation `@SqlTable` và `@SqlColumn` là metadata của backend. URL và JSON vẫn giữ dạng mô tả bên dưới.
 
 REST API Spring Boot cho **16 bảng dữ liệu đầu vào** trong `sql/01_schema.sql`. Ba file trong `backend/sql` là bản sao của thư mục `sql` tại workspace để backend chạy được khi clone repo riêng. Schema gốc có 41 bảng; API chỉ mở CRUD cho nhóm dữ liệu đầu vào.
 
