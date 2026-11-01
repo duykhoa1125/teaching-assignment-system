@@ -6,15 +6,15 @@
 
 | Package | Vai trò |
 | --- | --- |
-| `controller` | Nhận HTTP request và trả response |
-| `payload/dto` | DTO cho JSON request/response |
+| `controller` | 16 controller, mỗi bảng một file và một URL riêng |
+| `payload/request` | 16 request DTO, mỗi bảng một file |
+| `payload/dto` | 16 response DTO, mỗi bảng một file; thêm DTO lỗi chung |
 | `entity` | 16 class entity, mỗi bảng đầu vào một file; khai báo tên bảng, cột và kiểu dữ liệu |
-| `service` | Kiểm tra dữ liệu và điều phối CRUD |
-| `repository` | Truy vấn PostgreSQL bằng JDBC |
-| `model` | Danh mục URL của 16 resource; đọc metadata cột từ entity |
+| `service` | 16 service interface; `service/impl` có 16 implementation; `service/support` chứa phần kiểm tra CRUD lặp lại |
+| `repository` | 16 repository riêng; `repository/support` chứa SQL và ánh xạ entity dùng chung |
 | `exception` | Lỗi nghiệp vụ và ánh xạ sang HTTP status |
 
-Các endpoint dùng chung controller/service/repository vì 16 bảng có cùng thao tác CRUD. Mỗi bảng có một entity riêng trong `entity`; `ResourceCatalog` đọc metadata từ các entity để giới hạn các cột có thể ghi. Các entity dùng với JDBC, nên annotation `@SqlTable` và `@SqlColumn` là metadata của backend. URL và JSON vẫn giữ dạng mô tả bên dưới.
+Mỗi bảng có controller, service interface/implementation, repository, request DTO, response DTO và entity riêng. Ví dụ `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `teacher`. Các lớp `CrudSupport`, `JdbcCrudRepository` và `EntityMetadata` chỉ xử lý thao tác lặp lại; service/repository từng bảng có thể thêm logic và truy vấn riêng. Backend dùng JDBC, nên annotation `@SqlTable` và `@SqlColumn` là metadata của backend. URL và JSON vẫn giữ dạng mô tả bên dưới.
 
 REST API Spring Boot cho **16 bảng dữ liệu đầu vào** trong `sql/01_schema.sql`. Ba file trong `backend/sql` là bản sao của thư mục `sql` tại workspace để backend chạy được khi clone repo riêng. Schema gốc có 41 bảng; API chỉ mở CRUD cho nhóm dữ liệu đầu vào.
 
@@ -84,4 +84,4 @@ mvn test "-Ddb.integration=true"
 docker compose down
 ```
 
-Lệnh đầu kiểm tra danh sách đúng 16 resource, đối chiếu cột với schema SQL, kiểm tra đường đi CRUD và HTTP. Lệnh có `db.integration=true` chạy thêm 16 bài CRUD trên PostgreSQL thật, mỗi bài tạo, đọc, sửa, xóa rồi rollback để không đổi dữ liệu demo. Cần database đã được khởi tạo từ `backend/sql/01_schema.sql` và `backend/sql/02_seed.sql`.
+Lệnh đầu kiểm tra 16 bộ controller/service/repository, đối chiếu entity với schema SQL và kiểm tra HTTP CRUD. Lệnh có `db.integration=true` chạy thêm 16 bài CRUD trên PostgreSQL thật, mỗi bài tạo, đọc, sửa, xóa rồi rollback để không đổi dữ liệu demo. Cần database đã được khởi tạo từ `backend/sql/01_schema.sql` và `backend/sql/02_seed.sql`.
