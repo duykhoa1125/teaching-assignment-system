@@ -4,6 +4,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.ClassSubjectApplicability;
+import vn.edu.tass.backend.exception.BadRequestException;
 import vn.edu.tass.backend.mapper.ClassSubjectApplicabilityMapper;
 import vn.edu.tass.backend.payload.dto.ClassSubjectApplicabilityDto;
 import vn.edu.tass.backend.payload.request.ClassSubjectApplicabilityRequest;
@@ -39,6 +40,7 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
     @Override
     @Transactional
     public ClassSubjectApplicabilityDto createClassSubjectApplicability(ClassSubjectApplicabilityRequest request) {
+        validate(request);
         ClassSubjectApplicability entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +48,7 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
     @Override
     @Transactional
     public ClassSubjectApplicabilityDto updateClassSubjectApplicability(long id, ClassSubjectApplicabilityRequest request) {
+        validate(request);
         ClassSubjectApplicability entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -62,5 +65,16 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
         CrudParameters.requireId(id);
         return repository.findById(id)
             .orElseThrow(() -> new vn.edu.tass.backend.exception.NotFoundException("class_subject_applicability id=" + id + " does not exist"));
+    }
+
+    private static void validate(ClassSubjectApplicabilityRequest request) {
+        if (request.getStatus() == null
+                || !List.of("APPLICABLE", "NOT_APPLICABLE", "UNDETERMINED").contains(request.getStatus())) {
+            throw new BadRequestException("status is invalid");
+        }
+        if ((request.getConfirmedBy() == null) != (request.getConfirmedAt() == null)
+                || (request.getComponentsConfirmedBy() == null) != (request.getComponentsConfirmedAt() == null)) {
+            throw new BadRequestException("confirmation actor and timestamp must be supplied together");
+        }
     }
 }

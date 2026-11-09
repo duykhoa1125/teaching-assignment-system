@@ -1,6 +1,7 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import jakarta.persistence.EntityManager;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.AssignmentRound;
@@ -16,10 +17,13 @@ import vn.edu.tass.backend.utils.OffsetLimitPageable;
 public class AssignmentRoundServiceImpl implements AssignmentRoundService {
     private final AssignmentRoundRepository repository;
     private final AssignmentRoundMapper mapper;
+    private final EntityManager entityManager;
 
-    public AssignmentRoundServiceImpl(AssignmentRoundRepository repository, AssignmentRoundMapper mapper) {
+    public AssignmentRoundServiceImpl(AssignmentRoundRepository repository, AssignmentRoundMapper mapper,
+            EntityManager entityManager) {
         this.repository = repository;
         this.mapper = mapper;
+        this.entityManager = entityManager;
     }
 
     @Override
@@ -40,7 +44,9 @@ public class AssignmentRoundServiceImpl implements AssignmentRoundService {
     @Transactional
     public AssignmentRoundDto createAssignmentRound(AssignmentRoundRequest request) {
         AssignmentRound entity = mapper.toEntity(request);
-        return mapper.toDto(repository.saveAndFlush(entity));
+        AssignmentRound saved = repository.saveAndFlush(entity);
+        entityManager.refresh(saved);
+        return mapper.toDto(saved);
     }
 
     @Override
@@ -48,7 +54,9 @@ public class AssignmentRoundServiceImpl implements AssignmentRoundService {
     public AssignmentRoundDto updateAssignmentRound(long id, AssignmentRoundRequest request) {
         AssignmentRound entity = find(id);
         mapper.applyRequest(request, entity);
-        return mapper.toDto(repository.saveAndFlush(entity));
+        AssignmentRound saved = repository.saveAndFlush(entity);
+        entityManager.refresh(saved);
+        return mapper.toDto(saved);
     }
 
     @Override

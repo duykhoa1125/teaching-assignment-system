@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityManager;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import org.springframework.stereotype.Component;
@@ -39,7 +40,7 @@ class PerEntityCrudTest {
     @ParameterizedTest(name = "{0}")
     @MethodSource("resources")
     @SuppressWarnings({"rawtypes", "unchecked"})
-    void sixteenResourcesUseJpaAndExposeCrud(String name, String path, String table) throws Exception {
+    void seventeenResourcesUseJpaAndExposeCrud(String name, String path, String table) throws Exception {
         Class<?> entityType = type("entity", name);
         Class<?> requestType = type("payload.request", name + "Request");
         Class<?> dtoType = type("payload.dto", name + "Dto");
@@ -72,8 +73,11 @@ class PerEntityCrudTest {
             return saved;
         }).when(repository).saveAndFlush(any());
         Object mapper = mapperType.getConstructor().newInstance();
-        Object service = serviceImplType.getConstructor(repositoryType, mapperType)
-            .newInstance(repository, mapper);
+        Object service = name.equals("AssignmentRound")
+            ? serviceImplType.getConstructor(repositoryType, mapperType, EntityManager.class)
+                .newInstance(repository, mapper, mock(EntityManager.class))
+            : serviceImplType.getConstructor(repositoryType, mapperType)
+                .newInstance(repository, mapper);
         Object controller = controllerType.getConstructor(serviceType).newInstance(service);
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
@@ -103,7 +107,7 @@ class PerEntityCrudTest {
         Object changedRequest = requestType.getConstructor().newInstance();
         for (Field field : requestType.getDeclaredFields()) {
             field.setAccessible(true);
-            field.set(changedRequest, changedSample(field.getType()));
+            field.set(changedRequest, requestSample(field, true));
         }
         Object createdDto = serviceType.getMethod("create" + name, requestType)
             .invoke(service, changedRequest);
@@ -123,7 +127,7 @@ class PerEntityCrudTest {
     private static Map<String, Object> requestBody(Class<?> type) {
         Map<String, Object> body = new LinkedHashMap<>();
         for (Field field : type.getDeclaredFields()) {
-            Object value = sample(field.getType());
+            Object value = requestSample(field, false);
             body.put(field.getName().replaceAll("([A-Z])", "_$1").toLowerCase(),
                 value instanceof LocalDate || value instanceof OffsetDateTime ? value.toString() : value);
         }
@@ -148,6 +152,18 @@ class PerEntityCrudTest {
         if (type == OffsetDateTime.class) return OffsetDateTime.parse("2027-01-01T10:00:00+07:00");
         assertEquals(String.class, type);
         return "UPDATED";
+    }
+
+    private static Object requestSample(Field field, boolean changed) {
+        return switch (field.getName()) {
+            case "demandType" -> changed ? "ENRICHMENT" : "STANDARD";
+            case "unit" -> "PERIOD_PER_WEEK";
+            case "experienceStatus" -> "HAS_EXPERIENCE";
+            case "status" -> field.getDeclaringClass().getSimpleName().equals("ClassSubjectApplicabilityRequest")
+                ? (changed ? "NOT_APPLICABLE" : "APPLICABLE")
+                : (changed ? "UPDATED" : "ACTIVE");
+            default -> changed ? changedSample(field.getType()) : sample(field.getType());
+        };
     }
 
     private static void assertSameFields(Object expected, Object actual) throws Exception {
@@ -176,7 +192,8 @@ class PerEntityCrudTest {
             Arguments.of("TeachingExperience", "teaching-experiences", "teaching_experience"),
             Arguments.of("AssignmentRound", "assignment-rounds", "assignment_round"),
             Arguments.of("RoundSubjectScope", "round-subject-scopes", "round_subject_scope"),
-            Arguments.of("ClassSubjectApplicability", "class-subject-applicabilities", "class_subject_applicability")
+            Arguments.of("ClassSubjectApplicability", "class-subject-applicabilities", "class_subject_applicability"),
+            Arguments.of("RequiredDemandComponent", "required-demand-components", "required_demand_component")
         );
     }
 }

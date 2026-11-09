@@ -1,5 +1,7 @@
 package vn.edu.tass.backend.entity;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -27,14 +29,8 @@ public class TeachingExperience {
     @Column(name = "subject_id", nullable = false)
     private Long subjectId;
 
-    @Column(name = "grade_id")
+    @Column(name = "grade_id", nullable = false)
     private Long gradeId;
-
-    @Column(name = "experience_level", nullable = false)
-    private String experienceLevel;
-
-    @Column(name = "experience_period", nullable = false)
-    private String experiencePeriod;
 
     @Column(name = "recorded_by", nullable = false)
     private Long recordedBy;
@@ -42,4 +38,25 @@ public class TeachingExperience {
     @CreationTimestamp
     @Column(name = "recorded_at", nullable = false)
     private OffsetDateTime recordedAt;
+
+    @Column(name = "experience_status", nullable = false)
+    private String experienceStatus;
+
+    @Column(name = "years_of_experience")
+    private BigDecimal yearsOfExperience;
+
+    @Column(name = "as_of_date", nullable = false)
+    private LocalDate asOfDate;
+
+    @Column(name = "evidence_ref")
+    private String evidenceRef;
+
+    @Column(name = "source_import_id")
+    private Long sourceImportId;
+
+    @Column(name = "verified_by")
+    private Long verifiedBy;
+
+    @Column(name = "verified_at")
+    private OffsetDateTime verifiedAt;
 }

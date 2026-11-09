@@ -1,5 +1,6 @@
 package vn.edu.tass.backend.payload.request;
 
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
@@ -24,4 +25,12 @@ public class ClassSubjectApplicabilityRequest {
 
     @NotNull
     private Long updatedBy;
+
+    private Long confirmedBy;
+
+    private OffsetDateTime confirmedAt;
+
+    private Long componentsConfirmedBy;
+
+    private OffsetDateTime componentsConfirmedAt;
 }

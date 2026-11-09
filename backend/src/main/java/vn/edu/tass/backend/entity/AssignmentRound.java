@@ -9,6 +9,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 @Entity
 @Table(name = "assignment_round")
@@ -40,4 +42,12 @@ public class AssignmentRound {
 
     @Column(name = "closes_at")
     private OffsetDateTime closesAt;
+
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    @Column(name = "source_revision_token", nullable = false, insertable = false, updatable = false)
+    private String sourceRevisionToken;
+
+    @Generated(event = {EventType.INSERT, EventType.UPDATE})
+    @Column(name = "source_updated_at", nullable = false, insertable = false, updatable = false)
+    private OffsetDateTime sourceUpdatedAt;
 }

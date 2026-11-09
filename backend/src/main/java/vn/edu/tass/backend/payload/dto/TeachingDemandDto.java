@@ -1,6 +1,7 @@
 package vn.edu.tass.backend.payload.dto;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -28,4 +29,10 @@ public class TeachingDemandDto {
     private OffsetDateTime updatedAt;
 
     private String demandType;
+
+    private LocalDate validFrom;
+
+    private LocalDate validTo;
+
+    private String unit;
 }

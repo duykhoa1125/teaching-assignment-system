@@ -1,5 +1,8 @@
 package vn.edu.tass.backend.payload.request;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotBlank;
@@ -17,13 +20,24 @@ public class TeachingExperienceRequest {
     @NotNull
     private Long subjectId;
 
+    @NotNull
     private Long gradeId;
 
     @NotBlank
-    private String experienceLevel;
+    private String experienceStatus;
 
-    @NotBlank
-    private String experiencePeriod;
+    private BigDecimal yearsOfExperience;
+
+    @NotNull
+    private LocalDate asOfDate;
+
+    private String evidenceRef;
+
+    private Long sourceImportId;
+
+    private Long verifiedBy;
+
+    private OffsetDateTime verifiedAt;
 
     @NotNull
     private Long recordedBy;
