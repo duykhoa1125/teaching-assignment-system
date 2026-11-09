@@ -6,7 +6,7 @@ Hệ thống hỗ trợ quyết định phân công giảng dạy giáo viên th
 
 - **Đặc tả & thiết kế:** Đã hoàn thiện báo cáo yêu cầu hệ thống và thiết kế thuật toán ([`docs/report.pdf`](docs/report.pdf)) cùng bộ sơ đồ thiết kế ([`docs/diagrams/`](docs/diagrams/)).
 - **Thuật toán (`algorithm/`):** Đã xây dựng module tối ưu bằng **Google OR-Tools CP-SAT** (`tass-cpsat`), cùng các module đối chứng **Greedy** (`tass-greedy`), **Genetic Algorithm** (`tass-genetic`), thư viện dùng chung (`tass-common`) và bộ so sánh (`tass-benchmark`, `tass-comparison`).
-- **Backend (`backend/`):** Đã thiết kế CSDL PostgreSQL 41 bảng (`backend/sql/`) và xây dựng REST API CRUD bằng **Java 17 / Spring Boot** cho 16 bảng dữ liệu đầu vào.
+- **Backend (`backend/`):** Đã thiết kế CSDL PostgreSQL 48 bảng (`backend/sql/`) và xây dựng REST API CRUD bằng **Java 17 / Spring Boot** cho 16 bảng dữ liệu đầu vào.
 - **Frontend & Hạ tầng (`frontend/`, `infra/`):** Chưa khởi tạo mã nguồn.
 
 ## Cấu trúc repository
