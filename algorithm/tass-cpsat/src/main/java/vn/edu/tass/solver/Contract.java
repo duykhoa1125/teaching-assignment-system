@@ -9,13 +9,13 @@ public final class Contract {
     private Contract() {}
     static <T> List<T> list(List<T> v) { return v == null ? List.of() : List.copyOf(v); }
     static <K,V> Map<K,V> map(Map<K,V> v) { return v == null ? Map.of() : Collections.unmodifiableMap(new LinkedHashMap<>(v)); }
-    public enum DemandType { STANDARD, SPECIALIZED_TOPIC }
+    public enum DemandType { STANDARD, SPECIALIZED_TOPIC, ENRICHMENT }
     public enum Applicability { APPLICABLE, NOT_APPLICABLE, UNDETERMINED }
     public enum EmploymentStatus { ACTIVE, FULL_TERM_LEAVE }
     public enum CheckStatus { PASS, VIOLATION, INSUFFICIENT_DATA, NOT_APPLICABLE }
     public enum CheckPeriod { WEEKLY, ANNUAL }
     public enum CoverageMode { COMPONENTS, PERIODS, COMPLETE_GROUPS }
-    public enum DeviationBasis { A, W }
+    public enum DeviationBasis { A, W, T }
     public enum PreservePolicy { REOPTIMIZE, PENALIZE_CHANGES }
     public enum LoadBasis { FIXED_WEEKLY, AVERAGE_WEEKLY }
 
@@ -27,7 +27,18 @@ public final class Contract {
     public record Config(CoverageMode coverageMode, DeviationBasis deviationBasis, PreservePolicy preservePolicy,
                          long loadWeight, long experienceWeight, long changeWeight,
                          double totalSeconds, double phaseOneSeconds, double phaseTwoSeconds,
-                         int workers, int seed, String decisionSource, boolean demoAssumptions) {}
+                         int workers, int seed, String decisionSource, boolean demoAssumptions,
+                         Map<String,Double> stageSeconds, Map<String,Long> gradeWeights) {
+        public Config { stageSeconds=map(stageSeconds); gradeWeights=map(gradeWeights); }
+        public Config(CoverageMode coverageMode, DeviationBasis deviationBasis, PreservePolicy preservePolicy,
+                      long loadWeight,long experienceWeight,long changeWeight,double totalSeconds,
+                      double phaseOneSeconds,double phaseTwoSeconds,int workers,int seed,String decisionSource,boolean demoAssumptions) {
+            this(coverageMode,deviationBasis,preservePolicy,loadWeight,experienceWeight,changeWeight,totalSeconds,
+                phaseOneSeconds,phaseTwoSeconds,workers,seed,decisionSource,demoAssumptions,Map.of(),Map.of());
+        }
+        public double budget(String stage) { return stageSeconds.getOrDefault(stage, stage.equals("Z")?phaseOneSeconds:phaseTwoSeconds/4); }
+        public long gradeWeight(String grade) { return gradeWeights.getOrDefault(grade,gradeWeights.getOrDefault("other",1L)); }
+    }
     public record Scope(String classId, String className, String subjectId, String subjectName,
                         String gradeId, String levelId, Applicability status,
                         List<DemandType> requiredTypes, String confirmationSource) {
@@ -35,7 +46,10 @@ public final class Contract {
         public String key() { return classId + "\u001f" + subjectId; }
     }
     public record Demand(String id, String classId, String subjectId, String semesterId,
-                         DemandType type, BigDecimal periods, String source) {
+                         DemandType type, BigDecimal periods, String source, LocalDate startsOn, LocalDate endsOn) {
+        public Demand(String id,String classId,String subjectId,String semesterId,DemandType type,BigDecimal periods,String source) {
+            this(id,classId,subjectId,semesterId,type,periods,source,null,null);
+        }
         public String groupKey() { return classId + "\u001f" + subjectId; }
     }
     public record Employment(String schoolId, String semesterId, LocalDate startsOn, LocalDate endsOn,
@@ -63,12 +77,18 @@ public final class Contract {
     }
     public record Precheck(String ruleId, CheckStatus status, String source, String explanation) {}
     public record PreviousAssignment(String demandId, String teacherId) {}
+    public record LockedAssignment(String demandId,String teacherId,String lockedBy,String lockedAt,String reason) {}
     public record Snapshot(String schemaVersion, Identity identity, Period period, Normalization normalization,
                            Config config, List<Scope> scopes, List<Demand> demands, List<Teacher> teachers,
                            List<PreviousAssignment> previousAssignments, String previousSource,
-                           List<Precheck> prechecks, String hardCheckInventorySource) {
+                           List<Precheck> prechecks, String hardCheckInventorySource, List<LockedAssignment> lockedAssignments) {
         public Snapshot { scopes=list(scopes); demands=list(demands); teachers=list(teachers);
-            previousAssignments=list(previousAssignments); prechecks=list(prechecks); }
+            previousAssignments=list(previousAssignments); prechecks=list(prechecks); lockedAssignments=list(lockedAssignments); }
+        public Snapshot(String schemaVersion,Identity identity,Period period,Normalization normalization,Config config,
+                        List<Scope> scopes,List<Demand> demands,List<Teacher> teachers,List<PreviousAssignment> previousAssignments,
+                        String previousSource,List<Precheck> prechecks,String hardCheckInventorySource) {
+            this(schemaVersion,identity,period,normalization,config,scopes,demands,teachers,previousAssignments,previousSource,prechecks,hardCheckInventorySource,List.of());
+        }
     }
     public record Issue(String code, String path, String message) {}
     public record Assignment(String demandId, String classId, String subjectId, DemandType type,
@@ -78,7 +98,7 @@ public final class Contract {
     }
     public record Load(String teacherId, BigDecimal B, BigDecimal R, BigDecimal Q, BigDecimal A,
                        BigDecimal F, BigDecimal C, BigDecimal W, BigDecimal deltaA, BigDecimal deltaW,
-                       BigDecimal under, BigDecimal over, boolean targetApplicable) {}
+                       BigDecimal under, BigDecimal over, boolean targetApplicable, BigDecimal T, BigDecimal deltaT) {}
     public record CheckResult(String teacherId, String checkId, String ruleId, CheckPeriod period,
                               String calculationPeriod, String unit, CheckStatus status, BigDecimal value,
                               BigDecimal limit, List<String> missingData) {
@@ -89,7 +109,9 @@ public final class Contract {
                           int totalGroups, int completeGroups, int incompleteGroups,
                           BigDecimal loadDeviation, long experiencePenalty, long changes,
                           int addedDemands, int removedDemands, long coverageObjective, long softObjective,
-                          boolean fullCoverageImpossibleProven) {}
+                          boolean fullCoverageImpossibleProven, BigDecimal maxLoadDeviation, List<Long> objectiveVector) {
+        public Metrics { objectiveVector=list(objectiveVector); }
+    }
     public record Phase(String name, String status, String stopReason, Long objective,
                         Double bestBound, double seconds, boolean exactOptimalityProven) {}
     public record Result(String status, Identity identity, String snapshotHash, List<Issue> errors,

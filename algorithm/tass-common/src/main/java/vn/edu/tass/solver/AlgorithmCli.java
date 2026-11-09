@@ -16,7 +16,7 @@ public final class AlgorithmCli {
         try{snapshot=Json.MAPPER.readValue(input.toFile(),Snapshot.class);}catch(Exception ex){System.err.println("INVALID_JSON: "+ex.getMessage());System.exit(65);return;}
         Result result=algorithm.solve(snapshot);write(out,snapshot,result);
         System.out.println(algorithm.name()+" "+result.status()+" -> "+out);
-        if(result.metrics()!=null)System.out.println("Assigned "+result.metrics().assignedComponents()+"/"+result.metrics().totalComponents()+"; coverage="+result.metrics().coverageObjective()+"; soft="+result.metrics().softObjective());
+        if(result.metrics()!=null)System.out.println("Assigned "+result.metrics().assignedComponents()+"/"+result.metrics().totalComponents()+"; coverage="+result.metrics().coverageObjective()+"; objectives="+result.metrics().objectiveVector());
         if(!result.hasCandidate())System.exit(result.status().equals("INVALID_INPUT")?2:3);
     }
     public static void write(Path out,Snapshot snapshot,Result result) throws Exception {
@@ -27,8 +27,8 @@ public final class AlgorithmCli {
         List<String> rows=new ArrayList<>();rows.add("demandId,classId,subjectId,demandType,periods,teacherId,reasonCode,reason");
         for(Assignment a:result.assignments())rows.add(csv(a.demandId(),a.classId(),a.subjectId(),a.type(),a.periods(),a.teacherId(),a.reasonCode(),a.reason()));
         Files.write(out.resolve("assignments.csv"),rows,StandardCharsets.UTF_8);
-        rows=new ArrayList<>();rows.add("teacherId,B,R,Q,A,F,C,W,deltaA,deltaW,under,over,targetApplicable");
-        for(Load l:result.loads())rows.add(csv(l.teacherId(),l.B(),l.R(),l.Q(),l.A(),l.F(),l.C(),l.W(),l.deltaA(),l.deltaW(),l.under(),l.over(),l.targetApplicable()));
+        rows=new ArrayList<>();rows.add("teacherId,B,R,Q,A,F,C,W,deltaA,deltaW,under,over,targetApplicable,T,deltaT");
+        for(Load l:result.loads())rows.add(csv(l.teacherId(),l.B(),l.R(),l.Q(),l.A(),l.F(),l.C(),l.W(),l.deltaA(),l.deltaW(),l.under(),l.over(),l.targetApplicable(),l.T(),l.deltaT()));
         Files.write(out.resolve("loads.csv"),rows,StandardCharsets.UTF_8);
     }
     public static String csv(Object... values) {

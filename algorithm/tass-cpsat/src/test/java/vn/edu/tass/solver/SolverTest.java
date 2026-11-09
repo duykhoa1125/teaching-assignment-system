@@ -41,10 +41,10 @@ class SolverTest {
         set(t,"/teachers/0/hardChecks/0/fixed",new BigDecimal("0.5"));set(t,"/teachers/0/hardChecks/0/converted",new BigDecimal("0.375"));set(t,"/teachers/0/hardChecks/0/coefficients",Map.of("D1",new BigDecimal("1.25"),"D2",new BigDecimal("1.875")));set(t,"/teachers/0/hardChecks/0/limit",4);
         Result r=solver.solve(read(t));assertEquals("OPTIMAL",r.status());Load l=r.loads().get(0);number("3.125",l.A());number("4",l.W());number("4",l.Q());number("-0.875",l.deltaA());number("0",l.deltaW());
     }
-    @Test void poc17AssignedComponentsCannotUseDifferentTeachers() throws Exception {
+    @Test void poc17ComponentsMayUseDifferentTeachers() throws Exception {
         ObjectNode t=tree();((ArrayNode)t.get("scopes")).remove(1);set(t,"/scopes/0/requiredTypes",List.of("STANDARD","SPECIALIZED_TOPIC"));set(t,"/demands/1/subjectId","MATH");set(t,"/demands/1/type","SPECIALIZED_TOPIC");set(t,"/teachers/1/experiencePenalties/D2",0);
-        Result r=solver.solve(read(t));assertEquals(1,r.metrics().assignedComponents(),"Two teachers have aggregate capacity 2 but group cannot be split");assertEquals(1,r.metrics().incompleteGroups());
-        set(t,"/teachers/0/hardChecks/0/limit",2);r=solver.solve(read(t));assertEquals(2,r.metrics().assignedComponents());assertEquals(1,assignments(r).values().stream().distinct().count());
+        Result r=solver.solve(read(t));assertEquals(2,r.metrics().assignedComponents(),"Standard and topic can use different qualified teachers");assertEquals(0,r.metrics().incompleteGroups());
+        set(t,"/teachers/0/hardChecks/0/limit",2);r=solver.solve(read(t));assertEquals(2,r.metrics().assignedComponents());new SolutionValidator().evaluate(read(t),Map.of("D1","FLEX","D2","FLEX"),false);
     }
     @Test void poc18LeaveIsNotUnderloadAndNoCrossSemesterEligibility() throws Exception {
         ObjectNode t=tree();set(t,"/teachers/0/employments/0/status","FULL_TERM_LEAVE");set(t,"/teachers/0/workload/targetApplicable",false);Result r=solver.solve(read(t));
@@ -71,7 +71,7 @@ class SolverTest {
     }
     @Test void poc10ChangesCountTeacherSwitchOnceAndAddedRemovedSeparately() throws Exception {
         ObjectNode t=tree();set(t,"/previousAssignments",List.of(Map.of("demandId","D1","teacherId","FLEX"),Map.of("demandId","REMOVED","teacherId","FLEX")));set(t,"/previousSource","SOURCE-V0");set(t,"/config/preservePolicy","PENALIZE_CHANGES");set(t,"/config/changeWeight",2);
-        Result r=solver.solve(read(t));assertEquals(1,r.metrics().changes());assertEquals(1,r.metrics().addedDemands());assertEquals(1,r.metrics().removedDemands());assertEquals(200,r.metrics().softObjective());
+        Result r=solver.solve(read(t));assertEquals(1,r.metrics().changes());assertEquals(1,r.metrics().addedDemands());assertEquals(1,r.metrics().removedDemands());assertEquals(1,r.metrics().objectiveVector().get(4));
     }
     @Test void scalingDoesNotChangeRelativeLoadExperienceWeights() throws Exception {
         ObjectNode t=tree();Result a=solver.solve(read(t));set(t,"/normalization/integerScale",1000);Result b=solver.solve(read(t));assertEquals(assignments(a),assignments(b));assertEquals(a.metrics().softObjective()*10,b.metrics().softObjective());
@@ -102,14 +102,14 @@ class SolverTest {
     }
     @Test void poc14PhaseTwoUnknownKeepsPhaseOneAndDoesNotUpgradeProof() throws Exception {
         Map<String,String> chosen=new LinkedHashMap<>();chosen.put("D1","MATH-ONLY");chosen.put("D2","FLEX");
-        AssignmentSolver fake=new AssignmentSolver((m,p,name,time,c)->name.equals("COVERAGE")?
+        AssignmentSolver fake=new AssignmentSolver((m,p,name,time,c)->name.equals("Z")?
             new AssignmentSolver.PhaseRun(new Phase(name,"FEASIBLE","TIME_LIMIT",0L,0.0,0.1,false),chosen):
             new AssignmentSolver.PhaseRun(new Phase(name,"UNKNOWN","TIME_LIMIT",null,null,0.1,false),null));
-        Result r=fake.solve(base());assertEquals("FEASIBLE",r.status());assertEquals("COVERAGE",r.selectedPhase());assertEquals(chosen,assignments(r));assertFalse(r.coverageOptimalityProven());
+        Result r=fake.solve(base());assertEquals("FEASIBLE",r.status());assertEquals("Z",r.selectedPhase());assertEquals(chosen,assignments(r));assertFalse(r.coverageOptimalityProven());
     }
     @Test void phaseTwoOptimalDoesNotProvePhaseOneOptimal() throws Exception {
         Map<String,String> chosen=Map.of("D1","MATH-ONLY","D2","FLEX");
-        AssignmentSolver fake=new AssignmentSolver((m,p,name,time,c)->new AssignmentSolver.PhaseRun(new Phase(name,name.equals("COVERAGE")?"FEASIBLE":"OPTIMAL","TEST",0L,0.0,0.1,name.equals("SOFT")),chosen));
+        AssignmentSolver fake=new AssignmentSolver((m,p,name,time,c)->new AssignmentSolver.PhaseRun(new Phase(name,name.equals("Z")?"FEASIBLE":"OPTIMAL","TEST",0L,0.0,0.1,!name.equals("Z")),chosen));
         Result r=fake.solve(base());assertFalse(r.coverageOptimalityProven());assertTrue(r.softOptimalityProven());assertEquals("FEASIBLE",r.status());
     }
     @Test void phaseOneUnknownNeverReadsAssignmentsOrStartsPhaseTwo() throws Exception {
@@ -119,6 +119,6 @@ class SolverTest {
     @Test void poc09CancelledRunHasNoApplicableCandidate() throws Exception {Cancellation token=new Cancellation();token.cancel();Result r=solver.solve(base(),token);assertEquals("CANCELLED",r.status());assertTrue(r.assignments().isEmpty());}
     @Test void phaseTwoDisabledRetainsRealNativeIncumbent() throws Exception {ObjectNode t=tree();set(t,"/config/phaseTwoSeconds",0);Result r=solver.solve(read(t));assertEquals("FEASIBLE",r.status());assertEquals(2,r.metrics().assignedComponents());assertEquals("NOT_RUN",r.phases().get(1).status());}
     @Test void backendFailureReturnsNoCandidate() throws Exception {AssignmentSolver broken=new AssignmentSolver((m,p,n,t,c)->{throw new IllegalStateException("simulated backend error");});var r=broken.solve(base());assertEquals("ERROR",r.status());assertTrue(r.assignments().isEmpty());}
-    @ParameterizedTest @CsvSource({"greedy-trap.json,2,0","shortage.json,1,1","component-consistency.json,1,1","decimal-load.json,2,0"})
+    @ParameterizedTest @CsvSource({"greedy-trap.json,2,0","shortage.json,1,1","component-consistency.json,2,0","decimal-load.json,2,0"})
     void checkedInFixtures(String name,int assigned,int missing) throws Exception {var input=Json.MAPPER.readValue(java.nio.file.Path.of("fixtures",name).toFile(),Snapshot.class);var r=solver.solve(input);assertEquals("OPTIMAL",r.status(),r.errors().toString());assertEquals(assigned,r.metrics().assignedComponents());assertEquals(missing,r.metrics().unassignedComponents());}
 }

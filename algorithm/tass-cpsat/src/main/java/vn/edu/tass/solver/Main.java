@@ -21,8 +21,8 @@ public final class Main {
         List<String> rows=new ArrayList<>();rows.add("demandId,classId,subjectId,demandType,periods,teacherId,reasonCode,reason");
         for(Assignment a:result.assignments())rows.add(String.join(",",csv(a.demandId()),csv(a.classId()),csv(a.subjectId()),csv(a.type()),csv(a.periods()),csv(a.teacherId()),csv(a.reasonCode()),csv(a.reason())));
         Files.write(output.resolve("assignments.csv"),rows,StandardCharsets.UTF_8);
-        List<String> loadRows=new ArrayList<>();loadRows.add("teacherId,B,R,Q,A,F,C,W,deltaA,deltaW,under,over,targetApplicable");
-        for(Load l:result.loads())loadRows.add(String.join(",",csv(l.teacherId()),csv(l.B()),csv(l.R()),csv(l.Q()),csv(l.A()),csv(l.F()),csv(l.C()),csv(l.W()),csv(l.deltaA()),csv(l.deltaW()),csv(l.under()),csv(l.over()),csv(l.targetApplicable())));
+        List<String> loadRows=new ArrayList<>();loadRows.add("teacherId,B,R,Q,A,F,C,W,deltaA,deltaW,under,over,targetApplicable,T,deltaT");
+        for(Load l:result.loads())loadRows.add(String.join(",",csv(l.teacherId()),csv(l.B()),csv(l.R()),csv(l.Q()),csv(l.A()),csv(l.F()),csv(l.C()),csv(l.W()),csv(l.deltaA()),csv(l.deltaW()),csv(l.under()),csv(l.over()),csv(l.targetApplicable()),csv(l.T()),csv(l.deltaT())));
         Files.write(output.resolve("loads.csv"),loadRows,StandardCharsets.UTF_8);
         System.out.println(result.status()+" -> "+output);
         if(result.metrics()!=null)System.out.println("Assigned "+result.metrics().assignedComponents()+"/"+result.metrics().totalComponents()+"; missing periods="+result.metrics().missingPeriods()+"; coverage proof="+result.coverageOptimalityProven());

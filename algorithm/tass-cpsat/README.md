@@ -1,5 +1,7 @@
 # TASS — module phân công giáo viên CP-SAT
 
+> **Cập nhật 09/11/2026:** mã hiện hành dùng năm bước Z/L1/M/experience/change, hỗ trợ khóa cứng, ENRICHMENT và tải T-B. Xem [mô hình và hợp đồng hiện hành](docs/CURRENT_MODEL.md), [fixture v2](fixtures/report-five-stage.json). Các mô tả hai pha, ép cùng giáo viên và số liệu bên dưới thuộc PoC cũ, chỉ giữ để đối chiếu lịch sử. Module hiện nhận một khoảng hiệu lực đồng nhất; giới hạn đa giai đoạn được nêu trong tài liệu hiện hành.
+
 Java 17+ / Maven, Google OR-Tools **9.14.6206**. Module gồm thư viện Java, CLI, JSON fixture và unit/integration tests. Tài liệu đầu vào là bộ rà soát **22/10/2026** tại `D:\HCMUT\DACN\TASS_ChuanHoa_20261022\TASS_ChuanHoa_20261022`.
 
 Thư mục nguồn không có ứng dụng Java/Spring Boot, repository, schema SQL hoặc migration. Vì vậy module được xây độc lập; các record trong `Contract.java` là **hợp đồng solver**, không phải tên cột tự suy từ ERD. Có hướng dẫn ghép vào Spring Boot trong [hợp đồng tích hợp](docs/CONTRACT.md).

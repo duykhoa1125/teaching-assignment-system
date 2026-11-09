@@ -1,0 +1,101 @@
+{
+  "tests": 209,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "suites": [
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.ExcelDerivedSolverTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.ExhaustiveOracleTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.ReportSolverTest",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.SolverTest",
+      "tests": 45,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.AssignmentServiceIT",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-cpsat",
+      "suite": "vn.edu.tass.solver.CliIT",
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-greedy",
+      "suite": "vn.edu.tass.solver.CommonSolverTest",
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-genetic",
+      "suite": "vn.edu.tass.solver.CommonSolverTest",
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "module": "tass-benchmark",
+      "suite": "vn.edu.tass.solver.CommonSolverTest",
+      "tests": 46,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "source_sha256": {
+    "algorithm\\tass-benchmark\\src\\main\\java\\vn\\edu\\tass\\solver\\BenchmarkMain.java": "ba80cc5895c4ebd66640ae1bc5bdfb33f1dbab307e34bf06fd9fa7fb56998dc6",
+    "algorithm\\tass-common\\src\\main\\java\\vn\\edu\\tass\\solver\\AlgorithmCli.java": "1b7a3006cb7d1582b5e81164fcb4609210159f2bece3d5316b56fdba01705abd",
+    "algorithm\\tass-common\\src\\main\\java\\vn\\edu\\tass\\solver\\HeuristicProblem.java": "6e0eca5ca2d1a0f0f1093cee70e4d71228232803417d3927d2f8b5af090198d6",
+    "algorithm\\tass-common\\src\\main\\java\\vn\\edu\\tass\\solver\\HeuristicResults.java": "df41722992b232d6b995e7a0b96dec3105bec365cf9f965daf4bee95dfddd632",
+    "algorithm\\tass-common\\src\\main\\java\\vn\\edu\\tass\\solver\\SolverAlgorithm.java": "adc0212a54cdca0acd812afad411129c13785726e65656dc06983b438de15081",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\AssignmentService.java": "1e6d3f2c85cbd7c5c89a8ca1a080c01e7080606fdcf7a3964e266fd17e81637e",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\AssignmentSolver.java": "e9b53bd309cc518ce246115fba798dbe177a4f008ce03f94a546ea05ecefc743",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\Cancellation.java": "21293bfd19c0afc8aed82e8bf98069909aec8b5b542d0c70c29fbc0646fc9125",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\Contract.java": "d936dfb1071f8833230e0213a4809e6005627bad091db9fdc0c3f384f08e80ba",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\ExperienceScoring.java": "39f644a50d58fd910ba18c89530447476317fbd22055ac9cdba8a3c2dabb2591",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\InputValidator.java": "0870dff6e0c75799e3b5d4192054fb61118f372fc322ede4948acd26140f83fd",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\Json.java": "9cad3d3c6d8cbc158adbd3e650779086207c83a978a984f61c5dcc59009d5795",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\Main.java": "e279d2d0f5aa25739dd91654c9cdddd6eec20572ac3e2a9b1eb449ffdaa7dbdb",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\ModelBuilder.java": "ed9b32d98c09e5f5764e9f77328495fc718197813617f01b6f8eeec68b7b8885",
+    "algorithm\\tass-cpsat\\src\\main\\java\\vn\\edu\\tass\\solver\\SolutionValidator.java": "f48093b89c4ae3b3bd16a6f8db0796617c8d17491e4fe05077b019524208af99",
+    "algorithm\\tass-genetic\\src\\main\\java\\vn\\edu\\tass\\solver\\GeneticMain.java": "92868706d55c4e433042a84c2e281c11856224106a4e867231022f6f50913ef2",
+    "algorithm\\tass-genetic\\src\\main\\java\\vn\\edu\\tass\\solver\\GeneticSolver.java": "e8754dd0160154b5cc318e87f70585e9cd2b0b88d4497435affca4b6da6f62d2",
+    "algorithm\\tass-greedy\\src\\main\\java\\vn\\edu\\tass\\solver\\GreedyMain.java": "47a8b0d11e9fa62eb14a9ec8870eaeb5e700a10244062ad69ac1db417eada23d",
+    "algorithm\\tass-greedy\\src\\main\\java\\vn\\edu\\tass\\solver\\GreedySolver.java": "2f4bb12da8a0c1e994960d0a798a3e08e0163c2ce692a8cb1f942e609cfb9085"
+  }
+}

@@ -1,0 +1,309 @@
+{
+  "schemaVersion": "tass-solver/2",
+  "identity": {
+    "schoolId": "DEMO-SCHOOL",
+    "semesterId": "2026-HK1",
+    "roundId": "R1",
+    "planId": "P1",
+    "versionId": "V1",
+    "baseRevision": 0,
+    "snapshotId": "SNAP-1",
+    "sourceRevisionToken": "source-1",
+    "ruleSetVersion": "TOY-RULES-1",
+    "optimizationConfigVersion": "POC-1"
+  },
+  "period": {
+    "startsOn": "2026-09-01",
+    "endsOn": "2027-01-15"
+  },
+  "normalization": {
+    "integerScale": 100,
+    "unit": "PERIODS_PER_WEEK",
+    "basis": "FIXED_WEEKLY",
+    "roundingRule": "EXACT"
+  },
+  "config": {
+    "coverageMode": "COMPONENTS",
+    "deviationBasis": "T",
+    "preservePolicy": "PENALIZE_CHANGES",
+    "loadWeight": 1,
+    "experienceWeight": 1,
+    "changeWeight": 1,
+    "totalSeconds": 30,
+    "phaseOneSeconds": 8,
+    "phaseTwoSeconds": 8,
+    "workers": 1,
+    "seed": 42,
+    "decisionSource": "Report 2026-11-09; illustrative grade weights 3:1; five lexicographic stages",
+    "demoAssumptions": true,
+    "stageSeconds": {
+      "Z": 5,
+      "L1": 5,
+      "M": 5,
+      "experience": 5,
+      "change": 5
+    },
+    "gradeWeights": {
+      "9": 3,
+      "12": 3,
+      "other": 1
+    }
+  },
+  "scopes": [
+    {
+      "classId": "CLASS0",
+      "className": "Class 0",
+      "subjectId": "MATH",
+      "subjectName": "Math",
+      "gradeId": "8",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "TOY-CONFIRMATION-1"
+    },
+    {
+      "classId": "CLASS1",
+      "className": "Class 1",
+      "subjectId": "MATH",
+      "subjectName": "Math",
+      "gradeId": "9",
+      "levelId": "THCS",
+      "status": "APPLICABLE",
+      "requiredTypes": [
+        "STANDARD"
+      ],
+      "confirmationSource": "TOY-CONFIRMATION-1"
+    }
+  ],
+  "demands": [
+    {
+      "id": "D1",
+      "classId": "CLASS0",
+      "subjectId": "MATH",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1,
+      "source": "TOY-DEMAND-1",
+      "startsOn": "2026-09-01",
+      "endsOn": "2027-01-15"
+    },
+    {
+      "id": "D2",
+      "classId": "CLASS1",
+      "subjectId": "MATH",
+      "semesterId": "2026-HK1",
+      "type": "STANDARD",
+      "periods": 1,
+      "source": "TOY-DEMAND-2",
+      "startsOn": "2026-09-01",
+      "endsOn": "2027-01-15"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "FLEX",
+      "name": "GV dạy được cả hai môn",
+      "employments": [
+        {
+          "schoolId": "DEMO-SCHOOL",
+          "semesterId": "2026-HK1",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "status": "ACTIVE",
+          "source": "TOY-EMPLOYMENT-FLEX"
+        }
+      ],
+      "qualifications": [
+        {
+          "subjectId": "MATH",
+          "levelId": "THCS",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "verified": true,
+          "source": "DEMO"
+        }
+      ],
+      "workload": {
+        "base": 1,
+        "reduction": 0,
+        "fixedOutside": 0,
+        "converted": 0,
+        "targetApplicable": true,
+        "source": "TOY-LOAD-FLEX; explicit zero evidence",
+        "selectedBaseline": "BASELINE-FLEX-1",
+        "outsideDemandIds": []
+      },
+      "experiencePenalties": {
+        "D1": 0,
+        "D2": 0
+      },
+      "hardChecks": [
+        {
+          "id": "WEEKLY-TOY",
+          "ruleId": "BR-06",
+          "period": "WEEKLY",
+          "calculationPeriod": "each teaching week in 2026-HK1",
+          "unit": "PERIODS_PER_WEEK",
+          "dataStatus": "PASS",
+          "fixed": 0,
+          "converted": 0,
+          "coefficients": {
+            "D1": 1,
+            "D2": 1
+          },
+          "limit": 1,
+          "missingData": [],
+          "source": "TOY cap=1, not a legal threshold"
+        },
+        {
+          "id": "ANNUAL",
+          "ruleId": "BR-06",
+          "period": "ANNUAL",
+          "calculationPeriod": "2026-2027",
+          "unit": "OVERTIME_HOURS",
+          "dataStatus": "INSUFFICIENT_DATA",
+          "fixed": null,
+          "converted": null,
+          "coefficients": {},
+          "limit": null,
+          "missingData": [
+            "Annual actual workload and approved hour-to-period conversion"
+          ],
+          "source": "OI-03 unresolved; no zero substitution"
+        }
+      ]
+    },
+    {
+      "id": "MATH-ONLY",
+      "name": "GV chỉ dạy Toán",
+      "employments": [
+        {
+          "schoolId": "DEMO-SCHOOL",
+          "semesterId": "2026-HK1",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "status": "ACTIVE",
+          "source": "TOY-EMPLOYMENT-MATH"
+        }
+      ],
+      "qualifications": [
+        {
+          "subjectId": "MATH",
+          "levelId": "THCS",
+          "startsOn": "2026-09-01",
+          "endsOn": "2027-01-15",
+          "verified": true,
+          "source": "DEMO"
+        }
+      ],
+      "workload": {
+        "base": 1,
+        "reduction": 0,
+        "fixedOutside": 0,
+        "converted": 0,
+        "targetApplicable": true,
+        "source": "TOY-LOAD-MATH; explicit zero evidence",
+        "selectedBaseline": "BASELINE-MATH-1",
+        "outsideDemandIds": []
+      },
+      "experiencePenalties": {
+        "D1": 5,
+        "D2": 5
+      },
+      "hardChecks": [
+        {
+          "id": "WEEKLY-TOY",
+          "ruleId": "BR-06",
+          "period": "WEEKLY",
+          "calculationPeriod": "each teaching week in 2026-HK1",
+          "unit": "PERIODS_PER_WEEK",
+          "dataStatus": "PASS",
+          "fixed": 0,
+          "converted": 0,
+          "coefficients": {
+            "D1": 1,
+            "D2": 1
+          },
+          "limit": 1,
+          "missingData": [],
+          "source": "TOY cap=1, not a legal threshold"
+        },
+        {
+          "id": "ANNUAL",
+          "ruleId": "BR-06",
+          "period": "ANNUAL",
+          "calculationPeriod": "2026-2027",
+          "unit": "OVERTIME_HOURS",
+          "dataStatus": "INSUFFICIENT_DATA",
+          "fixed": null,
+          "converted": null,
+          "coefficients": {},
+          "limit": null,
+          "missingData": [
+            "Annual actual workload and approved hour-to-period conversion"
+          ],
+          "source": "OI-03 unresolved; no zero substitution"
+        }
+      ]
+    }
+  ],
+  "previousAssignments": [
+    {
+      "demandId": "D1",
+      "teacherId": "FLEX"
+    },
+    {
+      "demandId": "D2",
+      "teacherId": "MATH-ONLY"
+    }
+  ],
+  "previousSource": "same-round-prior-draft",
+  "prechecks": [
+    {
+      "ruleId": "BR-04",
+      "status": "PASS",
+      "source": "TOY-RULES-1",
+      "explanation": "Fixture B=1 and R=0; not a statutory norm"
+    },
+    {
+      "ruleId": "BR-16",
+      "status": "NOT_APPLICABLE",
+      "source": "TOY-RULES-1",
+      "explanation": "No duties or personal reductions in fixture"
+    },
+    {
+      "ruleId": "BR-17",
+      "status": "PASS",
+      "source": "TOY-RULES-1",
+      "explanation": "Explicit toy rule version and semester; no claim of legal certification"
+    },
+    {
+      "ruleId": "BR-18",
+      "status": "NOT_APPLICABLE",
+      "source": "TOY-RULES-1",
+      "explanation": "No duty appointments"
+    },
+    {
+      "ruleId": "BR-19",
+      "status": "NOT_APPLICABLE",
+      "source": "TOY-RULES-1",
+      "explanation": "No payments, reductions or converted activities"
+    },
+    {
+      "ruleId": "BR-20",
+      "status": "NOT_APPLICABLE",
+      "source": "TOY-RULES-1",
+      "explanation": "No school fund allocations"
+    },
+    {
+      "ruleId": "BR-21",
+      "status": "NOT_APPLICABLE",
+      "source": "TOY-RULES-1",
+      "explanation": "No converted activities"
+    }
+  ],
+  "hardCheckInventorySource": "TOY-RULES-1: one complete weekly check and one explicitly unknown annual check per teacher",
+  "lockedAssignments": []
+}

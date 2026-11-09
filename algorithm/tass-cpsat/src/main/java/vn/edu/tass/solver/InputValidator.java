@@ -10,7 +10,7 @@ public final class InputValidator {
     static final long SAFE = 1_000_000_000_000L;
     public static final class InvalidInput extends IllegalArgumentException {
         private final List<Issue> issues;
-        InvalidInput(String path, String message) { super(path + ": " + message); issues=List.of(new Issue("INVALID_INPUT",path,message)); }
+        InvalidInput(String path, String message) { super(path + ": " + message); issues=List.of(new Issue(path.equals("LOCK_CONFLICT")?"LOCK_CONFLICT":"INVALID_INPUT",path,message)); }
         public List<Issue> issues() { return issues; }
     }
     static void require(boolean condition, String path, String message) { if (!condition) throw new InvalidInput(path,message); }
@@ -31,7 +31,8 @@ public final class InputValidator {
 
     public Prepared validate(Snapshot s) {
         require(s!=null,"snapshot","Required");
-        require("tass-solver/1".equals(s.schemaVersion()),"schemaVersion","Expected tass-solver/1");
+        boolean v2="tass-solver/2".equals(s.schemaVersion());
+        require(v2 || "tass-solver/1".equals(s.schemaVersion()),"schemaVersion","Expected tass-solver/2");
         Identity id=s.identity(); require(id!=null,"identity","Required");
         text(id.schoolId(),"identity.schoolId"); text(id.semesterId(),"identity.semesterId");
         text(id.roundId(),"identity.roundId"); text(id.planId(),"identity.planId"); text(id.versionId(),"identity.versionId");
@@ -46,12 +47,21 @@ public final class InputValidator {
         require("EXACT".equals(n.roundingRule()),"roundingRule","Only EXACT supported; apply approved business rounding upstream with evidence");
         Config cfg=s.config(); require(cfg!=null,"config","Required");
         require(cfg.coverageMode()!=null && cfg.deviationBasis()!=null && cfg.preservePolicy()!=null,"config","Explicit objective policies required");
-        bounded(cfg.loadWeight(),"loadWeight"); bounded(cfg.experienceWeight(),"experienceWeight"); bounded(cfg.changeWeight(),"changeWeight");
-        require(cfg.loadWeight()>0 || cfg.experienceWeight()>0 || cfg.changeWeight()>0,"config.weights","At least one nonzero weight required");
-        require(cfg.preservePolicy()!=PreservePolicy.REOPTIMIZE || cfg.changeWeight()==0,"changeWeight","REOPTIMIZE requires zero change weight");
-        require(cfg.preservePolicy()!=PreservePolicy.PENALIZE_CHANGES || cfg.changeWeight()>0,"changeWeight","PENALIZE_CHANGES requires positive weight");
-        require(Double.isFinite(cfg.totalSeconds()) && cfg.totalSeconds()>0 && cfg.totalSeconds()<=3600,"totalSeconds","Must be finite, >0 and <=3600");
-        require(Double.isFinite(cfg.phaseOneSeconds()) && cfg.phaseOneSeconds()>0 && Double.isFinite(cfg.phaseTwoSeconds()) && cfg.phaseTwoSeconds()>=0,"phaseSeconds","Invalid phase budgets");
+        bounded(cfg.loadWeight(),"loadWeight");bounded(cfg.experienceWeight(),"experienceWeight");bounded(cfg.changeWeight(),"changeWeight");
+        if(!v2)require(cfg.preservePolicy()!=PreservePolicy.REOPTIMIZE || cfg.changeWeight()==0,"changeWeight","Legacy REOPTIMIZE requires zero change weight");
+        require(Double.isFinite(cfg.totalSeconds()) && cfg.totalSeconds()>0 && cfg.totalSeconds()<=60,"totalSeconds","Must be finite, >0 and <=60");
+        if(v2) {
+            require(cfg.coverageMode()==CoverageMode.COMPONENTS && cfg.deviationBasis()==DeviationBasis.T,"config","v2 requires COMPONENTS and T-B");
+            require(cfg.loadWeight()==1 && cfg.experienceWeight()==1 && cfg.changeWeight()==1,"config.weights","Independent lexicographic stages use unit coefficients, not weighted sums");
+            require(cfg.demoAssumptions() || cfg.totalSeconds()>=30,"totalSeconds","Production budget must be 30..60 seconds");
+            require(cfg.stageSeconds().keySet().equals(Set.of("Z","L1","M","experience","change")),"stageSeconds","Exactly five stage budgets required");
+            require(cfg.gradeWeights().keySet().containsAll(Set.of("9","12","other")),"gradeWeights","Explicit 9/12/other weights required");
+            require(cfg.gradeWeight("9")>cfg.gradeWeight("other") && cfg.gradeWeight("12")>cfg.gradeWeight("other"),"gradeWeights","Final grades must have higher priority");
+        }
+        double budget=0;
+        for(String stage:List.of("Z","L1","M","experience","change")) { double value=cfg.budget(stage);require(Double.isFinite(value) && value>=0 && (!v2 || value>0),"stageSeconds","Invalid stage budget");budget+=value; }
+        require(budget<=cfg.totalSeconds()+1e-9,"stageSeconds","Stage budgets exceed total run budget");
+        for(long weight:cfg.gradeWeights().values())require(weight>0 && weight<=SAFE,"gradeWeights","Positive safe integer weights required");
         require(cfg.workers()>0 && cfg.workers()<=64 && cfg.seed()>=0,"run","Invalid workers or seed"); text(cfg.decisionSource(),"config.decisionSource");
         text(s.hardCheckInventorySource(),"hardCheckInventorySource");
         Map<String,Precheck> pre=new HashMap<>();
@@ -79,6 +89,11 @@ public final class InputValidator {
             Scope sc=scopes.get(d.groupKey());require(sc!=null && sc.status()==Applicability.APPLICABLE,"demand.scope","Not in confirmed applicable scope");
             require(d.type()!=null && sc.requiredTypes().contains(d.type()),"demand.type","Unconfirmed component");
             require(tuples.add(d.groupKey()+"\u001f"+d.type()),"demands","Duplicate class-subject-semester-type");
+            if(v2) {
+                dates(d.startsOn(),d.endsOn(),"demand.interval");
+                require(d.startsOn().equals(s.period().startsOn()) && d.endsOn().equals(s.period().endsOn()),"demand.interval","A solve must use one uniform effective interval; segment mixed phases before solving, never sum weekly rates across phases");
+                require(d.periods()!=null && d.periods().stripTrailingZeros().scale()<=2 && d.periods().compareTo(new BigDecimal("999.99"))<=0,"demand.periods","At most two decimal places, <=999.99; no rounding");
+            }
             h[j]=scaled(d.periods(),scale,"demand."+d.id()+".periods"); require(h[j]>0,"demand.periods","Must be positive");total=plus(total,h[j]);
             groups.computeIfAbsent(d.groupKey(),k->new ArrayList<>()).add(j);
         }
@@ -105,7 +120,7 @@ public final class InputValidator {
             for(int j=0;j<dc;j++) {
                 Demand d=s.demands().get(j);Scope sc=scopes.get(d.groupKey());
                 eligible[i][j]=active && t.qualifications().stream().anyMatch(z->z.verified() && z.subjectId().equals(d.subjectId()) && z.levelId().equals(sc.levelId()) && covers(z.startsOn(),z.endsOn(),s.period()));
-                if(eligible[i][j]) {Long penalty=t.experiencePenalties().get(d.id());require(penalty!=null,"experiencePenalties."+d.id(),"Explicit penalty required for each eligible pair, including configured missing-experience penalty");bounded(penalty,"experiencePenalty");softBound=plus(softBound,times(times(cfg.experienceWeight(),scale),penalty));}
+                if(eligible[i][j]) {Long penalty=t.experiencePenalties().get(d.id());require(penalty!=null,"experiencePenalties."+d.id(),"Explicit penalty required for each eligible pair, including configured missing-experience penalty");bounded(penalty,"experiencePenalty");softBound=plus(softBound,times(cfg.gradeWeight(sc.gradeId()),penalty));}
             }
             for(String key:t.experiencePenalties().keySet()) require(di.containsKey(key),"experiencePenalties","Unknown demand "+key);
             Set<String> checkIds=new HashSet<>(); boolean weekly=false,annual=false;
@@ -121,12 +136,25 @@ public final class InputValidator {
                 for(BigDecimal value:check.coefficients().values()) max=plus(max,scaled(value,scale,"check.coefficient"));scaled(check.limit(),scale,"check.limit");
             }
             require(weekly && annual,"hardChecks","Each teacher needs complete weekly check and explicit annual check/status");
-            if(w.targetApplicable()) softBound=plus(softBound,times(cfg.loadWeight(),plus(q[i],plus(total,plus(f[i],c[i])))));
+            if(w.targetApplicable()) softBound=plus(softBound,plus(b[i],plus(r[i],plus(total,plus(f[i],c[i])))));
         }
         Set<String> oldIds=new HashSet<>();
         for(PreviousAssignment old:s.previousAssignments()) {text(old.demandId(),"previous.demandId");require(oldIds.add(old.demandId()),"previousAssignments","Duplicate demand");if(old.teacherId()!=null)text(old.teacherId(),"previous.teacherId");}
         if(!s.previousAssignments().isEmpty()) text(s.previousSource(),"previousSource");
-        softBound=plus(softBound,times(times(cfg.changeWeight(),scale),dc));
+        bounded(dc,"changes");
+        Map<String,LockedAssignment> locks=new LinkedHashMap<>();
+        for(LockedAssignment lock:s.lockedAssignments()) {
+            text(lock.demandId(),"lock.demandId");text(lock.teacherId(),"lock.teacherId");text(lock.lockedBy(),"lock.lockedBy");text(lock.lockedAt(),"lock.lockedAt");text(lock.reason(),"lock.reason");
+            try {java.time.OffsetDateTime.parse(lock.lockedAt());}catch(java.time.format.DateTimeParseException ex){throw new InvalidInput("lock.lockedAt","Expected an ISO timestamp with UTC offset");}
+            Integer j=di.get(lock.demandId()),i=ti.get(lock.teacherId());
+            require(locks.put(lock.demandId(),lock)==null && j!=null && i!=null && eligible[i][j],"LOCK_CONFLICT","Duplicate, missing or ineligible locked assignment");
+        }
+        for(Teacher teacher:s.teachers())for(HardCheck check:teacher.hardChecks())if(check.dataStatus()==CheckStatus.PASS) {
+            BigDecimal value=check.fixed().add(check.converted());
+            boolean hasLock=false;
+            for(LockedAssignment lock:locks.values())if(teacher.id().equals(lock.teacherId())) { value=value.add(check.coefficients().get(lock.demandId()));hasLock=true; }
+            if(hasLock)require(value.compareTo(check.limit())<=0,"LOCK_CONFLICT","Locked assignments exceed "+check.id());
+        }
         return new Prepared(s,scale,h,b,r,q,f,c,eligible,groups.values().stream().map(List::copyOf).toList(),Collections.unmodifiableMap(di),Collections.unmodifiableMap(ti));
     }
 }

@@ -30,7 +30,7 @@ class CommonSolverTest {
     private static void number(String expected,BigDecimal actual){SolverTest.number(expected,actual);}
     private static void candidate(Snapshot s,Result r){assertTrue(r.hasCandidate(),r.status()+" "+r.errors());new SolutionValidator().evaluate(s,map(r),false);}
 
-    @ParameterizedTest @CsvSource({"greedy-trap.json,2,0","shortage.json,1,1","component-consistency.json,1,1","decimal-load.json,2,0"})
+    @ParameterizedTest @CsvSource({"greedy-trap.json,2,0","shortage.json,1,1","component-consistency.json,2,0","decimal-load.json,2,0"})
     void originalFixturesAndExpectedCoverage(String name,int assigned,int missing) throws Exception {
         var s=Json.MAPPER.readValue(Path.of(System.getProperty("tass.fixtures"),name).toFile(),Snapshot.class);var r=solver.solve(s);candidate(s,r);
         assertEquals(assigned,r.metrics().assignedComponents());assertEquals(missing,r.metrics().unassignedComponents());assertEquals(missing==0,r.dataReadyForOpening());
@@ -53,8 +53,8 @@ class CommonSolverTest {
     @Test void poc05And11OriginalDecimalFixture() throws Exception {
         var s=Json.MAPPER.readValue(Path.of(System.getProperty("tass.fixtures"),"decimal-load.json").toFile(),Snapshot.class);var r=solver.solve(s);candidate(s,r);var l=r.loads().get(0);number("3.125",l.A());number("4",l.W());number("4",l.Q());number("-0.875",l.deltaA());number("0",l.deltaW());
     }
-    @Test void poc17ComponentsNeverUseDifferentTeachers() throws Exception {
-        var t=tree();((ArrayNode)t.get("scopes")).remove(1);set(t,"/scopes/0/requiredTypes",List.of("STANDARD","SPECIALIZED_TOPIC"));set(t,"/demands/1/subjectId","MATH");set(t,"/demands/1/type","SPECIALIZED_TOPIC");set(t,"/teachers/1/experiencePenalties/D2",0);var s=read(t);var r=solver.solve(s);candidate(s,r);assertEquals(1,r.metrics().assignedComponents());assertEquals(1,map(r).values().stream().filter(Objects::nonNull).distinct().count());
+    @Test void poc17ComponentsCanUseDifferentTeachers() throws Exception {
+        var t=tree();((ArrayNode)t.get("scopes")).remove(1);set(t,"/scopes/0/requiredTypes",List.of("STANDARD","SPECIALIZED_TOPIC"));set(t,"/demands/1/subjectId","MATH");set(t,"/demands/1/type","SPECIALIZED_TOPIC");set(t,"/teachers/1/experiencePenalties/D2",0);var s=read(t);var r=solver.solve(s);candidate(s,r);assertEquals(2,r.metrics().assignedComponents());assertEquals(2,map(r).values().stream().filter(Objects::nonNull).distinct().count());
     }
     @Test void poc18LeaveAndOtherSemesterNotEligible() throws Exception {
         var t=tree();set(t,"/teachers/0/employments/0/status","FULL_TERM_LEAVE");set(t,"/teachers/0/workload/targetApplicable",false);var s=read(t);var r=solver.solve(s);candidate(s,r);assertNull(map(r).get("D2"));assertNull(r.loads().get(0).Q());assertNull(r.loads().get(0).under());
@@ -71,7 +71,7 @@ class CommonSolverTest {
         for(String mode:List.of("COMPONENTS","PERIODS","COMPLETE_GROUPS")){set(t,"/config/coverageMode",mode);var s=read(t);var r=solver.solve(s);candidate(s,r);assertEquals(1,r.metrics().assignedComponents());if(mode.equals("PERIODS"))assertEquals("FLEX",map(r).get("D2"));}
     }
     @Test void poc10OriginalChangeMetricCase() throws Exception {
-        var t=tree();set(t,"/previousAssignments",List.of(Map.of("demandId","D1","teacherId","FLEX"),Map.of("demandId","REMOVED","teacherId","FLEX")));set(t,"/previousSource","V0");set(t,"/config/preservePolicy","PENALIZE_CHANGES");set(t,"/config/changeWeight",2);var s=read(t);var r=solver.solve(s);candidate(s,r);assertEquals(1,r.metrics().changes());assertEquals(1,r.metrics().addedDemands());assertEquals(1,r.metrics().removedDemands());assertEquals(200,r.metrics().softObjective());
+        var t=tree();set(t,"/previousAssignments",List.of(Map.of("demandId","D1","teacherId","FLEX"),Map.of("demandId","REMOVED","teacherId","FLEX")));set(t,"/previousSource","V0");set(t,"/config/preservePolicy","PENALIZE_CHANGES");set(t,"/config/changeWeight",2);var s=read(t);var r=solver.solve(s);candidate(s,r);assertEquals(1,r.metrics().changes());assertEquals(1,r.metrics().addedDemands());assertEquals(1,r.metrics().removedDemands());assertEquals(1,r.metrics().objectiveVector().get(4));
     }
     @Test void originalScalingInvariant() throws Exception {var t=tree();var a=solver.solve(read(t));set(t,"/normalization/integerScale",1000);var b=solver.solve(read(t));assertEquals(map(a),map(b));assertEquals(a.metrics().softObjective()*10,b.metrics().softObjective());}
     @Test void poc09Cancellation() throws Exception {var c=new Cancellation();c.cancel();var r=solver.solve(base(),c);assertEquals("CANCELLED",r.status());assertTrue(r.assignments().isEmpty());}
@@ -94,5 +94,18 @@ class CommonSolverTest {
     }
     @Test void sameSeedReproducesDecisionsWhenNoTimeLimitIntervenes() throws Exception {
         var s=base();var a=solver.solve(s);var b=solver.solve(s);assertEquals(map(a),map(b));assertEquals(a.metrics(),b.metrics());
+    }
+    @Test void reportV2FixtureUsesFiveElementScore() throws Exception {
+        Snapshot s=Json.MAPPER.readValue(Path.of(System.getProperty("tass.fixtures"),"report-five-stage.json").toFile(),Snapshot.class);
+        Result r=solver.solve(s);candidate(s,r);assertEquals(5,r.metrics().objectiveVector().size());assertEquals(2,r.metrics().assignedComponents());
+        assertNotNull(r.loads().get(0).T());
+    }
+    @Test void locksAreRespectedByEveryAlgorithm() throws Exception {
+        ObjectNode t=tree();set(t,"/lockedAssignments",List.of(Map.of("demandId","D1","teacherId","FLEX","lockedBy","manager","lockedAt","2026-11-09T08:00:00+07:00","reason","Confirmed")));
+        Snapshot s=read(t);Result r=solver.solve(s);candidate(s,r);assertEquals("FLEX",map(r).get("D1"));assertNull(map(r).get("D2"));
+    }
+    @Test void ineligibleLockReturnsExplicitConflictForEveryAlgorithm() throws Exception {
+        ObjectNode t=tree();set(t,"/lockedAssignments",List.of(Map.of("demandId","D2","teacherId","MATH-ONLY","lockedBy","manager","lockedAt","2026-11-09T08:00:00+07:00","reason","Confirmed")));
+        Result r=solver.solve(read(t));assertEquals("LOCK_CONFLICT",r.status());assertTrue(r.assignments().isEmpty());
     }
 }
