@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -24,6 +25,7 @@ public class TeachingExperienceRequest {
     private Long gradeId;
 
     @NotBlank
+    @Schema(allowableValues = {"UNKNOWN", "NO_EXPERIENCE", "HAS_EXPERIENCE"})
     private String experienceStatus;
 
     private BigDecimal yearsOfExperience;

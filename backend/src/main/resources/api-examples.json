@@ -1,0 +1,143 @@
+{
+  "schools": {
+    "school_code": "DEMO_NEW",
+    "name": "Trường minh họa mới",
+    "status": "ACTIVE"
+  },
+  "academic-years": {
+    "school_id": 1,
+    "year_code": "2027-2028",
+    "starts_on": "2027-08-01",
+    "ends_on": "2028-07-31"
+  },
+  "semesters": {
+    "academic_year_id": 1,
+    "semester_no": 2,
+    "starts_on": "2027-01-01",
+    "ends_on": "2027-05-31"
+  },
+  "education-levels": {
+    "level_code": "TH",
+    "name": "Tiểu học"
+  },
+  "grades": {
+    "education_level_id": 1,
+    "grade_code": "11",
+    "name": "Khối 11"
+  },
+  "classes": {
+    "academic_year_id": 1,
+    "grade_id": 1,
+    "class_code": "10A4",
+    "status": "ACTIVE"
+  },
+  "subjects": {
+    "subject_code": "TIN_HOC",
+    "name": "Tin học",
+    "valid_from": "2026-08-01"
+  },
+  "teachers": {
+    "school_id": 1,
+    "teacher_code": "GV_NEW",
+    "full_name": "Nguyễn Văn A"
+  },
+  "teaching-demands": {
+    "semester_id": 1,
+    "class_id": 1,
+    "subject_id": 1,
+    "periods_per_week": 4,
+    "status": "ACTIVE",
+    "updated_by": 1,
+    "demand_type": "STANDARD",
+    "valid_from": "2026-09-01",
+    "valid_to": "2026-12-31",
+    "unit": "PERIOD_PER_WEEK"
+  },
+  "departments": {
+    "school_id": 1,
+    "department_code": "TIN",
+    "name": "Tổ Tin học",
+    "valid_from": "2026-08-01"
+  },
+  "teacher-employments": {
+    "teacher_id": 1,
+    "department_id": 1,
+    "semester_id": 1,
+    "employment_status": "TEACHING",
+    "position_code": "TEACHER",
+    "valid_from": "2026-08-01"
+  },
+  "teaching-qualifications": {
+    "teacher_id": 1,
+    "subject_id": 1,
+    "education_level_id": 1,
+    "verification_status": "PENDING",
+    "valid_from": "2026-08-01"
+  },
+  "teaching-experiences": {
+    "teacher_id": 1,
+    "subject_id": 1,
+    "grade_id": 1,
+    "experience_status": "UNKNOWN",
+    "as_of_date": "2026-08-01",
+    "recorded_by": 1
+  },
+  "assignment-rounds": {
+    "semester_id": 1,
+    "round_code": "ROUND_NEW",
+    "status": "DRAFT"
+  },
+  "round-subject-scopes": {
+    "round_id": 1,
+    "grade_id": 1,
+    "subject_id": 1
+  },
+  "class-subject-applicabilities": {
+    "scope_id": 1,
+    "class_id": 1,
+    "status": "UNDETERMINED",
+    "updated_by": 1
+  },
+  "required-demand-components": {
+    "applicability_id": 1,
+    "demand_type": "STANDARD",
+    "valid_from": "2026-09-01",
+    "valid_to": "2026-12-31"
+  },
+  "teacher-workload-bases": {
+    "teacher_id": 1,
+    "semester_id": 1,
+    "education_level_id": 1,
+    "position_code": "TEACHER",
+    "base_periods_per_week": 17,
+    "unit": "PERIOD_PER_WEEK",
+    "valid_from": "2026-08-01",
+    "valid_to": "2026-12-31",
+    "profile_ref": "hoso:gv:1",
+    "verification_status": "PENDING"
+  },
+  "teaching-histories": {
+    "teacher_id": 1,
+    "academic_year_id": 1,
+    "semester_id": 1,
+    "class_id": 1,
+    "subject_id": 1,
+    "taught_from": "2026-09-01",
+    "taught_to": "2026-12-31",
+    "source_kind": "EXTERNAL_RECORD",
+    "evidence_ref": "bienban:1",
+    "verification_status": "PENDING",
+    "recorded_by": 1
+  },
+  "teacher-duties": {
+    "teacher_id": 1,
+    "semester_id": 1,
+    "rule_definition_id": 1,
+    "duty_type": "HOMEROOM",
+    "class_id": 1,
+    "scope_description": "Chủ nhiệm lớp 10A1",
+    "valid_from": "2026-08-01",
+    "verification_status": "PENDING",
+    "payment_status": "UNPAID"
+  }
+}

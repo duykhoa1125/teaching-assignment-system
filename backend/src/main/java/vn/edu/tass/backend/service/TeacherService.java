@@ -6,6 +6,7 @@ import vn.edu.tass.backend.payload.request.TeacherRequest;
 
 public interface TeacherService {
     List<TeacherDto> retrieveAllTeacher(int limit, int offset);
+    List<TeacherDto> searchTeacher(int limit, int offset, Long schoolId, String teacherCode, String q);
     TeacherDto retrieveById(long id);
     TeacherDto createTeacher(TeacherRequest request);
     TeacherDto updateTeacher(long id, TeacherRequest request);

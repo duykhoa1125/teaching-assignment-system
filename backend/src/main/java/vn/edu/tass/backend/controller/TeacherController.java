@@ -28,8 +28,12 @@ public class TeacherController {
 
     @GetMapping
     public List<TeacherDto> retrieveAllTeacher(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllTeacher(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "school_id", required = false) Long schoolId,
+            @RequestParam(name = "teacher_code", required = false) String teacherCode,
+            @RequestParam(name = "q", required = false) String q) {
+        if (schoolId == null && teacherCode == null && q == null) return service.retrieveAllTeacher(limit, offset);
+        return service.searchTeacher(limit, offset, schoolId, teacherCode, q);
     }
 
     @GetMapping("/{id}")

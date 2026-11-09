@@ -29,12 +29,15 @@ class EntitySchemaTest {
         Map.entry(AssignmentRound.class, "assignment_round"),
         Map.entry(RoundSubjectScope.class, "round_subject_scope"),
         Map.entry(ClassSubjectApplicability.class, "class_subject_applicability"),
-        Map.entry(RequiredDemandComponent.class, "required_demand_component")
+        Map.entry(RequiredDemandComponent.class, "required_demand_component"),
+        Map.entry(TeacherWorkloadBasis.class, "teacher_workload_basis"),
+        Map.entry(TeachingHistory.class, "teaching_history"),
+        Map.entry(TeacherDuty.class, "teacher_duty")
     );
 
     @Test
     void jpaEntitiesMatchSqlColumns() throws Exception {
-        assertEquals(17, TABLES.size());
+        assertEquals(20, TABLES.size());
         String schema = Files.readString(Path.of("sql", "01_schema.sql"));
         for (var entry : TABLES.entrySet()) {
             Class<?> type = entry.getKey();

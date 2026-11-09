@@ -28,8 +28,12 @@ public class SchoolClassController {
 
     @GetMapping
     public List<SchoolClassDto> retrieveAllSchoolClass(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllSchoolClass(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "academic_year_id", required = false) Long academicYearId,
+            @RequestParam(name = "grade_id", required = false) Long gradeId,
+            @RequestParam(name = "status", required = false) String status) {
+        if (academicYearId == null && gradeId == null && status == null) return service.retrieveAllSchoolClass(limit, offset);
+        return service.searchSchoolClass(limit, offset, academicYearId, gradeId, status);
     }
 
     @GetMapping("/{id}")
