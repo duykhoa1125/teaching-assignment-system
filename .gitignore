@@ -97,9 +97,14 @@ $RECYCLE.BIN/
 .DS_Store
 ._*
 
-# Only publish the final report and diagrams from docs/
+# Publish the report source, setup guide and required assets from docs/
 /docs/*
+!/docs/README.md
+!/docs/report.tex
 !/docs/report.pdf
+!/docs/images/
+/docs/images/*
+!/docs/images/hcmut.png
 !/docs/diagrams/
 !/docs/diagrams/**
 
