@@ -26,11 +26,11 @@ public final class BenchmarkMain {
         Snapshot warm=paired(inputs.values().iterator().next(),0,seconds);
         for(SolverAlgorithm algorithm:algorithms)algorithm.solve(warm);
         Files.createDirectories(out.getParent());Files.createDirectory(out);
-        Map<String,Object> manifest=new LinkedHashMap<>();manifest.put("schemaVersion","tass-benchmark/1");manifest.put("algorithms",algorithms.stream().map(SolverAlgorithm::name).toList());manifest.put("repeats",repeats);manifest.put("totalSeconds",seconds);manifest.put("workers",1);manifest.put("warmupRunsPerAlgorithm",1);manifest.put("javaVersion",System.getProperty("java.runtime.version"));manifest.put("javaVendor",System.getProperty("java.vendor"));manifest.put("os",System.getProperty("os.name")+" "+System.getProperty("os.arch"));manifest.put("logicalProcessors",Runtime.getRuntime().availableProcessors());manifest.put("ortools",AssignmentSolver.ORTOOLS_VERSION);manifest.put("gaOptions",GeneticSolver.Options.defaults());manifest.put("ranking","Lexicographic: valid hard constraints, then lower coverageObjective, then lower softObjective. Time is reported separately.");manifest.put("timing","End-to-end solve() wall time, including preprocessing and independent validation, excluding JSON I/O and one warm-up per algorithm. Algorithms run sequentially with rotating order.");
+        Map<String,Object> manifest=new LinkedHashMap<>();manifest.put("schemaVersion","tass-benchmark/1");manifest.put("algorithms",algorithms.stream().map(SolverAlgorithm::name).toList());manifest.put("repeats",repeats);manifest.put("totalSeconds",seconds);manifest.put("workers",1);manifest.put("warmupRunsPerAlgorithm",1);manifest.put("javaVersion",System.getProperty("java.runtime.version"));manifest.put("javaVendor",System.getProperty("java.vendor"));manifest.put("os",System.getProperty("os.name")+" "+System.getProperty("os.arch"));manifest.put("logicalProcessors",Runtime.getRuntime().availableProcessors());manifest.put("ortools",AssignmentSolver.ORTOOLS_VERSION);manifest.put("gaOptions",GeneticSolver.Options.defaults());manifest.put("ranking","Lexicographic: hard feasibility, then (Z,L1,M,experience,change). softObjective is a legacy L1 alias, not a ranking. Time is reported separately.");manifest.put("timing","End-to-end solve() wall time, including preprocessing and independent validation, excluding JSON I/O and one warm-up per algorithm. Algorithms run sequentially with rotating order.");
         Map<String,String> hashes=new LinkedHashMap<>();inputs.forEach((name,s)->hashes.put(name,Json.hash(s)));manifest.put("sourceSnapshotHashes",hashes);
         Json.MAPPER.writerWithDefaultPrettyPrinter().writeValue(out.resolve("manifest.json").toFile(),manifest);
         List<Observation> observations=new ArrayList<>();List<String> rows=new ArrayList<>();
-        rows.add("dataset,trial,algorithm,inputHash,seed,budgetSeconds,valid,status,assigned,total,missingPeriods,coverageObjective,softObjective,loadDeviation,experiencePenalty,changes,completeGroups,wallSeconds,coverageProof,softProof,budgetExceeded");
+        rows.add("dataset,trial,algorithm,inputHash,seed,budgetSeconds,valid,status,assigned,total,missingPeriods,coverageObjective,softObjective,loadDeviation,experiencePenalty,changes,completeGroups,wallSeconds,coverageProof,softProof,budgetExceeded,maxLoadDeviation,objectiveVector");
         int datasetIndex=0;
         for(var entry:inputs.entrySet()) {
             String safe="dataset-"+(datasetIndex++)+"-"+entry.getKey().replaceAll("[^a-zA-Z0-9._-]","_");
@@ -47,7 +47,7 @@ public final class BenchmarkMain {
                     }
                     if(!hash.equals(r.snapshotHash()))throw new IllegalStateException("Algorithm result snapshot hash differs");
                     Path run=out.resolve(safe).resolve("trial-"+(trial+1)).resolve(algorithm.name());AlgorithmCli.write(run,s,r);
-                    Metrics m=r.metrics();rows.add(AlgorithmCli.csv(entry.getKey(),trial+1,algorithm.name(),hash,s.config().seed(),seconds,valid,r.status(),m==null?null:m.assignedComponents(),m==null?null:m.totalComponents(),m==null?null:m.missingPeriods(),m==null?null:m.coverageObjective(),m==null?null:m.softObjective(),m==null?null:m.loadDeviation(),m==null?null:m.experiencePenalty(),m==null?null:m.changes(),m==null?null:m.completeGroups(),wall,r.coverageOptimalityProven(),r.softOptimalityProven(),wall>seconds));
+                    Metrics m=r.metrics();rows.add(AlgorithmCli.csv(entry.getKey(),trial+1,algorithm.name(),hash,s.config().seed(),seconds,valid,r.status(),m==null?null:m.assignedComponents(),m==null?null:m.totalComponents(),m==null?null:m.missingPeriods(),m==null?null:m.coverageObjective(),m==null?null:m.softObjective(),m==null?null:m.loadDeviation(),m==null?null:m.experiencePenalty(),m==null?null:m.changes(),m==null?null:m.completeGroups(),wall,r.coverageOptimalityProven(),r.softOptimalityProven(),wall>seconds,m==null?null:m.maxLoadDeviation(),m==null?null:m.objectiveVector()));
                     observations.add(new Observation(entry.getKey(),trial+1,algorithm.name(),hash,s.config().seed(),wall,valid,r));
                 }
             }
@@ -57,18 +57,26 @@ public final class BenchmarkMain {
         System.out.println("Comparison saved: "+out);
     }
     private static Snapshot paired(Snapshot source,int trial,double seconds) {
-        Config c=source.config();Config cfg=new Config(c.coverageMode(),c.deviationBasis(),c.preservePolicy(),c.loadWeight(),c.experienceWeight(),c.changeWeight(),seconds,seconds*0.45,seconds*0.45,1,Math.floorMod(c.seed()+trial,Integer.MAX_VALUE),c.decisionSource()+"; paired benchmark budget",c.demoAssumptions());
+        Config c=source.config();Config cfg=new Config(c.coverageMode(),c.deviationBasis(),c.preservePolicy(),c.loadWeight(),c.experienceWeight(),c.changeWeight(),seconds,seconds*0.45,seconds*0.45,1,Math.floorMod(c.seed()+trial,Integer.MAX_VALUE),c.decisionSource()+"; paired benchmark budget",c.demoAssumptions(),rescaleBudgets(c,seconds),c.gradeWeights());
         Identity i=source.identity();Identity id=new Identity(i.schoolId(),i.semesterId(),i.roundId(),i.planId(),i.versionId(),i.baseRevision(),i.snapshotId()+"-benchmark-"+(trial+1),i.sourceRevisionToken(),i.ruleSetVersion(),i.optimizationConfigVersion()+"-BENCHMARK");
-        return new Snapshot(source.schemaVersion(),id,source.period(),source.normalization(),cfg,source.scopes(),source.demands(),source.teachers(),source.previousAssignments(),source.previousSource(),source.prechecks(),source.hardCheckInventorySource());
+        return new Snapshot(source.schemaVersion(),id,source.period(),source.normalization(),cfg,source.scopes(),source.demands(),source.teachers(),source.previousAssignments(),source.previousSource(),source.prechecks(),source.hardCheckInventorySource(),source.lockedAssignments());
+    }
+    private static Map<String,Double> rescaleBudgets(Config c,double seconds) {
+        Map<String,Double> result=new LinkedHashMap<>();
+        for(String stage:AssignmentSolver.STAGES)result.put(stage,c.budget(stage)*seconds/c.totalSeconds());
+        return result;
+    }
+    private static int compareVectors(List<Long> a,List<Long> b) {
+        for(int k=0;k<5;k++){int compared=Long.compare(a.get(k),b.get(k));if(compared!=0)return compared;}return 0;
     }
     private static void writeSummary(Path out,List<Observation> rows) throws Exception {
-        List<String> csv=new ArrayList<>();csv.add("dataset,algorithm,runs,validRuns,fullCoverageRuns,bestCoverage,worstCoverage,medianCoverage,minSoftAtBestCoverage,maxSoftAtBestCoverage,medianWallSeconds,p95WallSeconds,coverageProofRuns");
+        List<String> csv=new ArrayList<>();csv.add("dataset,algorithm,runs,validRuns,fullCoverageRuns,bestCoverage,worstCoverage,medianCoverage,minSoftAtBestCoverage,maxSoftAtBestCoverage,medianWallSeconds,p95WallSeconds,coverageProofRuns,bestObjectiveVector");
         Map<String,List<Observation>> groups=new LinkedHashMap<>();for(Observation row:rows)groups.computeIfAbsent(row.dataset()+"\u001f"+row.algorithm(),ignored->new ArrayList<>()).add(row);
         for(List<Observation> group:groups.values()) {
             Observation first=group.get(0);var valid=group.stream().filter(Observation::valid).toList();
             long best=valid.stream().mapToLong(v->v.result().metrics().coverageObjective()).min().orElse(-1),worst=valid.stream().mapToLong(v->v.result().metrics().coverageObjective()).max().orElse(-1);
             var atBest=valid.stream().filter(v->v.result().metrics().coverageObjective()==best).toList();
-            csv.add(AlgorithmCli.csv(first.dataset(),first.algorithm(),group.size(),valid.size(),valid.stream().filter(v->v.result().metrics().unassignedComponents()==0).count(),best,worst,percentile(valid.stream().mapToDouble(v->v.result().metrics().coverageObjective()).toArray(),0.5),atBest.stream().mapToLong(v->v.result().metrics().softObjective()).min().orElse(-1),atBest.stream().mapToLong(v->v.result().metrics().softObjective()).max().orElse(-1),percentile(group.stream().mapToDouble(Observation::wallSeconds).toArray(),0.5),percentile(group.stream().mapToDouble(Observation::wallSeconds).toArray(),0.95),group.stream().filter(v->v.result().coverageOptimalityProven()).count()));
+            csv.add(AlgorithmCli.csv(first.dataset(),first.algorithm(),group.size(),valid.size(),valid.stream().filter(v->v.result().metrics().unassignedComponents()==0).count(),best,worst,percentile(valid.stream().mapToDouble(v->v.result().metrics().coverageObjective()).toArray(),0.5),atBest.stream().mapToLong(v->v.result().metrics().softObjective()).min().orElse(-1),atBest.stream().mapToLong(v->v.result().metrics().softObjective()).max().orElse(-1),percentile(group.stream().mapToDouble(Observation::wallSeconds).toArray(),0.5),percentile(group.stream().mapToDouble(Observation::wallSeconds).toArray(),0.95),group.stream().filter(v->v.result().coverageOptimalityProven()).count(),valid.stream().map(v->v.result().metrics().objectiveVector()).min(BenchmarkMain::compareVectors).orElse(null)));
         }
         Files.write(out.resolve("summary.csv"),csv,StandardCharsets.UTF_8);
     }

@@ -1,5 +1,7 @@
 # Hợp đồng solver và tích hợp
 
+> Hợp đồng hiện hành ngày 09/11/2026 là [tass-solver/2 và mô hình năm bước](CURRENT_MODEL.md). Nội dung tass-solver/1/hai pha dưới đây là hồ sơ lịch sử; dùng tài liệu mới khi dựng adapter backend. Các nguyên tắc về quyền, snapshot bất biến và giao dịch CAS tiếp tục áp dụng.
+
 `Contract.java` định nghĩa schema JSON `tass-solver/1`. Đây là DTO mới của module, không phải từ điển database. JSON từ chối trường không biết, tên key trùng và null cho primitive. Các collection được sao chép bất biến. `input-snapshot.json` phải được giữ cùng `result.json` để đọc tên hiển thị, cấu hình, nguồn và đơn vị; hash SHA-256 tính từ serialization chuẩn hóa key/order, không phải hash byte của tệp JSON có thụt dòng.
 
 ## Input

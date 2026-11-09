@@ -12,7 +12,7 @@ public final class HeuristicResults {
         if(cancel.isCancelled())return failure(input,"CANCELLED",List.of(),algorithm,start);
         SolutionValidator validator=new SolutionValidator();var assignment=problem.toAssignments(candidate);
         var evaluation=validator.evaluate(input,assignment,false);
-        if(evaluation.metrics().coverageObjective()!=candidate.score().coverage() || evaluation.metrics().softObjective()!=candidate.score().soft())
+        if(!evaluation.metrics().objectiveVector().equals(candidate.score().vector()))
             throw new IllegalStateException("Heuristic score differs from shared independent validator");
         List<String> warnings=new ArrayList<>();warnings.add("Heuristic candidate: no proof of global optimality or full-coverage impossibility.");
         if(input.config().demoAssumptions())warnings.add("DEMO ASSUMPTIONS: "+input.config().decisionSource());
@@ -27,7 +27,7 @@ public final class HeuristicResults {
         double elapsed=seconds(start);return new Result(status,input==null?null:input.identity(),input==null?null:Json.hash(input),errors,List.of(),List.of(),List.of(),null,List.of(),null,false,false,false,List.of(),elapsed,input!=null && input.config()!=null && elapsed>input.config().totalSeconds(),algorithm+"/1.0",0,0);
     }
     public static Result error(Snapshot input,RuntimeException error,String algorithm,long start) {
-        if(error instanceof InputValidator.InvalidInput invalid)return failure(input,"INVALID_INPUT",invalid.issues(),algorithm,start);
+        if(error instanceof InputValidator.InvalidInput invalid)return failure(input,invalid.issues().stream().anyMatch(i->i.path().equals("LOCK_CONFLICT"))?"LOCK_CONFLICT":"INVALID_INPUT",invalid.issues(),algorithm,start);
         if(error instanceof HeuristicProblem.BaselineViolation)return failure(input,"INFEASIBLE",List.of(new Issue("BASELINE_HARD_VIOLATION","hardChecks",error.getMessage())),algorithm,start);
         return failure(input,"ERROR",List.of(new Issue("RUN_ERROR","heuristic",error.toString())),algorithm,start);
     }

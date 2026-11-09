@@ -20,17 +20,20 @@ class ExhaustiveOracleTest {
                 set(t,"/teachers/"+i+"/workload/base",3);set(t,"/teachers/"+i+"/workload/fixedOutside",fixed[i]);set(t,"/teachers/"+i+"/hardChecks/0/fixed",fixed[i]);set(t,"/teachers/"+i+"/hardChecks/0/limit",caps[i]);set(t,"/teachers/"+i+"/hardChecks/0/coefficients",coefficients);set(t,"/teachers/"+i+"/experiencePenalties",penaltyMap);
             }
             set(t,"/config/loadWeight",2);set(t,"/config/experienceWeight",3);
-            long bestCoverage=Long.MAX_VALUE,bestSoft=Long.MAX_VALUE;
+            long[] best=null;
             // 0=unassigned, 1=teacher 0, 2=teacher 1. No CP-SAT/production validator used here.
             for(int code=0;code<27;code++) {
                 int value=code,missing=0,exp=0;int[] load=fixed.clone();
                 for(int j=0;j<3;j++){int choice=value%3;value/=3;if(choice==0)missing++;else{load[choice-1]+=hours[j];exp+=penalties[choice-1][j];}}
                 if(load[0]>caps[0] || load[1]>caps[1])continue;
-                long soft=100L*(2*(Math.abs(load[0]-3)+Math.abs(load[1]-3))+3*exp);
-                if(missing<bestCoverage || missing==bestCoverage && soft<bestSoft){bestCoverage=missing;bestSoft=soft;}
+                long d0=Math.abs(load[0]-3),d1=Math.abs(load[1]-3);
+                long[] vector={missing,100*(d0+d1),100*Math.max(d0,d1),exp,0};
+                boolean smaller=best==null;
+                if(best!=null)for(int k=0;k<5;k++){if(vector[k]!=best[k]){smaller=vector[k]<best[k];break;}}
+                if(smaller)best=vector;
             }
             var result=solver.solve(read(t));assertEquals("OPTIMAL",result.status(),"sample="+sample+" "+result.errors());
-            assertEquals(bestCoverage,result.metrics().coverageObjective(),"sample="+sample);assertEquals(bestSoft,result.metrics().softObjective(),"sample="+sample);
+            assertEquals(Arrays.stream(best).boxed().toList(),result.metrics().objectiveVector(),"sample="+sample);
         }
     }
 }
