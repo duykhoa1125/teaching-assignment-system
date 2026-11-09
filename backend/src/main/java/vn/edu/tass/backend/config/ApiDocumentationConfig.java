@@ -53,8 +53,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và API nghiệp vụ phase 2 tiếp theo. "
+            .description("20 nhóm CRUD dữ liệu đầu vào và hồ sơ tổng hợp giáo viên theo học kỳ. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và các API nghiệp vụ phase 2 tiếp theo. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -78,6 +78,20 @@ public class ApiDocumentationConfig {
 
     private static void documentPath(String path, PathItem item, Map<String, Map<String, Object>> examples) {
         if (!path.startsWith("/api/")) return;
+        if (path.equals("/api/teachers/{id}/profile")) {
+            Operation operation = item.getGet();
+            operation.setTags(List.of("Hồ sơ giáo viên"));
+            operation.setSummary("Xem hồ sơ tổng hợp giáo viên theo học kỳ");
+            operation.setDescription("Trả công tác, chuyên môn có hiệu lực giao với học kỳ, kinh nghiệm mới nhất theo môn/khối "
+                + "tại ngày kết thúc học kỳ, lịch sử thực dạy đã kết thúc trước ngày đó, cơ sở định mức và nhiệm vụ thuộc học kỳ. "
+                + "Chỉ chấp nhận học kỳ thuộc cùng trường với giáo viên; danh sách rỗng nếu chưa có dữ liệu.");
+            documentParameters(operation);
+            operation.getParameters().stream().filter(p -> "semester_id".equals(p.getName()))
+                .forEach(p -> p.setDescription("ID học kỳ cần xem; bắt buộc và phải thuộc trường của giáo viên."));
+            documentResponses(operation, PathItem.HttpMethod.GET, true);
+            operation.getResponses().get("200").setDescription("Hồ sơ tổng hợp giáo viên trong học kỳ.");
+            return;
+        }
         String resource = path.substring("/api/".length()).split("/")[0];
         String label = RESOURCES.get(resource);
         if (label == null) return;

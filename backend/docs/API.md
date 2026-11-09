@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào
+# TASS Backend API — dữ liệu đầu vào và hồ sơ giáo viên
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD, gồm 40 URL và 100 tổ hợp method/URL. Các API đăng nhập, hồ sơ tổng hợp, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1 và API hồ sơ giáo viên của mục 2, gồm 41 URL và 101 tổ hợp method/URL. Các API đăng nhập, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -11,6 +11,32 @@ Chạy backend rồi mở:
 - OpenAPI YAML: `http://127.0.0.1:8080/v3/api-docs.yaml`
 
 Swagger UI có schema request/response, ví dụ body và mã phản hồi cho từng endpoint. Các ví dụ body cũng nằm trong `src/main/resources/api-examples.json`.
+
+## Hồ sơ giáo viên theo học kỳ
+
+`GET /api/teachers/{id}/profile?semester_id={semester_id}` trả một object gồm `teacher`, `semester` và sáu danh sách: `employments` (công tác), `qualifications` (chuyên môn), `experiences` (kinh nghiệm), `teaching_histories` (lịch sử thực dạy), `workload_bases` (cơ sở định mức) và `duties` (nhiệm vụ). Mỗi phần tử trong danh sách dùng cùng cấu trúc DTO với API CRUD của tài nguyên tương ứng. Danh sách chưa có dữ liệu trả `[]`; trạng thái xác nhận của từng bản ghi được giữ nguyên, kể cả `PENDING` và `REJECTED`.
+
+`semester_id` là tham số bắt buộc, phải là ID dương của học kỳ thuộc trường của giáo viên. API trả `400` nếu thiếu/sai tham số hoặc học kỳ thuộc trường khác; trả `404` nếu không tìm thấy giáo viên hoặc học kỳ.
+
+- Công tác, cơ sở định mức và nhiệm vụ: lấy bản ghi của giáo viên **đúng học kỳ được chọn**, có khoảng hiệu lực giao với học kỳ (tính cả hai ngày biên).
+- Chuyên môn: lấy bản ghi của giáo viên có khoảng hiệu lực giao với học kỳ, kể cả bản ghi bắt đầu trước học kỳ hoặc có `valid_to` rỗng.
+- Kinh nghiệm: mỗi cặp `subject_id`/`grade_id` lấy bản ghi có `as_of_date` mới nhất không sau ngày kết thúc học kỳ. API không cộng dồn số năm giữa các bản ghi.
+- Lịch sử thực dạy: lấy cả các học kỳ trước, với `taught_to` không sau ngày kết thúc học kỳ được chọn; sắp từ lần dạy gần nhất đến cũ nhất.
+
+Ví dụ response rút gọn:
+
+```json
+{
+  "teacher": {"id": 12, "school_id": 1, "teacher_code": "GV012", "full_name": "Nguyễn Văn A"},
+  "semester": {"id": 3, "academic_year_id": 2, "semester_no": 1, "starts_on": "2026-08-01", "ends_on": "2026-12-31"},
+  "employments": [{"id": 8, "teacher_id": 12, "department_id": 2, "semester_id": 3, "employment_status": "TEACHING", "position_code": "TEACHER", "valid_from": "2026-08-01", "valid_to": null}],
+  "qualifications": [{"id": 21, "teacher_id": 12, "subject_id": 4, "education_level_id": 2, "verification_status": "VERIFIED", "verified_by": 1, "verified_at": "2026-08-02T09:00:00+07:00", "evidence_ref": "hoso:21", "valid_from": "2026-08-01", "valid_to": null}],
+  "experiences": [{"id": 15, "teacher_id": 12, "subject_id": 4, "grade_id": 10, "experience_status": "HAS_EXPERIENCE", "years_of_experience": 3, "as_of_date": "2026-08-01", "evidence_ref": "hoso:15", "source_import_id": null, "verified_by": 1, "verified_at": "2026-08-02T09:00:00+07:00", "recorded_by": 1, "recorded_at": "2026-08-02T09:00:00+07:00"}],
+  "teaching_histories": [],
+  "workload_bases": [],
+  "duties": []
+}
+```
 
 ## Quy ước chung
 
