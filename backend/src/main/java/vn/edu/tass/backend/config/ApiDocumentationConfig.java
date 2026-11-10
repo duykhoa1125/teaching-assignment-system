@@ -53,8 +53,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào và hồ sơ tổng hợp giáo viên theo học kỳ. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và các API nghiệp vụ phase 2 tiếp theo. "
+            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên và kiểm tra chuẩn bị đợt. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và các API phương án/solver. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -90,6 +90,53 @@ public class ApiDocumentationConfig {
                 .forEach(p -> p.setDescription("ID học kỳ cần xem; bắt buộc và phải thuộc trường của giáo viên."));
             documentResponses(operation, PathItem.HttpMethod.GET, true);
             operation.getResponses().get("200").setDescription("Hồ sơ tổng hợp giáo viên trong học kỳ.");
+            return;
+        }
+        if (path.equals("/api/assignment-rounds/{id}/readiness")) {
+            Operation operation = item.getGet();
+            operation.setTags(List.of("Chuẩn bị đợt"));
+            operation.setSummary("Kiểm tra dữ liệu sẵn sàng cho đợt phân công");
+            operation.setDescription("Tổng hợp số cặp lớp–môn theo phạm vi, lỗi thiếu dữ liệu, thành phần chưa đủ và cảnh báo từ schema sống. "
+                + "Nhu cầu chưa có giáo viên đủ điều kiện là cảnh báo vì BR-15 cho phép DRAFT còn nhu cầu chưa gán. "
+                + "can_run_solver chỉ phản ánh điều kiện dữ liệu cơ bản tại source_revision_token trả về; "
+                + "lượt chạy sau này vẫn phải đối chiếu token, phiên bản và quy tắc cấu hình riêng.");
+            documentParameters(operation);
+            documentResponses(operation, PathItem.HttpMethod.GET, true);
+            ApiResponse success = operation.getResponses().get("200");
+            success.setDescription("Báo cáo sẵn sàng của đợt.");
+            Content content = success.getContent();
+            if (content == null) {
+                content = new Content();
+                success.setContent(content);
+            }
+            MediaType json = content.get("application/json");
+            if (json == null) {
+                json = new MediaType().schema(new Schema<>().$ref("#/components/schemas/RoundReadinessDto"));
+                content.addMediaType("application/json", json);
+            }
+            json.setExample(Map.of(
+                    "round_id", 2,
+                    "semester_id", 1,
+                    "source_revision_token", "token-hien-tai",
+                    "can_run_solver", false,
+                    "scope_summaries", List.of(Map.of(
+                        "scope_id", 6,
+                        "grade_id", 1,
+                        "subject_id", 2,
+                        "confirmed", false,
+                        "class_count", 3,
+                        "applicable_count", 2,
+                        "not_applicable_count", 0,
+                        "undetermined_count", 1,
+                        "missing_applicability_count", 0,
+                        "applicable_missing_demand_count", 1)),
+                    "missing_data", List.of(),
+                    "incomplete_components", List.of(Map.of(
+                        "code", "ROUND_SCOPE_UNCONFIRMED",
+                        "resource_type", "assignment_round",
+                        "resource_id", 2,
+                        "message", "Chưa xác nhận phạm vi đợt.")),
+                    "warnings", List.of()));
             return;
         }
         String resource = path.substring("/api/".length()).split("/")[0];
