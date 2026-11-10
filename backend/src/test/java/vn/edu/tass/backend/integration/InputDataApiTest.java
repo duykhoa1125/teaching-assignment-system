@@ -39,7 +39,7 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(41, spec.path("paths").size());
+        assertEquals(42, spec.path("paths").size());
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",
@@ -79,12 +79,33 @@ class InputDataApiTest {
             .path("properties").has("teaching_histories"));
         assertTrue(spec.path("components").path("schemas").path("TeacherProfileDto")
             .path("properties").has("workload_bases"));
+        JsonNode readiness = spec.path("paths").path("/api/assignment-rounds/{id}/readiness").path("get");
+        assertTrue(readiness.path("responses").has("200"));
+        assertTrue(readiness.path("responses").has("400"));
+        assertTrue(readiness.path("responses").has("404"));
+        assertEquals("ROUND_SCOPE_UNCONFIRMED", readiness.path("responses").path("200")
+            .path("content").path("application/json").path("example")
+            .path("incomplete_components").get(0).path("code").asText());
+        assertTrue(spec.path("components").path("schemas").path("RoundReadinessDto")
+            .path("properties").has("can_run_solver"));
+        assertTrue(spec.path("components").path("schemas").path("RoundReadinessDto")
+            .path("properties").has("scope_summaries"));
+        assertTrue(spec.path("components").path("schemas").path("ReadinessScopeDto")
+            .path("properties").has("applicable_missing_demand_count"));
         assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
             .path("properties").has("code"));
         assertTrue(spec.path("paths").path("/api/departments").path("get")
             .path("parameters").toString().contains("school_id"));
         mvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/v3/api-docs.yaml")).andExpect(status().isOk());
+    }
+
+    @Test
+    void readinessRejectsInvalidRoundIdAndReportsMissingRound() throws Exception {
+        mvc.perform(get("/api/assignment-rounds/0/readiness"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/assignment-rounds/999999/readiness"))
+            .andExpect(status().isNotFound());
     }
 
     @Test

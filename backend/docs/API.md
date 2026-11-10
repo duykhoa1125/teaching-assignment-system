@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào và hồ sơ giáo viên
+# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên và chuẩn bị đợt
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1 và API hồ sơ giáo viên của mục 2, gồm 41 URL và 101 tổ hợp method/URL. Các API đăng nhập, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3, gồm 42 URL và 102 tổ hợp method/URL. Các API đăng nhập, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -37,6 +37,44 @@ Ví dụ response rút gọn:
   "duties": []
 }
 ```
+
+## Kiểm tra chuẩn bị đợt phân công
+
+`GET /api/assignment-rounds/{id}/readiness` trả trạng thái dữ liệu nguồn hiện tại của đợt. `id` phải là số nguyên dương; đợt không tồn tại trả `404`. Response có `source_revision_token` để client đối chiếu trước khi tạo phương án hoặc lượt chạy sau này. API này chỉ đọc, không tạo snapshot, plan hay solver run.
+
+| Trường | Ý nghĩa |
+| --- | --- |
+| `scope_summaries` | Từng phạm vi môn/khối của đợt: `scope_id`, `grade_id`, `subject_id`, `confirmed`, `class_count`, `applicable_count`, `not_applicable_count`, `undetermined_count`, `missing_applicability_count` và `applicable_missing_demand_count`. Các số đếm là số cặp lớp–môn; `0` là số lượng thực tế, không thay cho dữ liệu chưa biết. |
+| `missing_data` | Thiếu cấu hình tối ưu đã xác nhận, bộ quy tắc, giáo viên, kỳ tính tải hoặc định mức/tải tuần đã xác nhận; gồm cả dữ liệu tải không hợp lệ. |
+| `incomplete_components` | Phạm vi, trạng thái áp dụng môn và tập thành phần nhu cầu chưa đầy đủ. Các mã gốc lấy từ view PostgreSQL `v_tass_preparation_issues`. |
+| `warnings` | Không có giáo viên đủ điều kiện cho một nhu cầu, thiếu lịch sử thực dạy đã xác nhận hoặc bối cảnh trường dùng cho phần mở rộng. Nhu cầu không có ứng viên có thể còn chưa gán trong DRAFT theo BR-15, nên không chặn việc chạy solver. |
+| `can_run_solver` | `true` khi hai danh sách lỗi chặn chạy đều rỗng tại token hiện tại. Đây là đánh giá dữ liệu đầu vào; API chạy solver chưa được triển khai và lượt chạy thực tế phải kiểm tra lại token, revision, phiên bản và cấu hình đã chọn. |
+
+Mỗi phần tử lỗi gồm `code`, `resource_type`, `resource_id`, `message`. `resource_id` có thể `null` cho lỗi chung như thiếu cấu hình. Một giáo viên có thể có nhiều lỗi tải, mỗi lỗi ghi rõ ID kỳ tính tải trong `message`. Kiểm tra kỳ tính tải yêu cầu phủ hết học kỳ, không có khoảng trống hoặc chồng lấn; tải ngoài phạm vi và cơ sở định mức chỉ bắt buộc cho giáo viên có giai đoạn công tác `TEACHING` giao với kỳ tính tải, còn các thành phần quy đổi đang tham gia tải phải được xác nhận. Điều kiện giáo viên đủ chuyên môn sử dụng hàm `tass_teacher_eligible` của schema PostgreSQL.
+
+Ví dụ response rút gọn cho đợt chưa hoàn tất:
+
+```json
+{
+  "round_id": 2,
+  "semester_id": 1,
+  "source_revision_token": "token-hien-tai",
+  "can_run_solver": false,
+  "scope_summaries": [
+    {"scope_id": 6, "grade_id": 1, "subject_id": 2, "confirmed": false,
+     "class_count": 3, "applicable_count": 2, "not_applicable_count": 0,
+     "undetermined_count": 1, "missing_applicability_count": 0,
+     "applicable_missing_demand_count": 1}
+  ],
+  "missing_data": [],
+  "incomplete_components": [
+    {"code": "ROUND_SCOPE_UNCONFIRMED", "resource_type": "assignment_round", "resource_id": 2, "message": "Chưa xác nhận phạm vi đợt."}
+  ],
+  "warnings": []
+}
+```
+
+Danh sách có thể chứa nhiều lỗi của cùng một lớp hoặc nhu cầu. Sửa dữ liệu nguồn sẽ làm PostgreSQL đổi `source_revision_token`; kết quả readiness cũ không còn đại diện cho dữ liệu mới.
 
 ## Quy ước chung
 

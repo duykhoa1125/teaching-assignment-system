@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ import org.springframework.transaction.annotation.Transactional;
 @AutoConfigureMockMvc
 class PostgresCrudIntegrationTest {
     @Autowired MockMvc mvc;
+    @Autowired JdbcTemplate jdbc;
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
     private static final List<String> RESOURCES = List.of(
         "schools", "academic-years", "semesters", "education-levels", "grades", "classes",
@@ -46,6 +49,73 @@ class PostgresCrudIntegrationTest {
         "class-subject-applicabilities", "required-demand-components",
         "teacher-workload-bases", "teaching-histories", "teacher-duties"
     );
+
+    @Test
+    @Transactional
+    void readinessReportsSeededPreparationAndNewMissingWeeklyInput() throws Exception {
+        JsonNode ready = readiness(1);
+        assertTrue(ready.path("can_run_solver").asBoolean());
+        assertTrue(ready.path("source_revision_token").isTextual());
+        assertEquals(0, ready.path("missing_data").size());
+        assertEquals(0, ready.path("incomplete_components").size());
+        assertTrue(ready.path("scope_summaries").isArray());
+        assertTrue(ready.path("scope_summaries").size() > 0);
+        assertEquals(3, ready.path("scope_summaries").get(0).path("class_count").asInt());
+        assertEquals(2, ready.path("scope_summaries").get(0).path("applicable_count").asInt());
+        assertEquals(1, ready.path("scope_summaries").get(0).path("not_applicable_count").asInt());
+        assertTrue(ready.path("scope_summaries").get(0).path("confirmed").asBoolean());
+
+        JsonNode preparing = readiness(2);
+        assertTrue(!preparing.path("can_run_solver").asBoolean());
+        assertTrue(hasIssue(preparing.path("incomplete_components"), "ROUND_SCOPE_UNCONFIRMED"));
+        assertTrue(hasIssue(preparing.path("incomplete_components"), "MISSING_OR_INVALID_REQUIRED_DEMAND"));
+        assertEquals(1, preparing.path("scope_summaries").get(0)
+            .path("applicable_missing_demand_count").asInt());
+
+        jdbc.update("DELETE FROM teacher_period_workload WHERE teacher_id = 5 AND calculation_period_id = 2");
+        JsonNode incomplete = readiness(1);
+        assertTrue(!incomplete.path("can_run_solver").asBoolean());
+        assertTrue(hasIssue(incomplete.path("missing_data"), "MISSING_VERIFIED_WEEKLY_INPUT"));
+        assertNotEquals(ready.path("source_revision_token").asText(),
+            incomplete.path("source_revision_token").asText());
+    }
+
+    @Test
+    @Transactional
+    void readinessAllowsPartialDraftWhenARequiredDemandHasNoEligibleTeacher() throws Exception {
+        jdbc.update("DELETE FROM teaching_qualification WHERE id = 6");
+        JsonNode report = readiness(1);
+        assertTrue(report.path("can_run_solver").asBoolean());
+        assertTrue(hasIssue(report.path("warnings"), "NO_ELIGIBLE_TEACHER"));
+        assertEquals(0, report.path("missing_data").size());
+    }
+
+    @Test
+    @Transactional
+    void readinessRequiresConfirmedConfigurationButNotFullTermLeaveWorkload() throws Exception {
+        jdbc.update("DELETE FROM teacher_period_workload WHERE teacher_id = 4");
+        jdbc.update("DELETE FROM teacher_workload_basis WHERE teacher_id = 4 AND semester_id = 1");
+        JsonNode withLeave = readiness(1);
+        assertTrue(withLeave.path("can_run_solver").asBoolean());
+
+        jdbc.update("UPDATE optimization_config SET confirmed_by = NULL, confirmed_at = NULL WHERE id = 1");
+        JsonNode withoutConfirmedConfig = readiness(1);
+        assertTrue(!withoutConfirmedConfig.path("can_run_solver").asBoolean());
+        assertTrue(hasIssue(withoutConfirmedConfig.path("missing_data"), "MISSING_OPTIMIZATION_CONFIG"));
+    }
+
+    private JsonNode readiness(long roundId) throws Exception {
+        String body = mvc.perform(get("/api/assignment-rounds/" + roundId + "/readiness"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return JSON.readTree(body);
+    }
+
+    private static boolean hasIssue(JsonNode issues, String code) {
+        for (JsonNode issue : issues) {
+            if (code.equals(issue.path("code").asText())) return true;
+        }
+        return false;
+    }
 
     @Test
     @Transactional
