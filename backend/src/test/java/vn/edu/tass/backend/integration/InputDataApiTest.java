@@ -39,7 +39,7 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(40, spec.path("paths").size());
+        assertEquals(41, spec.path("paths").size());
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",
@@ -65,6 +65,20 @@ class InputDataApiTest {
         assertEquals("STANDARD", spec.path("components").path("schemas")
             .path("TeachingDemandRequest").path("properties").path("demand_type")
             .path("enum").get(0).asText());
+        assertTrue(spec.path("paths").path("/api/teachers/{id}/profile").has("get"));
+        JsonNode profile = spec.path("paths").path("/api/teachers/{id}/profile").path("get");
+        assertTrue(profile.path("responses").has("404"));
+        boolean requiredSemester = false;
+        for (JsonNode parameter : profile.path("parameters")) {
+            if ("semester_id".equals(parameter.path("name").asText())) {
+                requiredSemester = parameter.path("required").asBoolean();
+            }
+        }
+        assertTrue(requiredSemester);
+        assertTrue(spec.path("components").path("schemas").path("TeacherProfileDto")
+            .path("properties").has("teaching_histories"));
+        assertTrue(spec.path("components").path("schemas").path("TeacherProfileDto")
+            .path("properties").has("workload_bases"));
         assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
             .path("properties").has("code"));
         assertTrue(spec.path("paths").path("/api/departments").path("get")
