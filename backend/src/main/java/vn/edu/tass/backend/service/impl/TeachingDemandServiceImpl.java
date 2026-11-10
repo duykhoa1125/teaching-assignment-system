@@ -2,6 +2,8 @@ package vn.edu.tass.backend.service.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingDemand;
@@ -12,6 +14,7 @@ import vn.edu.tass.backend.payload.request.TeachingDemandRequest;
 import vn.edu.tass.backend.repository.TeachingDemandRepository;
 import vn.edu.tass.backend.service.TeachingDemandService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -29,6 +32,24 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     public List<TeachingDemandDto> retrieveAllTeachingDemand(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeachingDemandDto> searchTeachingDemand(int limit, int offset, Long semesterId, Long classId, Long subjectId, String demandType, String status, LocalDate asOf) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(semesterId, "semester_id");
+        InputSpecifications.requirePositive(classId, "class_id");
+        InputSpecifications.requirePositive(subjectId, "subject_id");
+        Specification<vn.edu.tass.backend.entity.TeachingDemand> filters = Specification.allOf(
+            InputSpecifications.equal("semesterId", semesterId),
+            InputSpecifications.equal("classId", classId),
+            InputSpecifications.equal("subjectId", subjectId),
+            InputSpecifications.equal("demandType", InputSpecifications.optionalText(demandType, "demand_type")),
+            InputSpecifications.equal("status", InputSpecifications.optionalText(status, "status")),
+            InputSpecifications.activeOn("validFrom", "validTo", asOf));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
     }
 

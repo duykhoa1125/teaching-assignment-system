@@ -41,7 +41,8 @@ class PostgresCrudIntegrationTest {
         "schools", "academic-years", "semesters", "education-levels", "grades", "classes",
         "subjects", "teachers", "teaching-demands", "departments", "teacher-employments",
         "teaching-qualifications", "teaching-experiences", "assignment-rounds", "round-subject-scopes",
-        "class-subject-applicabilities", "required-demand-components"
+        "class-subject-applicabilities", "required-demand-components",
+        "teacher-workload-bases", "teaching-histories", "teacher-duties"
     );
 
     @ParameterizedTest(name = "{0}")
@@ -169,6 +170,24 @@ class PostgresCrudIntegrationTest {
                 yield Map.of("applicability_id", applicabilityId, "demand_type", "STANDARD",
                     "valid_from", "2026-09-01", "valid_to", "2026-12-31");
             }
+            case "teacher-workload-bases" -> {
+                long teacherId = ((Number) value(create("teachers", Map.of("school_id", 1,
+                    "teacher_code", "TEST_BASIS_TEACHER", "full_name", "Test Basis Teacher")), "id")).longValue();
+                yield Map.of("teacher_id", teacherId, "semester_id", 1, "education_level_id", 1,
+                    "position_code", "TEACHER", "base_periods_per_week", 17,
+                    "unit", "PERIOD_PER_WEEK", "valid_from", "2026-09-01",
+                    "valid_to", "2026-12-31", "profile_ref", "test:basis", "verification_status", "PENDING");
+            }
+            case "teaching-histories" -> Map.ofEntries(
+                Map.entry("teacher_id", 1), Map.entry("academic_year_id", 1),
+                Map.entry("semester_id", 1), Map.entry("class_id", 1), Map.entry("subject_id", 1),
+                Map.entry("taught_from", "2026-09-01"), Map.entry("taught_to", "2026-12-31"),
+                Map.entry("source_kind", "EXTERNAL_RECORD"), Map.entry("evidence_ref", "test:history"),
+                Map.entry("verification_status", "PENDING"), Map.entry("recorded_by", 1));
+            case "teacher-duties" -> Map.of(
+                "teacher_id", 2, "semester_id", 1, "rule_definition_id", 1,
+                "duty_type", "HOMEROOM", "class_id", 2, "scope_description", "Test duty",
+                "valid_from", "2026-09-01", "verification_status", "PENDING", "payment_status", "UNPAID");
             default -> throw new IllegalArgumentException(resource);
         };
     }
@@ -188,6 +207,9 @@ class PostgresCrudIntegrationTest {
             case "round-subject-scopes" -> Map.entry("confirmed_by", 1);
             case "class-subject-applicabilities" -> Map.entry("reason", "Updated reason");
             case "required-demand-components" -> Map.entry("valid_from", "2026-10-01");
+            case "teacher-workload-bases" -> Map.entry("profile_ref", "test:basis:updated");
+            case "teaching-histories" -> Map.entry("evidence_ref", "test:history:updated");
+            case "teacher-duties" -> Map.entry("scope_description", "Updated duty");
             default -> throw new IllegalArgumentException(resource);
         };
     }

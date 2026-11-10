@@ -5,6 +5,9 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Set;
 import vn.edu.tass.backend.exception.BadRequestException;
+import vn.edu.tass.backend.payload.request.TeacherDutyRequest;
+import vn.edu.tass.backend.payload.request.TeacherWorkloadBasisRequest;
+import vn.edu.tass.backend.payload.request.TeachingHistoryRequest;
 
 public final class InputRecordRules {
     private static final Set<String> VERIFICATION_STATUSES = Set.of("PENDING", "VERIFIED", "REJECTED");
@@ -51,4 +54,41 @@ public final class InputRecordRules {
         }
     }
 
+    public static void validate(TeachingHistoryRequest request) {
+        dates(request.getTaughtFrom(), request.getTaughtTo(), "taught_from", "taught_to");
+        if (!Set.of("EXTERNAL_RECORD", "CONFIRMED_ACTUAL").contains(
+                request.getSourceKind() == null ? "" : request.getSourceKind())) {
+            throw new BadRequestException("source_kind is invalid");
+        }
+        verification(request.getVerificationStatus(), request.getVerifiedBy(), request.getVerifiedAt());
+        if (request.getSourcePlanDemandId() != null && !"CONFIRMED_ACTUAL".equals(request.getSourceKind())) {
+            throw new BadRequestException("source_plan_demand_id requires CONFIRMED_ACTUAL source_kind");
+        }
+    }
+
+    public static void validate(TeacherWorkloadBasisRequest request) {
+        dates(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
+        BigDecimal base = request.getBasePeriodsPerWeek();
+        nonnegativePeriod(base, "base_periods_per_week");
+        if (base == null || base.signum() == 0) {
+            throw new BadRequestException("base_periods_per_week must be positive");
+        }
+        if (!"PERIOD_PER_WEEK".equals(request.getUnit())) {
+            throw new BadRequestException("unit must be PERIOD_PER_WEEK");
+        }
+        verification(request.getVerificationStatus(), request.getVerifiedBy(), request.getVerifiedAt());
+    }
+
+    public static void validate(TeacherDutyRequest request) {
+        if (request.getValidTo() != null) {
+            dates(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
+        }
+        nonnegativePeriod(request.getReductionValue(), "reduction_value");
+        if ("HOMEROOM".equals(request.getDutyType()) && request.getClassId() == null) {
+            throw new BadRequestException("HOMEROOM duty requires class_id");
+        }
+        if ("VERIFIED".equals(request.getVerificationStatus()) && request.getVerifiedBy() == null) {
+            throw new BadRequestException("VERIFIED duty requires verified_by");
+        }
+    }
 }
