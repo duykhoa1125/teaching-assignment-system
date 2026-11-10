@@ -41,11 +41,13 @@ public class TeachingQualificationServiceImpl implements TeachingQualificationSe
         InputSpecifications.requirePositive(teacherId, "teacher_id");
         InputSpecifications.requirePositive(subjectId, "subject_id");
         InputSpecifications.requirePositive(educationLevelId, "education_level_id");
+        String statusFilter = InputSpecifications.optionalText(verificationStatus, "verification_status");
+        if (statusFilter != null) InputRecordRules.qualificationStatus(statusFilter);
         Specification<TeachingQualification> filters = Specification.allOf(
             InputSpecifications.equal("teacherId", teacherId),
             InputSpecifications.equal("subjectId", subjectId),
             InputSpecifications.equal("educationLevelId", educationLevelId),
-            InputSpecifications.equal("verificationStatus", InputSpecifications.optionalText(verificationStatus, "verification_status")),
+            InputSpecifications.equal("verificationStatus", statusFilter),
             InputSpecifications.activeOn("validFrom", "validTo", asOf));
         return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
@@ -88,6 +90,7 @@ public class TeachingQualificationServiceImpl implements TeachingQualificationSe
     }
 
     private static void validate(TeachingQualificationRequest request) {
+        InputRecordRules.qualificationStatus(request.getVerificationStatus());
         InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         InputRecordRules.confirmation(request.getVerifiedBy(), request.getVerifiedAt(), "verification");
     }

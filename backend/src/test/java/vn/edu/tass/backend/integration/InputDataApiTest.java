@@ -74,6 +74,50 @@ class InputDataApiTest {
     }
 
     @Test
+    void statusContractsRejectUnknownValuesAndPublishAllowedValues() throws Exception {
+        String[][] invalidBodies = {
+            {"teaching-demands", """
+                {"semester_id":1,"class_id":1,"subject_id":1,"periods_per_week":2,
+                 "status":"UNKNOWN","updated_by":1,"demand_type":"STANDARD",
+                 "valid_from":"2026-08-01","valid_to":"2026-12-31","unit":"PERIOD_PER_WEEK"}
+                """},
+            {"teacher-employments", """
+                {"teacher_id":1,"department_id":1,"semester_id":1,"employment_status":"MATERNITY_LEAVE",
+                 "position_code":"TEACHER","valid_from":"2026-08-01"}
+                """},
+            {"teaching-qualifications", """
+                {"teacher_id":1,"subject_id":1,"education_level_id":1,
+                 "verification_status":"REJECTED","valid_from":"2026-08-01"}
+                """}
+        };
+        for (String[] entry : invalidBodies) {
+            mvc.perform(post("/api/" + entry[0]).contentType(MediaType.APPLICATION_JSON)
+                    .content(entry[1]))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        }
+        mvc.perform(get("/api/teaching-demands").param("status", "UNKNOWN"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/teacher-employments").param("employment_status", "MATERNITY_LEAVE"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/teaching-qualifications").param("verification_status", "REJECTED"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/teacher-employments").param("employment_status", "ON_LEAVE"))
+            .andExpect(status().isOk());
+
+        JsonNode spec = json.readTree(mvc.perform(get("/v3/api-docs"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertTrue(spec.path("components").path("schemas").path("TeachingDemandRequest")
+            .path("properties").path("status").path("enum").toString().contains("INACTIVE"));
+        assertTrue(spec.path("components").path("schemas").path("TeacherEmploymentRequest")
+            .path("properties").path("employment_status").path("enum").toString().contains("ON_LEAVE"));
+        assertTrue(spec.path("components").path("schemas").path("TeachingQualificationRequest")
+            .path("properties").path("verification_status").path("enum").toString().contains("INACTIVE"));
+        assertTrue(spec.path("paths").path("/api/teacher-employments").path("get")
+            .path("parameters").toString().contains("ON_LEAVE"));
+    }
+
+    @Test
     void contextualFiltersAndPreWriteValidationReturnStableErrors() throws Exception {
         long department = create("departments", """
             {"school_id":1,"department_code":"MATH","name":"Math","valid_from":"2026-09-01","valid_to":"2026-12-31"}

@@ -159,9 +159,13 @@ class PerEntityCrudTest {
             case "demandType" -> changed ? "ENRICHMENT" : "STANDARD";
             case "unit" -> "PERIOD_PER_WEEK";
             case "experienceStatus" -> "HAS_EXPERIENCE";
+            case "employmentStatus" -> changed ? "INACTIVE" : "TEACHING";
+            case "verificationStatus" -> changed ? "INACTIVE" : "PENDING";
             case "status" -> field.getDeclaringClass().getSimpleName().equals("ClassSubjectApplicabilityRequest")
                 ? (changed ? "NOT_APPLICABLE" : "APPLICABLE")
-                : (changed ? "UPDATED" : "ACTIVE");
+                : field.getDeclaringClass().getSimpleName().equals("TeachingDemandRequest")
+                    ? (changed ? "INACTIVE" : "ACTIVE")
+                    : (changed ? "UPDATED" : "ACTIVE");
             default -> changed ? changedSample(field.getType()) : sample(field.getType());
         };
     }

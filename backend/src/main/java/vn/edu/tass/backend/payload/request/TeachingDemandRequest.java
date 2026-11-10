@@ -33,6 +33,7 @@ public class TeachingDemandRequest {
 
     @NotBlank
     @Size(max = 40)
+    @Schema(allowableValues = {"ACTIVE", "INACTIVE"})
     private String status;
 
     @NotNull

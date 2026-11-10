@@ -15,6 +15,7 @@ import vn.edu.tass.backend.repository.TeachingDemandRepository;
 import vn.edu.tass.backend.service.TeachingDemandService;
 import vn.edu.tass.backend.utils.CrudParameters;
 import vn.edu.tass.backend.utils.InputSpecifications;
+import vn.edu.tass.backend.utils.InputRecordRules;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -42,12 +43,14 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
         InputSpecifications.requirePositive(semesterId, "semester_id");
         InputSpecifications.requirePositive(classId, "class_id");
         InputSpecifications.requirePositive(subjectId, "subject_id");
+        String statusFilter = InputSpecifications.optionalText(status, "status");
+        if (statusFilter != null) InputRecordRules.demandStatus(statusFilter);
         Specification<vn.edu.tass.backend.entity.TeachingDemand> filters = Specification.allOf(
             InputSpecifications.equal("semesterId", semesterId),
             InputSpecifications.equal("classId", classId),
             InputSpecifications.equal("subjectId", subjectId),
             InputSpecifications.equal("demandType", InputSpecifications.optionalText(demandType, "demand_type")),
-            InputSpecifications.equal("status", InputSpecifications.optionalText(status, "status")),
+            InputSpecifications.equal("status", statusFilter),
             InputSpecifications.activeOn("validFrom", "validTo", asOf));
         return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
@@ -90,6 +93,7 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     }
 
     private static void validate(TeachingDemandRequest request) {
+        InputRecordRules.demandStatus(request.getStatus());
         if (request.getValidFrom() == null || request.getValidTo() == null
                 || request.getValidTo().isBefore(request.getValidFrom())) {
             throw new BadRequestException("valid_to must be on or after valid_from");

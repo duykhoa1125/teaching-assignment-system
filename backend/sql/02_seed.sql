@@ -112,7 +112,7 @@ INSERT INTO teacher_employment (id, teacher_id, department_id, semester_id, empl
 (1, 1, 1, 1, 'TEACHING', 'TEACHER', '2026-08-01', '2026-12-31'),
 (2, 2, 1, 1, 'TEACHING', 'TEACHER', '2026-08-01', '2026-12-31'),
 (3, 3, 2, 1, 'TEACHING', 'TEACHER', '2026-08-01', '2026-12-31'),
-(4, 4, 1, 1, 'MATERNITY_LEAVE', 'TEACHER', '2026-08-01', '2026-12-31'),
+(4, 4, 1, 1, 'ON_LEAVE', 'TEACHER', '2026-08-01', '2026-12-31'),
 (5, 5, 3, 1, 'TEACHING', 'TEACHER', '2026-08-01', '2026-12-31');
 
 INSERT INTO teaching_qualification (id, teacher_id, subject_id, education_level_id, verification_status, verified_by, verified_at, evidence_ref, valid_from, valid_to) VALUES

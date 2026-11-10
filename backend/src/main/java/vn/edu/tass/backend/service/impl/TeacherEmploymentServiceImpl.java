@@ -41,11 +41,13 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
         InputSpecifications.requirePositive(teacherId, "teacher_id");
         InputSpecifications.requirePositive(departmentId, "department_id");
         InputSpecifications.requirePositive(semesterId, "semester_id");
+        String statusFilter = InputSpecifications.optionalText(employmentStatus, "employment_status");
+        if (statusFilter != null) InputRecordRules.employmentStatus(statusFilter);
         Specification<TeacherEmployment> filters = Specification.allOf(
             InputSpecifications.equal("teacherId", teacherId),
             InputSpecifications.equal("departmentId", departmentId),
             InputSpecifications.equal("semesterId", semesterId),
-            InputSpecifications.equal("employmentStatus", InputSpecifications.optionalText(employmentStatus, "employment_status")),
+            InputSpecifications.equal("employmentStatus", statusFilter),
             InputSpecifications.activeOn("validFrom", "validTo", asOf));
         return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
@@ -60,6 +62,7 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     @Override
     @Transactional
     public TeacherEmploymentDto createTeacherEmployment(TeacherEmploymentRequest request) {
+        InputRecordRules.employmentStatus(request.getEmploymentStatus());
         InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         TeacherEmployment entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -68,6 +71,7 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     @Override
     @Transactional
     public TeacherEmploymentDto updateTeacherEmployment(long id, TeacherEmploymentRequest request) {
+        InputRecordRules.employmentStatus(request.getEmploymentStatus());
         InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         TeacherEmployment entity = find(id);
         mapper.applyRequest(request, entity);

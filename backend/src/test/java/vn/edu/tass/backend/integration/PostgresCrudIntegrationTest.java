@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -86,6 +87,26 @@ class PostgresCrudIntegrationTest {
     }
 
     private static Stream<String> resources() { return RESOURCES.stream(); }
+
+    @Test
+    @Transactional
+    void acceptedDemandEmploymentAndQualificationStatusesPersistOnPostgres() throws Exception {
+        Map<String, Object> demand = new HashMap<>(body("teaching-demands"));
+        demand.put("status", "INACTIVE");
+        assertEquals("INACTIVE", value(create("teaching-demands", demand), "status"));
+
+        Map<String, Object> employment = new HashMap<>(body("teacher-employments"));
+        employment.put("employment_status", "ON_LEAVE");
+        Map<String, Object> createdEmployment = create("teacher-employments", employment);
+        assertEquals("ON_LEAVE", value(createdEmployment, "employmentStatus"));
+        employment.put("employment_status", "INACTIVE");
+        assertEquals("INACTIVE", value(replace("teacher-employments",
+            ((Number) value(createdEmployment, "id")).longValue(), employment), "employmentStatus"));
+
+        Map<String, Object> qualification = new HashMap<>(body("teaching-qualifications"));
+        qualification.put("verification_status", "INACTIVE");
+        assertEquals("INACTIVE", value(create("teaching-qualifications", qualification), "verificationStatus"));
+    }
 
     private Map<String, Object> create(String resource, Map<String, Object> body) throws Exception {
         String response = mvc.perform(post("/api/" + resource)
