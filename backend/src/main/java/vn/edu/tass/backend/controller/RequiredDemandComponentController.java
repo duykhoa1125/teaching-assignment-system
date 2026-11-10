@@ -2,6 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.time.LocalDate;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +29,12 @@ public class RequiredDemandComponentController {
 
     @GetMapping
     public List<RequiredDemandComponentDto> retrieveAllRequiredDemandComponent(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllRequiredDemandComponent(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "applicability_id", required = false) Long applicabilityId,
+            @RequestParam(name = "demand_type", required = false) String demandType,
+            @RequestParam(name = "as_of", required = false) LocalDate asOf) {
+        if (applicabilityId == null && demandType == null && asOf == null) return service.retrieveAllRequiredDemandComponent(limit, offset);
+        return service.searchRequiredDemandComponent(limit, offset, applicabilityId, demandType, asOf);
     }
 
     @GetMapping("/{id}")

@@ -28,8 +28,10 @@ public class AcademicYearController {
 
     @GetMapping
     public List<AcademicYearDto> retrieveAllAcademicYear(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllAcademicYear(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "school_id", required = false) Long schoolId) {
+        if (schoolId == null) return service.retrieveAllAcademicYear(limit, offset);
+        return service.searchAcademicYear(limit, offset, schoolId);
     }
 
     @GetMapping("/{id}")

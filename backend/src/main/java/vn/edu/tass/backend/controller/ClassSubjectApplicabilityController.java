@@ -28,8 +28,12 @@ public class ClassSubjectApplicabilityController {
 
     @GetMapping
     public List<ClassSubjectApplicabilityDto> retrieveAllClassSubjectApplicability(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllClassSubjectApplicability(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "scope_id", required = false) Long scopeId,
+            @RequestParam(name = "class_id", required = false) Long classId,
+            @RequestParam(name = "status", required = false) String status) {
+        if (scopeId == null && classId == null && status == null) return service.retrieveAllClassSubjectApplicability(limit, offset);
+        return service.searchClassSubjectApplicability(limit, offset, scopeId, classId, status);
     }
 
     @GetMapping("/{id}")

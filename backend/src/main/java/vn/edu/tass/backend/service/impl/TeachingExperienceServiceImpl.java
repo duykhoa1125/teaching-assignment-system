@@ -2,6 +2,8 @@ package vn.edu.tass.backend.service.impl;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingExperience;
@@ -12,6 +14,7 @@ import vn.edu.tass.backend.payload.request.TeachingExperienceRequest;
 import vn.edu.tass.backend.repository.TeachingExperienceRepository;
 import vn.edu.tass.backend.service.TeachingExperienceService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -29,6 +32,23 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
     public List<TeachingExperienceDto> retrieveAllTeachingExperience(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TeachingExperienceDto> searchTeachingExperience(int limit, int offset, Long teacherId, Long subjectId, Long gradeId, String experienceStatus, LocalDate asOfDate) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(teacherId, "teacher_id");
+        InputSpecifications.requirePositive(subjectId, "subject_id");
+        InputSpecifications.requirePositive(gradeId, "grade_id");
+        Specification<TeachingExperience> filters = Specification.allOf(
+            InputSpecifications.equal("teacherId", teacherId),
+            InputSpecifications.equal("subjectId", subjectId),
+            InputSpecifications.equal("gradeId", gradeId),
+            InputSpecifications.equal("experienceStatus", InputSpecifications.optionalText(experienceStatus, "experience_status")),
+            InputSpecifications.equal("asOfDate", asOfDate));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
     }
 
