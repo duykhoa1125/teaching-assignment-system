@@ -1,6 +1,6 @@
 # TASS Backend API — dữ liệu đầu vào
 
-Tài liệu này mô tả **các API đã triển khai** trên nhánh phase 2 mục 1: 20 tài nguyên CRUD, gồm 40 URL và 100 tổ hợp method/URL. Các API đăng nhập, hồ sơ tổng hợp, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD, gồm 40 URL và 100 tổ hợp method/URL. Các API đăng nhập, hồ sơ tổng hợp, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -32,15 +32,26 @@ Bộ lọc chỉ áp dụng cho `GET /api/{resource}`. Có thể kết hợp nhi
 
 | Resource | Bộ lọc tùy chọn ngoài `limit`/`offset` |
 | --- | --- |
+| `academic-years` | `school_id` |
+| `semesters` | `academic_year_id` |
+| `grades` | `education_level_id` |
 | `classes` | `academic_year_id`, `grade_id`, `status` |
 | `subjects` | `subject_code`, `q`, `as_of` |
 | `teachers` | `school_id`, `teacher_code`, `q` |
 | `teaching-demands` | `semester_id`, `class_id`, `subject_id`, `demand_type`, `status`, `as_of` |
+| `departments` | `school_id`, `as_of` |
+| `teacher-employments` | `teacher_id`, `department_id`, `semester_id`, `employment_status`, `as_of` |
+| `teaching-qualifications` | `teacher_id`, `subject_id`, `education_level_id`, `verification_status`, `as_of` |
+| `teaching-experiences` | `teacher_id`, `subject_id`, `grade_id`, `experience_status`, `as_of_date` (khớp chính xác ngày ghi nhận) |
+| `assignment-rounds` | `semester_id`, `status` |
+| `round-subject-scopes` | `round_id`, `grade_id`, `subject_id` |
+| `class-subject-applicabilities` | `scope_id`, `class_id`, `status` |
+| `required-demand-components` | `applicability_id`, `demand_type`, `as_of` |
 | `teacher-workload-bases` | `teacher_id`, `semester_id`, `education_level_id`, `verification_status`, `as_of` |
 | `teaching-histories` | `teacher_id`, `semester_id`, `class_id`, `subject_id`, `verification_status`, `as_of` |
 | `teacher-duties` | `teacher_id`, `semester_id`, `duty_type`, `verification_status`, `as_of` |
 
-Các tài nguyên khác chỉ nhận `limit` và `offset` ở endpoint danh sách. Giáo viên và lớp không có cột hiệu lực trực tiếp, nên danh sách hai tài nguyên này không có `as_of`; ngày hiệu lực của môn, nhu cầu, định mức, lịch sử và nhiệm vụ được lọc qua chính các cột ngày của chúng.
+`schools` và `education-levels` chỉ nhận `limit` và `offset` ở endpoint danh sách. Giáo viên và lớp không có cột hiệu lực trực tiếp, nên danh sách hai tài nguyên này không có `as_of`; ngày hiệu lực của môn, nhu cầu, định mức, lịch sử và nhiệm vụ được lọc qua chính các cột ngày của chúng.
 
 ## Mã lỗi
 
@@ -48,16 +59,16 @@ Các tài nguyên khác chỉ nhận `limit` và `offset` ở endpoint danh sác
 | --- | --- |
 | `400 Bad Request` | JSON sai/thiếu trường bắt buộc, định dạng ngày sai, ID/limit/offset sai hoặc validation service không đạt |
 | `404 Not Found` | URL `/{id}` không có bản ghi |
-| `409 Conflict` | Trùng khóa `UNIQUE`, khóa ngoại không tồn tại hoặc bản ghi đang được tham chiếu |
+| `409 Conflict` | Trùng khóa `UNIQUE`, khóa ngoại không tồn tại, bản ghi đang được tham chiếu hoặc khoảng hiệu lực chồng lấn |
 | `422 Unprocessable Entity` | Vi phạm ràng buộc/trigger PostgreSQL khác, gồm ngữ cảnh trường, học kỳ và hiệu lực |
 
 Body lỗi có dạng:
 
 ```json
-{"error":"Bad Request","message":"valid_to must be on or after valid_from"}
+{"error":"Bad Request","code":"INVALID_REQUEST","message":"valid_to must be on or after valid_from"}
 ```
 
-Thông điệp `message` phụ thuộc lỗi thực tế. Lỗi `400` do JSON/Bean Validation có thể trả thông điệp chung. Các trường `updated_by`, `recorded_by`, `verified_by`, `confirmed_by` hiện là ID do client gửi; **chưa có xác thực/phân quyền**, nên chúng chưa chứng minh danh tính người gọi.
+`code` là mã ổn định để client xử lý: `INVALID_REQUEST` (400), `RESOURCE_NOT_FOUND` (404), `DUPLICATE_RESOURCE`, `REFERENCE_CONFLICT`, `OVERLAPPING_PERIOD` (409) và `DATA_CONSTRAINT` (422). Thông điệp `message` phụ thuộc lỗi thực tế. Lỗi `400` do JSON/Bean Validation có thể trả thông điệp chung. Các trường `updated_by`, `recorded_by`, `verified_by`, `confirmed_by` hiện là ID do client gửi; **chưa có xác thực/phân quyền**, nên chúng chưa chứng minh danh tính người gọi.
 
 ## Danh mục 20 tài nguyên
 
@@ -424,14 +435,16 @@ GET /api/teacher-workload-bases?teacher_id=1&semester_id=1&verification_status=V
 ### Kiểm tra dữ liệu quan trọng
 
 - `school.status`, `school_class.status`, `teaching_demand.status`, `assignment_round.status`, `teacher_employment.employment_status`, `teaching_qualification.verification_status` và `teacher_duty.payment_status` hiện chỉ yêu cầu chuỗi không rỗng theo schema; API chưa áp đặt danh sách enum chung cho các trường này.
+- Danh sách trạng thái nghiệp vụ cho `teaching_demand`, `teacher_employment`, `teaching_qualification` và cách ngừng hiệu lực giáo viên chưa được chốt. Bảng `teacher` hiện không có cột trạng thái hay khoảng hiệu lực; API không tự suy diễn thao tác ngừng hiệu lực.
 - `class_subject_applicability.status`: `APPLICABLE`, `NOT_APPLICABLE`, `UNDETERMINED`. Khi gửi `confirmed_by` cần gửi cả `confirmed_at`; `components_confirmed_by` và `components_confirmed_at` cũng phải đi cùng nhau. `required_demand_component.confirmed_by` và `confirmed_at` áp dụng quy tắc tương tự.
+- `assignment_round.scope_confirmed_by` đi cùng `scope_confirmed_at`; `round_subject_scope.confirmed_by` đi cùng `confirmed_at`; `teaching_qualification.verified_by` đi cùng `verified_at`. `assignment_round.closes_at` không được trước `opens_at`.
 - `teaching_demand.demand_type`: `STANDARD`, `SPECIALIZED_TOPIC`, `ENRICHMENT`; `unit` là `PERIOD_PER_WEEK`; `periods_per_week` dương, tối đa 999.99, tối đa 2 chữ số thập phân.
 - `required_demand_component.demand_type` dùng cùng ba giá trị với nhu cầu giảng dạy. Khi sửa thành phần bắt buộc, trigger PostgreSQL xóa xác nhận tập thành phần của bản ghi áp dụng tương ứng.
 - `teaching_experience.experience_status`: `UNKNOWN` không có số năm, `NO_EXPERIENCE` bằng 0, `HAS_EXPERIENCE` dương. Hai trạng thái đã biết cần có `verified_by`, `verified_at` và `evidence_ref` không rỗng.
 - `teaching_history.source_kind`: `EXTERNAL_RECORD` hoặc `CONFIRMED_ACTUAL`. `teaching_history` và `teacher_workload_basis` dùng `verification_status` là `PENDING`, `VERIFIED`, `REJECTED`; `VERIFIED` cần `verified_by` và `verified_at`.
 - `teacher_workload_basis.base_periods_per_week` dương, tối đa 999.99, tối đa 2 chữ số thập phân; `unit` là `PERIOD_PER_WEEK`. Với hồ sơ `TEACHER` đã xác nhận, PostgreSQL kiểm tra giá trị theo cấp học trong schema hiện tại.
 - `teacher_duty.duty_type=HOMEROOM` yêu cầu `class_id`. `reduction_value` không âm, tối đa 999.99, tối đa 2 chữ số thập phân.
-- Ngày kết thúc phải không trước ngày bắt đầu. PostgreSQL còn kiểm tra mối quan hệ giữa trường, năm học, học kỳ, lớp, môn và khoảng hiệu lực. Các bản ghi đang được tham chiếu có thể không sửa/xóa được.
+- Ngày kết thúc phải không trước ngày bắt đầu. ID trong request phải dương, các trường `VARCHAR` có giới hạn độ dài theo schema và `semester_no` thuộc khoảng 1–32767. PostgreSQL còn kiểm tra mối quan hệ giữa trường, năm học, học kỳ, lớp, môn và khoảng hiệu lực. Các bản ghi đang được tham chiếu có thể không sửa/xóa được.
 
 ## Chạy và kiểm thử
 

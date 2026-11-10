@@ -1,5 +1,6 @@
 package vn.edu.tass.backend.integration;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
@@ -64,8 +65,74 @@ class InputDataApiTest {
         assertEquals("STANDARD", spec.path("components").path("schemas")
             .path("TeachingDemandRequest").path("properties").path("demand_type")
             .path("enum").get(0).asText());
+        assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
+            .path("properties").has("code"));
+        assertTrue(spec.path("paths").path("/api/departments").path("get")
+            .path("parameters").toString().contains("school_id"));
         mvc.perform(get("/swagger-ui.html")).andExpect(status().is3xxRedirection());
         mvc.perform(get("/v3/api-docs.yaml")).andExpect(status().isOk());
+    }
+
+    @Test
+    void contextualFiltersAndPreWriteValidationReturnStableErrors() throws Exception {
+        long department = create("departments", """
+            {"school_id":1,"department_code":"MATH","name":"Math","valid_from":"2026-09-01","valid_to":"2026-12-31"}
+            """);
+        create("departments", """
+            {"school_id":2,"department_code":"LIT","name":"Literature","valid_from":"2026-09-01"}
+            """);
+        mvc.perform(get("/api/departments").param("school_id", "1").param("as_of", "2026-12-31"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$[0].id").value(department))
+            .andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(get("/api/departments").param("as_of", "2027-01-01"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(1));
+        mvc.perform(get("/api/departments").param("school_id", "0"))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/academic-years").contentType(MediaType.APPLICATION_JSON).content("""
+            {"school_id":1,"year_code":"BAD","starts_on":"2027-09-01","ends_on":"2027-08-31"}
+            """))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/academic-years").contentType(MediaType.APPLICATION_JSON).content("""
+            {"school_id":1,"year_code":"CODE_EXCEEDING_THIRTY_CHARACTERS_123",
+             "starts_on":"2027-08-01","ends_on":"2028-07-31"}
+            """))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"))
+            .andExpect(jsonPath("$.message").value(containsString("year_code")));
+        mvc.perform(post("/api/round-subject-scopes").contentType(MediaType.APPLICATION_JSON).content("""
+            {"round_id":1,"grade_id":1,"subject_id":1,"confirmed_by":1}
+            """))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/assignment-rounds").contentType(MediaType.APPLICATION_JSON).content("""
+            {"semester_id":1,"round_code":"BAD","status":"DRAFT",
+             "opens_at":"2026-10-02T09:00:00+07:00","closes_at":"2026-10-01T09:00:00+07:00"}
+            """))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/teaching-qualifications").contentType(MediaType.APPLICATION_JSON).content("""
+            {"teacher_id":1,"subject_id":1,"education_level_id":1,
+             "verification_status":"VERIFIED","verified_by":1,"valid_from":"2026-09-01"}
+            """))
+            .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+    }
+
+    @Test
+    void allNewContextualFiltersResolveAgainstJpaFields() throws Exception {
+        String[][] cases = {
+            {"academic-years", "school_id", "1"},
+            {"semesters", "academic_year_id", "1"},
+            {"grades", "education_level_id", "1"},
+            {"departments", "as_of", "2026-10-01"},
+            {"teacher-employments", "department_id", "1"},
+            {"teaching-qualifications", "education_level_id", "1"},
+            {"teaching-experiences", "as_of_date", "2026-10-01"},
+            {"assignment-rounds", "semester_id", "1"},
+            {"round-subject-scopes", "grade_id", "1"},
+            {"class-subject-applicabilities", "scope_id", "1"},
+            {"required-demand-components", "applicability_id", "1"}
+        };
+        for (String[] entry : cases) {
+            mvc.perform(get("/api/" + entry[0]).param(entry[1], entry[2]))
+                .andExpect(status().isOk());
+        }
     }
 
     @Test

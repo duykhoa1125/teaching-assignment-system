@@ -70,6 +70,7 @@ public class ApiDocumentationConfig {
             }
             openApi.getComponents().addSchemas("ApiErrorResponse", new ObjectSchema()
                 .addProperty("error", new StringSchema().example("Bad Request"))
+                .addProperty("code", new StringSchema().example("INVALID_REQUEST"))
                 .addProperty("message", new StringSchema().example("JSON hoặc tham số không hợp lệ")));
             openApi.getPaths().forEach((path, item) -> documentPath(path, item, examples));
         };
@@ -80,6 +81,7 @@ public class ApiDocumentationConfig {
         String resource = path.substring("/api/".length()).split("/")[0];
         String label = RESOURCES.get(resource);
         if (label == null) return;
+        if (!path.equals("/api/" + resource) && !path.equals("/api/" + resource + "/{id}")) return;
         boolean byId = path.endsWith("/{id}");
         item.readOperationsMap().forEach((method, operation) -> {
             operation.setTags(List.of(label));
@@ -179,20 +181,21 @@ public class ApiDocumentationConfig {
                 ? (byId ? "Bản ghi theo ID." : "Danh sách bản ghi.")
                 : "Bản ghi sau cập nhật.");
         }
-        responses.addApiResponse("400", error("Request hoặc tham số không hợp lệ.", "Bad Request"));
+        responses.addApiResponse("400", error("Request hoặc tham số không hợp lệ.", "Bad Request", "INVALID_REQUEST"));
         if (byId) {
-            responses.addApiResponse("404", error("Không tìm thấy bản ghi.", "Not Found"));
+            responses.addApiResponse("404", error("Không tìm thấy bản ghi.", "Not Found", "RESOURCE_NOT_FOUND"));
         }
         if (method == PathItem.HttpMethod.POST || method == PathItem.HttpMethod.PUT
                 || method == PathItem.HttpMethod.DELETE) {
-            responses.addApiResponse("409", error("Trùng dữ liệu hoặc vi phạm khóa ngoại.", "Conflict"));
-            responses.addApiResponse("422", error("Vi phạm ràng buộc dữ liệu PostgreSQL.", "Unprocessable Entity"));
+            responses.addApiResponse("409", error("Trùng dữ liệu, vi phạm khóa ngoại hoặc chồng khoảng hiệu lực.", "Conflict", "DUPLICATE_RESOURCE"));
+            responses.addApiResponse("422", error("Vi phạm ràng buộc dữ liệu PostgreSQL.", "Unprocessable Entity", "DATA_CONSTRAINT"));
         }
     }
 
-    private static ApiResponse error(String description, String status) {
+    private static ApiResponse error(String description, String status, String code) {
         Map<String, String> example = new LinkedHashMap<>();
         example.put("error", status);
+        example.put("code", code);
         example.put("message", description);
         return new ApiResponse().description(description).content(new Content().addMediaType(
             "application/json", new MediaType()
