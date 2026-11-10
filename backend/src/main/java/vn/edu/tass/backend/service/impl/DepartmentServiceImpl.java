@@ -1,6 +1,8 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Department;
@@ -10,6 +12,8 @@ import vn.edu.tass.backend.payload.request.DepartmentRequest;
 import vn.edu.tass.backend.repository.DepartmentRepository;
 import vn.edu.tass.backend.service.DepartmentService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
+import vn.edu.tass.backend.utils.InputRecordRules;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -32,6 +36,18 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<DepartmentDto> searchDepartment(int limit, int offset, Long schoolId, LocalDate asOf) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(schoolId, "school_id");
+        Specification<Department> filters = Specification.allOf(
+            InputSpecifications.equal("schoolId", schoolId),
+            InputSpecifications.activeOn("validFrom", "validTo", asOf));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public DepartmentDto retrieveById(long id) {
         return mapper.toDto(find(id));
     }
@@ -39,6 +55,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     @Transactional
     public DepartmentDto createDepartment(DepartmentRequest request) {
+        InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         Department entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +63,7 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Override
     @Transactional
     public DepartmentDto updateDepartment(long id, DepartmentRequest request) {
+        InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         Department entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));

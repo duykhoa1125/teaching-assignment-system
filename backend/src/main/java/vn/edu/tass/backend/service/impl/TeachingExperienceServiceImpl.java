@@ -1,15 +1,20 @@
 package vn.edu.tass.backend.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingExperience;
+import vn.edu.tass.backend.exception.BadRequestException;
 import vn.edu.tass.backend.mapper.TeachingExperienceMapper;
 import vn.edu.tass.backend.payload.dto.TeachingExperienceDto;
 import vn.edu.tass.backend.payload.request.TeachingExperienceRequest;
 import vn.edu.tass.backend.repository.TeachingExperienceRepository;
 import vn.edu.tass.backend.service.TeachingExperienceService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -32,6 +37,23 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
 
     @Override
     @Transactional(readOnly = true)
+    public List<TeachingExperienceDto> searchTeachingExperience(int limit, int offset, Long teacherId, Long subjectId, Long gradeId, String experienceStatus, LocalDate asOfDate) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(teacherId, "teacher_id");
+        InputSpecifications.requirePositive(subjectId, "subject_id");
+        InputSpecifications.requirePositive(gradeId, "grade_id");
+        Specification<TeachingExperience> filters = Specification.allOf(
+            InputSpecifications.equal("teacherId", teacherId),
+            InputSpecifications.equal("subjectId", subjectId),
+            InputSpecifications.equal("gradeId", gradeId),
+            InputSpecifications.equal("experienceStatus", InputSpecifications.optionalText(experienceStatus, "experience_status")),
+            InputSpecifications.equal("asOfDate", asOfDate));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TeachingExperienceDto retrieveById(long id) {
         return mapper.toDto(find(id));
     }
@@ -39,6 +61,7 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
     @Override
     @Transactional
     public TeachingExperienceDto createTeachingExperience(TeachingExperienceRequest request) {
+        validate(request);
         TeachingExperience entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +69,7 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
     @Override
     @Transactional
     public TeachingExperienceDto updateTeachingExperience(long id, TeachingExperienceRequest request) {
+        validate(request);
         TeachingExperience entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -62,5 +86,24 @@ public class TeachingExperienceServiceImpl implements TeachingExperienceService 
         CrudParameters.requireId(id);
         return repository.findById(id)
             .orElseThrow(() -> new vn.edu.tass.backend.exception.NotFoundException("teaching_experience id=" + id + " does not exist"));
+    }
+
+    private static void validate(TeachingExperienceRequest request) {
+        BigDecimal years = request.getYearsOfExperience();
+        String status = request.getExperienceStatus();
+        boolean valid = switch (status == null ? "" : status) {
+            case "UNKNOWN" -> years == null;
+            case "NO_EXPERIENCE" -> years != null && years.signum() == 0;
+            case "HAS_EXPERIENCE" -> years != null && years.signum() > 0;
+            default -> false;
+        };
+        if (!valid || years != null && years.compareTo(new BigDecimal("1000")) >= 0) {
+            throw new BadRequestException("experience_status and years_of_experience are inconsistent");
+        }
+        if (!"UNKNOWN".equals(status) && (request.getVerifiedBy() == null
+                || request.getVerifiedAt() == null || request.getEvidenceRef() == null
+                || request.getEvidenceRef().isBlank())) {
+            throw new BadRequestException("known experience requires verified_by, verified_at and evidence_ref");
+        }
     }
 }

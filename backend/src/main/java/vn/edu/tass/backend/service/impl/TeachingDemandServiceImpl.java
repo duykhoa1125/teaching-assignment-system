@@ -1,9 +1,11 @@
 package vn.edu.tass.backend.service.impl;
 
+import java.math.BigDecimal;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeachingDemand;
+import vn.edu.tass.backend.exception.BadRequestException;
 import vn.edu.tass.backend.mapper.TeachingDemandMapper;
 import vn.edu.tass.backend.payload.dto.TeachingDemandDto;
 import vn.edu.tass.backend.payload.request.TeachingDemandRequest;
@@ -39,6 +41,7 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     @Override
     @Transactional
     public TeachingDemandDto createTeachingDemand(TeachingDemandRequest request) {
+        validate(request);
         TeachingDemand entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +49,7 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
     @Override
     @Transactional
     public TeachingDemandDto updateTeachingDemand(long id, TeachingDemandRequest request) {
+        validate(request);
         TeachingDemand entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -62,5 +66,24 @@ public class TeachingDemandServiceImpl implements TeachingDemandService {
         CrudParameters.requireId(id);
         return repository.findById(id)
             .orElseThrow(() -> new vn.edu.tass.backend.exception.NotFoundException("teaching_demand id=" + id + " does not exist"));
+    }
+
+    private static void validate(TeachingDemandRequest request) {
+        if (request.getValidFrom() == null || request.getValidTo() == null
+                || request.getValidTo().isBefore(request.getValidFrom())) {
+            throw new BadRequestException("valid_to must be on or after valid_from");
+        }
+        BigDecimal periods = request.getPeriodsPerWeek();
+        if (periods == null || periods.signum() <= 0 || periods.compareTo(new BigDecimal("999.99")) > 0
+                || periods.stripTrailingZeros().scale() > 2) {
+            throw new BadRequestException("periods_per_week must be positive, at most 999.99, with two decimal places");
+        }
+        if (request.getDemandType() == null
+                || !List.of("STANDARD", "SPECIALIZED_TOPIC", "ENRICHMENT").contains(request.getDemandType())) {
+            throw new BadRequestException("demand_type is invalid");
+        }
+        if (!"PERIOD_PER_WEEK".equals(request.getUnit())) {
+            throw new BadRequestException("unit must be PERIOD_PER_WEEK");
+        }
     }
 }

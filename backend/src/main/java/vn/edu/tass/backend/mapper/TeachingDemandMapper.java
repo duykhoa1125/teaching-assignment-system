@@ -21,6 +21,9 @@ public class TeachingDemandMapper {
         entity.setStatus(request.getStatus());
         entity.setUpdatedBy(request.getUpdatedBy());
         entity.setDemandType(request.getDemandType());
+        entity.setValidFrom(request.getValidFrom());
+        entity.setValidTo(request.getValidTo());
+        entity.setUnit(request.getUnit());
     }
 
     public TeachingDemandDto toDto(TeachingDemand entity) {
@@ -34,6 +37,9 @@ public class TeachingDemandMapper {
         dto.setUpdatedBy(entity.getUpdatedBy());
         dto.setUpdatedAt(entity.getUpdatedAt());
         dto.setDemandType(entity.getDemandType());
+        dto.setValidFrom(entity.getValidFrom());
+        dto.setValidTo(entity.getValidTo());
+        dto.setUnit(entity.getUnit());
         return dto;
     }
 }

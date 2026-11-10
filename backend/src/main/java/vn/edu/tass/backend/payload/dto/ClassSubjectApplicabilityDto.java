@@ -23,4 +23,12 @@ public class ClassSubjectApplicabilityDto {
     private Long updatedBy;
 
     private OffsetDateTime updatedAt;
+
+    private Long confirmedBy;
+
+    private OffsetDateTime confirmedAt;
+
+    private Long componentsConfirmedBy;
+
+    private OffsetDateTime componentsConfirmedAt;
 }

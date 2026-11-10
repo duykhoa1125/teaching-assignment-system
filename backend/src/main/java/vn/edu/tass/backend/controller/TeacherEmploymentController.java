@@ -2,6 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.time.LocalDate;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +29,14 @@ public class TeacherEmploymentController {
 
     @GetMapping
     public List<TeacherEmploymentDto> retrieveAllTeacherEmployment(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllTeacherEmployment(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "teacher_id", required = false) Long teacherId,
+            @RequestParam(name = "department_id", required = false) Long departmentId,
+            @RequestParam(name = "semester_id", required = false) Long semesterId,
+            @RequestParam(name = "employment_status", required = false) String employmentStatus,
+            @RequestParam(name = "as_of", required = false) LocalDate asOf) {
+        if (teacherId == null && departmentId == null && semesterId == null && employmentStatus == null && asOf == null) return service.retrieveAllTeacherEmployment(limit, offset);
+        return service.searchTeacherEmployment(limit, offset, teacherId, departmentId, semesterId, employmentStatus, asOf);
     }
 
     @GetMapping("/{id}")

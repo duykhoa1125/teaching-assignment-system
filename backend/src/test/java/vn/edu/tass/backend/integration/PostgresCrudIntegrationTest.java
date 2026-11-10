@@ -1,127 +1,120 @@
 package vn.edu.tass.backend.integration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
-import vn.edu.tass.backend.exception.NotFoundException;
 
 /** Run with: mvn test -Ddb.integration=true (requires the seeded PostgreSQL from compose.yaml). */
 @EnabledIfSystemProperty(named = "db.integration", matches = "true")
 @SpringBootTest
+@AutoConfigureMockMvc
 class PostgresCrudIntegrationTest {
-    @Autowired ApplicationContext context;
+    @Autowired MockMvc mvc;
     private static final ObjectMapper JSON = new ObjectMapper().findAndRegisterModules();
-    private static final Map<String, String> NAMES = Map.ofEntries(
-        Map.entry("schools", "School"), Map.entry("academic-years", "AcademicYear"),
-        Map.entry("semesters", "Semester"), Map.entry("education-levels", "EducationLevel"),
-        Map.entry("grades", "Grade"), Map.entry("classes", "SchoolClass"),
-        Map.entry("subjects", "Subject"), Map.entry("teachers", "Teacher"),
-        Map.entry("teaching-demands", "TeachingDemand"), Map.entry("departments", "Department"),
-        Map.entry("teacher-employments", "TeacherEmployment"),
-        Map.entry("teaching-qualifications", "TeachingQualification"),
-        Map.entry("teaching-experiences", "TeachingExperience"),
-        Map.entry("assignment-rounds", "AssignmentRound"),
-        Map.entry("round-subject-scopes", "RoundSubjectScope"),
-        Map.entry("class-subject-applicabilities", "ClassSubjectApplicability")
+    private static final List<String> RESOURCES = List.of(
+        "schools", "academic-years", "semesters", "education-levels", "grades", "classes",
+        "subjects", "teachers", "teaching-demands", "departments", "teacher-employments",
+        "teaching-qualifications", "teaching-experiences", "assignment-rounds", "round-subject-scopes",
+        "class-subject-applicabilities", "required-demand-components"
     );
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("resources")
     @Transactional
-    void createReadListUpdateAndDeleteAgainstPostgres(String resource) {
+    void createReadListUpdateAndDeleteAgainstPostgres(String resource) throws Exception {
         Map<String, Object> body = new HashMap<>(body(resource));
         Object created = create(resource, body);
         long id = ((Number) value(created, "id")).longValue();
+        if (resource.equals("assignment-rounds")) {
+            assertNotNull(value(created, "sourceRevisionToken"));
+            assertNotNull(value(created, "sourceUpdatedAt"));
+        }
 
-        assertEquals(id, ((Number) value(get(resource, id), "id")).longValue());
+        assertEquals(id, ((Number) value(fetchOne(resource, id), "id")).longValue());
         assertTrue(list(resource).stream()
             .anyMatch(row -> ((Number) value(row, "id")).longValue() == id));
 
         Map.Entry<String, Object> change = update(resource);
         body.put(change.getKey(), change.getValue());
+        if (resource.equals("round-subject-scopes")) {
+            body.put("confirmed_at", "2026-10-01T09:00:00+07:00");
+        }
         Object updated = replace(resource, id, body);
         Object expected = change.getValue();
         Object actual = value(updated, camelCase(change.getKey()));
         if (expected instanceof Number) {
             assertEquals(0, new BigDecimal(expected.toString())
                 .compareTo(new BigDecimal(actual.toString())));
+        } else if (actual instanceof LocalDate) {
+            assertEquals(LocalDate.parse(expected.toString()), actual);
         } else {
             assertEquals(expected, actual);
         }
-
-        invoke(service(resource), "delete" + NAMES.get(resource), new Class<?>[]{long.class}, id);
-        assertThrows(NotFoundException.class, () -> get(resource, id));
-    }
-
-    private static Stream<String> resources() { return NAMES.keySet().stream(); }
-
-    private Object create(String resource, Map<String, Object> body) {
-        Class<?> requestType = requestType(resource);
-        return invoke(service(resource), "create" + NAMES.get(resource), new Class<?>[]{requestType}, JSON.convertValue(body, requestType));
-    }
-
-    private Object replace(String resource, long id, Map<String, Object> body) {
-        Class<?> requestType = requestType(resource);
-        return invoke(service(resource), "update" + NAMES.get(resource), new Class<?>[]{long.class, requestType},
-            id, JSON.convertValue(body, requestType));
-    }
-
-    private Object get(String resource, long id) {
-        return invoke(service(resource), "retrieveById", new Class<?>[]{long.class}, id);
-    }
-
-    @SuppressWarnings("unchecked")
-    private java.util.List<Object> list(String resource) {
-        return (java.util.List<Object>) invoke(service(resource), "retrieveAll" + NAMES.get(resource), new Class<?>[]{int.class, int.class}, 100, 0);
-    }
-
-    private Object service(String resource) {
-        try {
-            String name = NAMES.get(resource);
-            Class<?> serviceType = Class.forName("vn.edu.tass.backend.service." + name + "Service");
-            return context.getBean(serviceType);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
+        if (resource.equals("assignment-rounds")) {
+            assertNotEquals(value(created, "sourceRevisionToken"), value(updated, "sourceRevisionToken"));
         }
+
+        mvc.perform(delete("/api/" + resource + "/" + id)).andExpect(status().isNoContent());
+        mvc.perform(get("/api/" + resource + "/" + id)).andExpect(status().isNotFound());
     }
 
-    private static Class<?> requestType(String resource) {
-        try {
-            return Class.forName("vn.edu.tass.backend.payload.request." + NAMES.get(resource) + "Request");
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(e);
-        }
+    private static Stream<String> resources() { return RESOURCES.stream(); }
+
+    private Map<String, Object> create(String resource, Map<String, Object> body) throws Exception {
+        String response = mvc.perform(post("/api/" + resource)
+                .contentType(MediaType.APPLICATION_JSON).content(JSON.writeValueAsBytes(body)))
+            .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString();
+        return JSON.readValue(response, new TypeReference<>() {});
     }
 
-    private static Object invoke(Object target, String method, Class<?>[] types, Object... args) {
-        try {
-            return target.getClass().getMethod(method, types).invoke(target, args);
-        } catch (InvocationTargetException e) {
-            if (e.getCause() instanceof RuntimeException cause) throw cause;
-            throw new IllegalStateException(e.getCause());
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException(e);
-        }
+    private Map<String, Object> replace(String resource, long id, Map<String, Object> body) throws Exception {
+        String response = mvc.perform(put("/api/" + resource + "/" + id)
+                .contentType(MediaType.APPLICATION_JSON).content(JSON.writeValueAsBytes(body)))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return JSON.readValue(response, new TypeReference<>() {});
+    }
+
+    private Map<String, Object> fetchOne(String resource, long id) throws Exception {
+        String response = mvc.perform(get("/api/" + resource + "/" + id))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return JSON.readValue(response, new TypeReference<>() {});
+    }
+
+    private List<Map<String, Object>> list(String resource) throws Exception {
+        String response = mvc.perform(get("/api/" + resource).param("limit", "100"))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
+        return JSON.readValue(response, new TypeReference<>() {});
     }
 
     private static Object value(Object entity, String field) {
-        return invoke(entity, "get" + Character.toUpperCase(field.charAt(0)) + field.substring(1), new Class<?>[0]);
+        String key = field.replaceAll("([A-Z])", "_$1").toLowerCase(Locale.ROOT);
+        return ((Map<?, ?>) entity).get(key);
     }
 
     private static String camelCase(String sqlName) {
@@ -133,7 +126,7 @@ class PostgresCrudIntegrationTest {
         return result.toString();
     }
 
-    private Map<String, Object> body(String resource) {
+    private Map<String, Object> body(String resource) throws Exception {
         return switch (resource) {
             case "schools" -> Map.of("school_code", "TEST_SCHOOL", "name", "Test School", "status", "ACTIVE");
             case "academic-years" -> Map.of("school_id", 1, "year_code", "TEST_YEAR", "starts_on", "2099-08-01", "ends_on", "2100-07-31");
@@ -147,21 +140,34 @@ class PostgresCrudIntegrationTest {
                 long classId = ((Number) value(create("classes", Map.of("academic_year_id", 1,
                     "grade_id", 1, "class_code", "TEST_DEMAND_CLASS", "status", "ACTIVE")), "id")).longValue();
                 yield Map.of("semester_id", 1, "class_id", classId, "subject_id", 1,
-                    "periods_per_week", 1.25, "status", "ACTIVE", "updated_by", 1, "demand_type", "STANDARD");
+                    "periods_per_week", 1.25, "status", "ACTIVE", "updated_by", 1, "demand_type", "STANDARD",
+                    "valid_from", "2026-09-01", "valid_to", "2026-12-31", "unit", "PERIOD_PER_WEEK");
             }
             case "departments" -> Map.of("school_id", 1, "department_code", "TEST_DEP", "name", "Test Department", "valid_from", "2026-08-01");
-            case "teacher-employments" -> Map.of("teacher_id", 1, "department_id", 1, "semester_id", 1,
-                "employment_status", "TEACHING", "position_code", "TEST_POSITION", "valid_from", "2026-09-01");
+            case "teacher-employments" -> {
+                long teacherId = ((Number) value(create("teachers", Map.of("school_id", 1,
+                    "teacher_code", "TEST_EMPLOYMENT_TEACHER", "full_name", "Test Employment Teacher")), "id")).longValue();
+                yield Map.of("teacher_id", teacherId, "department_id", 1, "semester_id", 1,
+                    "employment_status", "TEACHING", "position_code", "TEST_POSITION", "valid_from", "2026-09-01");
+            }
             case "teaching-qualifications" -> Map.of("teacher_id", 1, "subject_id", 1, "education_level_id", 1,
                 "verification_status", "PENDING", "valid_from", "2026-08-01");
-            case "teaching-experiences" -> Map.of("teacher_id", 1, "subject_id", 1,
-                "experience_level", "TEST", "experience_period", "Test period", "recorded_by", 1);
+            case "teaching-experiences" -> Map.of("teacher_id", 1, "subject_id", 1, "grade_id", 1,
+                "experience_status", "UNKNOWN", "as_of_date", "2026-09-01", "recorded_by", 1);
             case "assignment-rounds" -> Map.of("semester_id", 1, "round_code", "TEST_ROUND", "status", "DRAFT");
             case "round-subject-scopes" -> Map.of("round_id", 2, "grade_id", 1, "subject_id", 1);
             case "class-subject-applicabilities" -> {
                 long scopeId = ((Number) value(create("round-subject-scopes",
                     Map.of("round_id", 2, "grade_id", 1, "subject_id", 1)), "id")).longValue();
                 yield Map.of("scope_id", scopeId, "class_id", 1, "status", "UNDETERMINED", "updated_by", 1);
+            }
+            case "required-demand-components" -> {
+                long scopeId = ((Number) value(create("round-subject-scopes",
+                    Map.of("round_id", 2, "grade_id", 1, "subject_id", 1)), "id")).longValue();
+                long applicabilityId = ((Number) value(create("class-subject-applicabilities",
+                    Map.of("scope_id", scopeId, "class_id", 1, "status", "APPLICABLE", "updated_by", 1)), "id")).longValue();
+                yield Map.of("applicability_id", applicabilityId, "demand_type", "STANDARD",
+                    "valid_from", "2026-09-01", "valid_to", "2026-12-31");
             }
             default -> throw new IllegalArgumentException(resource);
         };
@@ -177,10 +183,11 @@ class PostgresCrudIntegrationTest {
             case "teaching-demands" -> Map.entry("periods_per_week", 2.75);
             case "teacher-employments" -> Map.entry("position_code", "UPDATED_POSITION");
             case "teaching-qualifications" -> Map.entry("evidence_ref", "test:evidence");
-            case "teaching-experiences" -> Map.entry("experience_level", "UPDATED");
+            case "teaching-experiences" -> Map.entry("as_of_date", "2026-10-01");
             case "assignment-rounds" -> Map.entry("round_code", "TEST_ROUND_UPDATED");
             case "round-subject-scopes" -> Map.entry("confirmed_by", 1);
-            case "class-subject-applicabilities" -> Map.entry("status", "NOT_APPLICABLE");
+            case "class-subject-applicabilities" -> Map.entry("reason", "Updated reason");
+            case "required-demand-components" -> Map.entry("valid_from", "2026-10-01");
             default -> throw new IllegalArgumentException(resource);
         };
     }

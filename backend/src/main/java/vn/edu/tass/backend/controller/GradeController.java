@@ -28,8 +28,10 @@ public class GradeController {
 
     @GetMapping
     public List<GradeDto> retrieveAllGrade(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllGrade(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "education_level_id", required = false) Long educationLevelId) {
+        if (educationLevelId == null) return service.retrieveAllGrade(limit, offset);
+        return service.searchGrade(limit, offset, educationLevelId);
     }
 
     @GetMapping("/{id}")

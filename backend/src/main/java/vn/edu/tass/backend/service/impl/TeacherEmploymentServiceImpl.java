@@ -1,6 +1,8 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.TeacherEmployment;
@@ -10,6 +12,8 @@ import vn.edu.tass.backend.payload.request.TeacherEmploymentRequest;
 import vn.edu.tass.backend.repository.TeacherEmploymentRepository;
 import vn.edu.tass.backend.service.TeacherEmploymentService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
+import vn.edu.tass.backend.utils.InputRecordRules;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -32,6 +36,23 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<TeacherEmploymentDto> searchTeacherEmployment(int limit, int offset, Long teacherId, Long departmentId, Long semesterId, String employmentStatus, LocalDate asOf) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(teacherId, "teacher_id");
+        InputSpecifications.requirePositive(departmentId, "department_id");
+        InputSpecifications.requirePositive(semesterId, "semester_id");
+        Specification<TeacherEmployment> filters = Specification.allOf(
+            InputSpecifications.equal("teacherId", teacherId),
+            InputSpecifications.equal("departmentId", departmentId),
+            InputSpecifications.equal("semesterId", semesterId),
+            InputSpecifications.equal("employmentStatus", InputSpecifications.optionalText(employmentStatus, "employment_status")),
+            InputSpecifications.activeOn("validFrom", "validTo", asOf));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TeacherEmploymentDto retrieveById(long id) {
         return mapper.toDto(find(id));
     }
@@ -39,6 +60,7 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     @Override
     @Transactional
     public TeacherEmploymentDto createTeacherEmployment(TeacherEmploymentRequest request) {
+        InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         TeacherEmployment entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +68,7 @@ public class TeacherEmploymentServiceImpl implements TeacherEmploymentService {
     @Override
     @Transactional
     public TeacherEmploymentDto updateTeacherEmployment(long id, TeacherEmploymentRequest request) {
+        InputRecordRules.optionalEnd(request.getValidFrom(), request.getValidTo(), "valid_from", "valid_to");
         TeacherEmployment entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));

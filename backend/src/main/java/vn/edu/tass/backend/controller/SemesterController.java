@@ -28,8 +28,10 @@ public class SemesterController {
 
     @GetMapping
     public List<SemesterDto> retrieveAllSemester(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllSemester(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "academic_year_id", required = false) Long academicYearId) {
+        if (academicYearId == null) return service.retrieveAllSemester(limit, offset);
+        return service.searchSemester(limit, offset, academicYearId);
     }
 
     @GetMapping("/{id}")

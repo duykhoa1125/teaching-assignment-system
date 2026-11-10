@@ -39,4 +39,16 @@ public class ClassSubjectApplicability {
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    @Column(name = "confirmed_by")
+    private Long confirmedBy;
+
+    @Column(name = "confirmed_at")
+    private OffsetDateTime confirmedAt;
+
+    @Column(name = "components_confirmed_by")
+    private Long componentsConfirmedBy;
+
+    @Column(name = "components_confirmed_at")
+    private OffsetDateTime componentsConfirmedAt;
 }

@@ -6,6 +6,7 @@ import vn.edu.tass.backend.payload.request.AcademicYearRequest;
 
 public interface AcademicYearService {
     List<AcademicYearDto> retrieveAllAcademicYear(int limit, int offset);
+    List<AcademicYearDto> searchAcademicYear(int limit, int offset, Long schoolId);
     AcademicYearDto retrieveById(long id);
     AcademicYearDto createAcademicYear(AcademicYearRequest request);
     AcademicYearDto updateAcademicYear(long id, AcademicYearRequest request);

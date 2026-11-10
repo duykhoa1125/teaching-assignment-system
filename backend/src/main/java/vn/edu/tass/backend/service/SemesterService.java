@@ -6,6 +6,7 @@ import vn.edu.tass.backend.payload.request.SemesterRequest;
 
 public interface SemesterService {
     List<SemesterDto> retrieveAllSemester(int limit, int offset);
+    List<SemesterDto> searchSemester(int limit, int offset, Long academicYearId);
     SemesterDto retrieveById(long id);
     SemesterDto createSemester(SemesterRequest request);
     SemesterDto updateSemester(long id, SemesterRequest request);

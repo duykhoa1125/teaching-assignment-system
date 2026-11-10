@@ -19,6 +19,10 @@ public class ClassSubjectApplicabilityMapper {
         entity.setStatus(request.getStatus());
         entity.setReason(request.getReason());
         entity.setUpdatedBy(request.getUpdatedBy());
+        entity.setConfirmedBy(request.getConfirmedBy());
+        entity.setConfirmedAt(request.getConfirmedAt());
+        entity.setComponentsConfirmedBy(request.getComponentsConfirmedBy());
+        entity.setComponentsConfirmedAt(request.getComponentsConfirmedAt());
     }
 
     public ClassSubjectApplicabilityDto toDto(ClassSubjectApplicability entity) {
@@ -30,6 +34,10 @@ public class ClassSubjectApplicabilityMapper {
         dto.setReason(entity.getReason());
         dto.setUpdatedBy(entity.getUpdatedBy());
         dto.setUpdatedAt(entity.getUpdatedAt());
+        dto.setConfirmedBy(entity.getConfirmedBy());
+        dto.setConfirmedAt(entity.getConfirmedAt());
+        dto.setComponentsConfirmedBy(entity.getComponentsConfirmedBy());
+        dto.setComponentsConfirmedAt(entity.getComponentsConfirmedAt());
         return dto;
     }
 }

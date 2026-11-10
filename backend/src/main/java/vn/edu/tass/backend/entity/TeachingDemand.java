@@ -1,6 +1,7 @@
 package vn.edu.tass.backend.entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,4 +47,13 @@ public class TeachingDemand {
 
     @Column(name = "demand_type", nullable = false)
     private String demandType;
+
+    @Column(name = "valid_from", nullable = false)
+    private LocalDate validFrom;
+
+    @Column(name = "valid_to", nullable = false)
+    private LocalDate validTo;
+
+    @Column(name = "unit", nullable = false)
+    private String unit;
 }

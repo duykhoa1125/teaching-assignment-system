@@ -33,6 +33,8 @@ public class AssignmentRoundMapper {
         dto.setScopeConfirmedAt(entity.getScopeConfirmedAt());
         dto.setOpensAt(entity.getOpensAt());
         dto.setClosesAt(entity.getClosesAt());
+        dto.setSourceRevisionToken(entity.getSourceRevisionToken());
+        dto.setSourceUpdatedAt(entity.getSourceUpdatedAt());
         return dto;
     }
 }

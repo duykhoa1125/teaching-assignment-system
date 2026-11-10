@@ -17,9 +17,14 @@ public class TeachingExperienceMapper {
         entity.setTeacherId(request.getTeacherId());
         entity.setSubjectId(request.getSubjectId());
         entity.setGradeId(request.getGradeId());
-        entity.setExperienceLevel(request.getExperienceLevel());
-        entity.setExperiencePeriod(request.getExperiencePeriod());
         entity.setRecordedBy(request.getRecordedBy());
+        entity.setExperienceStatus(request.getExperienceStatus());
+        entity.setYearsOfExperience(request.getYearsOfExperience());
+        entity.setAsOfDate(request.getAsOfDate());
+        entity.setEvidenceRef(request.getEvidenceRef());
+        entity.setSourceImportId(request.getSourceImportId());
+        entity.setVerifiedBy(request.getVerifiedBy());
+        entity.setVerifiedAt(request.getVerifiedAt());
     }
 
     public TeachingExperienceDto toDto(TeachingExperience entity) {
@@ -28,10 +33,15 @@ public class TeachingExperienceMapper {
         dto.setTeacherId(entity.getTeacherId());
         dto.setSubjectId(entity.getSubjectId());
         dto.setGradeId(entity.getGradeId());
-        dto.setExperienceLevel(entity.getExperienceLevel());
-        dto.setExperiencePeriod(entity.getExperiencePeriod());
         dto.setRecordedBy(entity.getRecordedBy());
         dto.setRecordedAt(entity.getRecordedAt());
+        dto.setExperienceStatus(entity.getExperienceStatus());
+        dto.setYearsOfExperience(entity.getYearsOfExperience());
+        dto.setAsOfDate(entity.getAsOfDate());
+        dto.setEvidenceRef(entity.getEvidenceRef());
+        dto.setSourceImportId(entity.getSourceImportId());
+        dto.setVerifiedBy(entity.getVerifiedBy());
+        dto.setVerifiedAt(entity.getVerifiedAt());
         return dto;
     }
 }

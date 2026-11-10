@@ -2,6 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.time.LocalDate;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +29,14 @@ public class TeachingExperienceController {
 
     @GetMapping
     public List<TeachingExperienceDto> retrieveAllTeachingExperience(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllTeachingExperience(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "teacher_id", required = false) Long teacherId,
+            @RequestParam(name = "subject_id", required = false) Long subjectId,
+            @RequestParam(name = "grade_id", required = false) Long gradeId,
+            @RequestParam(name = "experience_status", required = false) String experienceStatus,
+            @RequestParam(name = "as_of_date", required = false) LocalDate asOfDate) {
+        if (teacherId == null && subjectId == null && gradeId == null && experienceStatus == null && asOfDate == null) return service.retrieveAllTeachingExperience(limit, offset);
+        return service.searchTeachingExperience(limit, offset, teacherId, subjectId, gradeId, experienceStatus, asOfDate);
     }
 
     @GetMapping("/{id}")

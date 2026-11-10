@@ -6,6 +6,7 @@ import vn.edu.tass.backend.payload.request.GradeRequest;
 
 public interface GradeService {
     List<GradeDto> retrieveAllGrade(int limit, int offset);
+    List<GradeDto> searchGrade(int limit, int offset, Long educationLevelId);
     GradeDto retrieveById(long id);
     GradeDto createGrade(GradeRequest request);
     GradeDto updateGrade(long id, GradeRequest request);

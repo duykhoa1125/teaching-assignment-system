@@ -30,10 +30,10 @@ class BackendContextTest {
     @Autowired SchoolService schools;
 
     @Test
-    void registersSixteenControllersServicesAndRepositories() {
-        assertEquals(16, context.getBeansWithAnnotation(RestController.class).size());
-        assertEquals(16, context.getBeansWithAnnotation(Service.class).size());
-        assertEquals(16, context.getBeanNamesForType(org.springframework.data.jpa.repository.JpaRepository.class).length);
+    void registersSeventeenControllersServicesAndRepositories() {
+        assertEquals(17, context.getBeansWithAnnotation(RestController.class).size());
+        assertEquals(17, context.getBeansWithAnnotation(Service.class).size());
+        assertEquals(17, context.getBeanNamesForType(org.springframework.data.jpa.repository.JpaRepository.class).length);
     }
 
     @Test

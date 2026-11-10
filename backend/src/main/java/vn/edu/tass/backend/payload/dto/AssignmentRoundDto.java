@@ -25,4 +25,8 @@ public class AssignmentRoundDto {
     private OffsetDateTime opensAt;
 
     private OffsetDateTime closesAt;
+
+    private String sourceRevisionToken;
+
+    private OffsetDateTime sourceUpdatedAt;
 }
