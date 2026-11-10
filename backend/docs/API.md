@@ -434,8 +434,11 @@ GET /api/teacher-workload-bases?teacher_id=1&semester_id=1&verification_status=V
 
 ### Kiểm tra dữ liệu quan trọng
 
-- `school.status`, `school_class.status`, `teaching_demand.status`, `assignment_round.status`, `teacher_employment.employment_status`, `teaching_qualification.verification_status` và `teacher_duty.payment_status` hiện chỉ yêu cầu chuỗi không rỗng theo schema; API chưa áp đặt danh sách enum chung cho các trường này.
-- Danh sách trạng thái nghiệp vụ cho `teaching_demand`, `teacher_employment`, `teaching_qualification` và cách ngừng hiệu lực giáo viên chưa được chốt. Bảng `teacher` hiện không có cột trạng thái hay khoảng hiệu lực; API không tự suy diễn thao tác ngừng hiệu lực.
+- `teaching_demand.status`: `ACTIVE`, `INACTIVE`.
+- `teacher_employment.employment_status`: `TEACHING`, `ON_LEAVE`, `INACTIVE`. `ON_LEAVE` là tạm nghỉ; để ngừng hiệu lực công tác, kết thúc khoảng `TEACHING` cũ rồi ghi khoảng `INACTIVE` không chồng lấn. Bảng `teacher` chưa có cột trạng thái riêng.
+- `teaching_qualification.verification_status`: `PENDING`, `VERIFIED`, `INACTIVE`. Khi ngừng hiệu lực chuyên môn, cần kết thúc khoảng `VERIFIED` cũ hoặc cập nhật bản ghi cũ; thêm một bản ghi `INACTIVE` chồng lấn không vô hiệu hóa bản `VERIFIED` còn hiệu lực. Các bảng khác có `verification_status` giữ tập giá trị riêng.
+- Database đã tồn tại cần kiểm tra dữ liệu cũ rồi chạy `sql/03_status_contract_migration.sql`. Script đổi `MATERNITY_LEAVE` thành `ON_LEAVE` và thêm ba CHECK constraint; trạng thái ngoài tập được duyệt sẽ khiến transaction thất bại để xử lý thủ công.
+- `school.status`, `school_class.status`, `assignment_round.status` và `teacher_duty.payment_status` vẫn chỉ yêu cầu chuỗi không rỗng theo schema.
 - `class_subject_applicability.status`: `APPLICABLE`, `NOT_APPLICABLE`, `UNDETERMINED`. Khi gửi `confirmed_by` cần gửi cả `confirmed_at`; `components_confirmed_by` và `components_confirmed_at` cũng phải đi cùng nhau. `required_demand_component.confirmed_by` và `confirmed_at` áp dụng quy tắc tương tự.
 - `assignment_round.scope_confirmed_by` đi cùng `scope_confirmed_at`; `round_subject_scope.confirmed_by` đi cùng `confirmed_at`; `teaching_qualification.verified_by` đi cùng `verified_at`. `assignment_round.closes_at` không được trước `opens_at`.
 - `teaching_demand.demand_type`: `STANDARD`, `SPECIALIZED_TOPIC`, `ENRICHMENT`; `unit` là `PERIOD_PER_WEEK`; `periods_per_week` dương, tối đa 999.99, tối đa 2 chữ số thập phân.

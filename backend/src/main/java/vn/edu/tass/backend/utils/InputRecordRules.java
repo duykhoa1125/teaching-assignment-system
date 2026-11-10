@@ -11,8 +11,29 @@ import vn.edu.tass.backend.payload.request.TeachingHistoryRequest;
 
 public final class InputRecordRules {
     private static final Set<String> VERIFICATION_STATUSES = Set.of("PENDING", "VERIFIED", "REJECTED");
+    private static final Set<String> DEMAND_STATUSES = Set.of("ACTIVE", "INACTIVE");
+    private static final Set<String> EMPLOYMENT_STATUSES = Set.of("TEACHING", "ON_LEAVE", "INACTIVE");
+    private static final Set<String> QUALIFICATION_STATUSES = Set.of("PENDING", "VERIFIED", "INACTIVE");
 
     private InputRecordRules() {}
+
+    public static void demandStatus(String status) {
+        requireStatus(status, DEMAND_STATUSES, "status");
+    }
+
+    public static void employmentStatus(String status) {
+        requireStatus(status, EMPLOYMENT_STATUSES, "employment_status");
+    }
+
+    public static void qualificationStatus(String status) {
+        requireStatus(status, QUALIFICATION_STATUSES, "verification_status");
+    }
+
+    private static void requireStatus(String status, Set<String> allowed, String field) {
+        if (status == null || !allowed.contains(status)) {
+            throw new BadRequestException(field + " is invalid");
+        }
+    }
 
     public static void dates(LocalDate from, LocalDate to, String fromName, String toName) {
         if (from == null || to == null || to.isBefore(from)) {

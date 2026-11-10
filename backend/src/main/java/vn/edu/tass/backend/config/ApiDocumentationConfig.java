@@ -88,10 +88,36 @@ public class ApiDocumentationConfig {
             operation.setSummary(summary(method, byId, label));
             operation.setDescription(description(method, byId));
             documentParameters(operation);
+            if (method == PathItem.HttpMethod.GET && !byId) documentStatusFilter(resource, operation);
             if (method == PathItem.HttpMethod.POST || method == PathItem.HttpMethod.PUT) {
                 addRequestExample(operation, examples.get(resource));
             }
             documentResponses(operation, method, byId);
+        });
+    }
+
+    private static void documentStatusFilter(String resource, Operation operation) {
+        String field;
+        List<String> values;
+        switch (resource) {
+            case "teaching-demands" -> {
+                field = "status";
+                values = List.of("ACTIVE", "INACTIVE");
+            }
+            case "teacher-employments" -> {
+                field = "employment_status";
+                values = List.of("TEACHING", "ON_LEAVE", "INACTIVE");
+            }
+            case "teaching-qualifications" -> {
+                field = "verification_status";
+                values = List.of("PENDING", "VERIFIED", "INACTIVE");
+            }
+            default -> { return; }
+        }
+        if (operation.getParameters() == null) return;
+        operation.getParameters().stream().filter(p -> field.equals(p.getName())).forEach(p -> {
+            p.setSchema(new StringSchema()._enum(values));
+            p.setDescription("Lọc chính xác theo trạng thái được hỗ trợ.");
         });
     }
 

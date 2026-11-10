@@ -3,6 +3,7 @@ package vn.edu.tass.backend.payload.request;
 import java.time.LocalDate;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -28,6 +29,7 @@ public class TeacherEmploymentRequest {
 
     @NotBlank
     @Size(max = 40)
+    @Schema(allowableValues = {"TEACHING", "ON_LEAVE", "INACTIVE"})
     private String employmentStatus;
 
     @NotBlank
