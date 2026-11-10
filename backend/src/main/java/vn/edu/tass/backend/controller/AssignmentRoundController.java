@@ -28,8 +28,11 @@ public class AssignmentRoundController {
 
     @GetMapping
     public List<AssignmentRoundDto> retrieveAllAssignmentRound(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllAssignmentRound(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "semester_id", required = false) Long semesterId,
+            @RequestParam(name = "status", required = false) String status) {
+        if (semesterId == null && status == null) return service.retrieveAllAssignmentRound(limit, offset);
+        return service.searchAssignmentRound(limit, offset, semesterId, status);
     }
 
     @GetMapping("/{id}")

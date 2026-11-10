@@ -2,6 +2,7 @@ package vn.edu.tass.backend.controller;
 
 import java.net.URI;
 import java.util.List;
+import java.time.LocalDate;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -28,8 +29,14 @@ public class TeachingQualificationController {
 
     @GetMapping
     public List<TeachingQualificationDto> retrieveAllTeachingQualification(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllTeachingQualification(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "teacher_id", required = false) Long teacherId,
+            @RequestParam(name = "subject_id", required = false) Long subjectId,
+            @RequestParam(name = "education_level_id", required = false) Long educationLevelId,
+            @RequestParam(name = "verification_status", required = false) String verificationStatus,
+            @RequestParam(name = "as_of", required = false) LocalDate asOf) {
+        if (teacherId == null && subjectId == null && educationLevelId == null && verificationStatus == null && asOf == null) return service.retrieveAllTeachingQualification(limit, offset);
+        return service.searchTeachingQualification(limit, offset, teacherId, subjectId, educationLevelId, verificationStatus, asOf);
     }
 
     @GetMapping("/{id}")

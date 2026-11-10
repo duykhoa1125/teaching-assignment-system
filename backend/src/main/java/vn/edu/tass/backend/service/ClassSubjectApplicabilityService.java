@@ -6,6 +6,7 @@ import vn.edu.tass.backend.payload.request.ClassSubjectApplicabilityRequest;
 
 public interface ClassSubjectApplicabilityService {
     List<ClassSubjectApplicabilityDto> retrieveAllClassSubjectApplicability(int limit, int offset);
+    List<ClassSubjectApplicabilityDto> searchClassSubjectApplicability(int limit, int offset, Long scopeId, Long classId, String status);
     ClassSubjectApplicabilityDto retrieveById(long id);
     ClassSubjectApplicabilityDto createClassSubjectApplicability(ClassSubjectApplicabilityRequest request);
     ClassSubjectApplicabilityDto updateClassSubjectApplicability(long id, ClassSubjectApplicabilityRequest request);

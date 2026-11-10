@@ -62,6 +62,9 @@ class PostgresCrudIntegrationTest {
 
         Map.Entry<String, Object> change = update(resource);
         body.put(change.getKey(), change.getValue());
+        if (resource.equals("round-subject-scopes")) {
+            body.put("confirmed_at", "2026-10-01T09:00:00+07:00");
+        }
         Object updated = replace(resource, id, body);
         Object expected = change.getValue();
         Object actual = value(updated, camelCase(change.getKey()));

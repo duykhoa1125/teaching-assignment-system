@@ -4,6 +4,8 @@ import java.time.LocalDate;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Max;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -12,9 +14,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class SemesterRequest {
     @NotNull
+    @Positive
     private Long academicYearId;
 
     @NotNull
+    @Positive
+    @Max(32767)
     private Integer semesterNo;
 
     @NotNull

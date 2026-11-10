@@ -1,6 +1,7 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.Semester;
@@ -10,6 +11,8 @@ import vn.edu.tass.backend.payload.request.SemesterRequest;
 import vn.edu.tass.backend.repository.SemesterRepository;
 import vn.edu.tass.backend.service.SemesterService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
+import vn.edu.tass.backend.utils.InputRecordRules;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -32,6 +35,17 @@ public class SemesterServiceImpl implements SemesterService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<SemesterDto> searchSemester(int limit, int offset, Long academicYearId) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(academicYearId, "academic_year_id");
+        Specification<Semester> filters = Specification.allOf(
+            InputSpecifications.equal("academicYearId", academicYearId));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public SemesterDto retrieveById(long id) {
         return mapper.toDto(find(id));
     }
@@ -39,6 +53,8 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     @Transactional
     public SemesterDto createSemester(SemesterRequest request) {
+        InputRecordRules.dates(request.getStartsOn(), request.getEndsOn(), "starts_on", "ends_on");
+        requireSemesterNo(request);
         Semester entity = mapper.toEntity(request);
         return mapper.toDto(repository.saveAndFlush(entity));
     }
@@ -46,6 +62,8 @@ public class SemesterServiceImpl implements SemesterService {
     @Override
     @Transactional
     public SemesterDto updateSemester(long id, SemesterRequest request) {
+        InputRecordRules.dates(request.getStartsOn(), request.getEndsOn(), "starts_on", "ends_on");
+        requireSemesterNo(request);
         Semester entity = find(id);
         mapper.applyRequest(request, entity);
         return mapper.toDto(repository.saveAndFlush(entity));
@@ -62,5 +80,11 @@ public class SemesterServiceImpl implements SemesterService {
         CrudParameters.requireId(id);
         return repository.findById(id)
             .orElseThrow(() -> new vn.edu.tass.backend.exception.NotFoundException("semester id=" + id + " does not exist"));
+    }
+
+    private static void requireSemesterNo(SemesterRequest request) {
+        if (request.getSemesterNo() == null || request.getSemesterNo() < 1) {
+            throw new vn.edu.tass.backend.exception.BadRequestException("semester_no must be positive");
+        }
     }
 }

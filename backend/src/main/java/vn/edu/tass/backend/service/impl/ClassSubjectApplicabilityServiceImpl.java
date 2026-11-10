@@ -1,6 +1,7 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.ClassSubjectApplicability;
@@ -11,6 +12,7 @@ import vn.edu.tass.backend.payload.request.ClassSubjectApplicabilityRequest;
 import vn.edu.tass.backend.repository.ClassSubjectApplicabilityRepository;
 import vn.edu.tass.backend.service.ClassSubjectApplicabilityService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -28,6 +30,20 @@ public class ClassSubjectApplicabilityServiceImpl implements ClassSubjectApplica
     public List<ClassSubjectApplicabilityDto> retrieveAllClassSubjectApplicability(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClassSubjectApplicabilityDto> searchClassSubjectApplicability(int limit, int offset, Long scopeId, Long classId, String status) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(scopeId, "scope_id");
+        InputSpecifications.requirePositive(classId, "class_id");
+        Specification<ClassSubjectApplicability> filters = Specification.allOf(
+            InputSpecifications.equal("scopeId", scopeId),
+            InputSpecifications.equal("classId", classId),
+            InputSpecifications.equal("status", InputSpecifications.optionalText(status, "status")));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
             .map(mapper::toDto).toList();
     }
 

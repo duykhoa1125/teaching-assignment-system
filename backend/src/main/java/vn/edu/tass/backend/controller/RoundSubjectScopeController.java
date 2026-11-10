@@ -28,8 +28,12 @@ public class RoundSubjectScopeController {
 
     @GetMapping
     public List<RoundSubjectScopeDto> retrieveAllRoundSubjectScope(@RequestParam(defaultValue = "20") int limit,
-            @RequestParam(defaultValue = "0") int offset) {
-        return service.retrieveAllRoundSubjectScope(limit, offset);
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(name = "round_id", required = false) Long roundId,
+            @RequestParam(name = "grade_id", required = false) Long gradeId,
+            @RequestParam(name = "subject_id", required = false) Long subjectId) {
+        if (roundId == null && gradeId == null && subjectId == null) return service.retrieveAllRoundSubjectScope(limit, offset);
+        return service.searchRoundSubjectScope(limit, offset, roundId, gradeId, subjectId);
     }
 
     @GetMapping("/{id}")

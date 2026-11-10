@@ -1,6 +1,8 @@
 package vn.edu.tass.backend.service.impl;
 
 import java.util.List;
+import java.time.LocalDate;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.tass.backend.entity.RequiredDemandComponent;
@@ -12,6 +14,7 @@ import vn.edu.tass.backend.payload.request.RequiredDemandComponentRequest;
 import vn.edu.tass.backend.repository.RequiredDemandComponentRepository;
 import vn.edu.tass.backend.service.RequiredDemandComponentService;
 import vn.edu.tass.backend.utils.CrudParameters;
+import vn.edu.tass.backend.utils.InputSpecifications;
 import vn.edu.tass.backend.utils.OffsetLimitPageable;
 
 @Service
@@ -30,6 +33,19 @@ public class RequiredDemandComponentServiceImpl implements RequiredDemandCompone
     public List<RequiredDemandComponentDto> retrieveAllRequiredDemandComponent(int limit, int offset) {
         CrudParameters.requirePage(limit, offset);
         return repository.findAll(new OffsetLimitPageable(limit, offset)).stream().map(mapper::toDto).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RequiredDemandComponentDto> searchRequiredDemandComponent(int limit, int offset, Long applicabilityId, String demandType, LocalDate asOf) {
+        CrudParameters.requirePage(limit, offset);
+        InputSpecifications.requirePositive(applicabilityId, "applicability_id");
+        Specification<RequiredDemandComponent> filters = Specification.allOf(
+            InputSpecifications.equal("applicabilityId", applicabilityId),
+            InputSpecifications.equal("demandType", InputSpecifications.optionalText(demandType, "demand_type")),
+            InputSpecifications.activeOn("validFrom", "validTo", asOf));
+        return repository.findAll(filters, new OffsetLimitPageable(limit, offset)).stream()
+            .map(mapper::toDto).toList();
     }
 
     @Override
