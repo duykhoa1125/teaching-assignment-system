@@ -138,7 +138,7 @@ INSERT INTO teaching_history (id, teacher_id, academic_year_id, semester_id, cla
 (2, 1, 2, 2, 8, 1, '2026-01-05', '2026-05-31', 'EXTERNAL_RECORD', 1, 'demo:actual-history:A:8', 'VERIFIED', 1, '2026-08-01 08:00+07', 1);
 
 INSERT INTO optimization_config (id, config_code, version_no, criteria_weights_json, time_limit_seconds, confirmed_by, confirmed_at) VALUES
-(1, 'DEMO_FIVE_STAGE', 1, '{"contract_version": 1, "demo_only": true, "objective_order": ["Z", "L1", "M", "experience", "change"], "coverage_mode": "COMPONENTS", "load_basis": "T-B", "lock_policy": "KEEP_LOCKED", "unassigned_policy": "DRAFT_ONLY", "non_solver_budget_seconds": 10, "stage_budgets": [{"name": "Z", "seconds": 8}, {"name": "L1", "seconds": 14}, {"name": "M", "seconds": 10}, {"name": "experience", "seconds": 10}, {"name": "change", "seconds": 8}], "experience": {"beta": 1, "as_of_date": "2026-08-01", "unknown_policy": "BLOCK", "grade_weights": {"9": 3, "12": 3, "other": 1}, "penalty_bands": [{"min_years": 0, "penalty": 6}, {"min_years": 1, "penalty": 4}, {"min_years": 3, "penalty": 2}, {"min_years": 5, "penalty": 0}]}, "hard_limits": {"max_total_weekly": 25, "source": "demo:illustrative-cap", "not_a_legal_threshold": true}}'::jsonb, 60, 1, '2026-08-01 08:00+07');
+(1, 'DEMO_FIVE_STAGE', 1, '{"contract_version": 1, "demo_only": true, "objective_order": ["Z", "L1", "M", "experience", "change"], "coverage_mode": "COMPONENTS", "load_basis": "T-B", "lock_policy": "KEEP_LOCKED", "unassigned_policy": "DRAFT_ONLY", "non_solver_budget_seconds": 10, "stage_budgets": [{"name": "Z", "seconds": 8}, {"name": "L1", "seconds": 14}, {"name": "M", "seconds": 10}, {"name": "experience", "seconds": 10}, {"name": "change", "seconds": 8}], "experience": {"beta": 1, "as_of_date": "2026-08-01", "unknown_policy": "BLOCK", "grade_weights": {"9": 3, "12": 3, "other": 1}, "penalty_bands": [{"min_years": 0, "penalty": 6}, {"min_years": 1, "penalty": 4}, {"min_years": 3, "penalty": 2}, {"min_years": 5, "penalty": 0}]}, "workload_policy": {"eligible_position_codes": ["TEACHER"], "rule_evaluator": "ILLUSTRATIVE_MVP_V1"}, "hard_limits": {"basis": "T", "max_total_weekly": 25, "source": "demo:illustrative-cap", "not_a_legal_threshold": true}}'::jsonb, 60, 1, '2026-08-01 08:00+07');
 
 INSERT INTO rule_set_version (id, rule_set_code, version_no, institution_type, status, valid_from, valid_to, confirmed_by, confirmed_at) VALUES
 (1, 'DEMO_MVP_RULES', 1, 'MULTI_LEVEL', 'DEMO_CONFIRMED', '2026-08-01', '2026-12-31', 1, '2026-08-01 08:00+07');
@@ -243,6 +243,25 @@ INSERT INTO required_demand_component (id, applicability_id, demand_type, valid_
 UPDATE class_subject_applicability SET components_confirmed_by=1,components_confirmed_at=clock_timestamp() WHERE id IN (1,2,4,5,7,8,9);
 
 -- Tat ca nguon da nap. Tu day khong sua du lieu nguon de snapshot con moi.
+-- Demo owner explicitly confirms the complete C/R inventory; production migration does not backfill this.
+UPDATE teacher_period_workload w SET input_confirmed_by=1,input_confirmed_at=clock_timestamp(),
+ input_confirmation_json=jsonb_build_object('contract_version',1,'round_id',1,
+ 'in_scope_demand_ids',(SELECT jsonb_agg(d.id ORDER BY d.id) FROM teaching_demand d WHERE d.semester_id=1 AND d.status='ACTIVE'
+   AND EXISTS(SELECT 1 FROM round_subject_scope sc JOIN class_subject_applicability a ON a.scope_id=sc.id
+     WHERE sc.round_id=1 AND sc.subject_id=d.subject_id AND a.class_id=d.class_id AND a.status='APPLICABLE')),
+ 'outside_demand_ids','[]'::jsonb,'evidence_ref','demo:complete-input-inventory:round1:'||w.teacher_id||':'||w.calculation_period_id,
+ 'reduction_items',coalesce((SELECT jsonb_agg(item ORDER BY table_name,source_id) FROM (
+   SELECT 'teacher_duty' table_name,d.id source_id,jsonb_build_object('source_table','teacher_duty','source_id',d.id,'item_key',d.evidence_ref) item
+     FROM teacher_duty d JOIN calculation_period cp ON cp.id=w.calculation_period_id
+     WHERE d.teacher_id=w.teacher_id AND d.semester_id=cp.semester_id AND d.valid_from<=cp.ends_on AND coalesce(d.valid_to,cp.ends_on)>=cp.starts_on
+   UNION ALL
+   SELECT 'teacher_reduction',r.id,jsonb_build_object('source_table','teacher_reduction','source_id',r.id,'item_key',r.evidence_ref)
+     FROM teacher_reduction r JOIN calculation_period cp ON cp.id=w.calculation_period_id
+     WHERE r.teacher_id=w.teacher_id AND r.semester_id=cp.semester_id AND r.valid_from<=cp.ends_on AND coalesce(r.valid_to,cp.ends_on)>=cp.starts_on
+ ) items),'[]'::jsonb),
+ 'conversion_items',coalesce((SELECT jsonb_agg(jsonb_build_object('source_table','converted_activity','source_id',c.id,'item_key',c.evidence_ref) ORDER BY c.id)
+   FROM converted_activity c WHERE c.teacher_id=w.teacher_id AND c.calculation_period_id=w.calculation_period_id AND c.include_in_workload),'[]'::jsonb))
+ WHERE w.record_type='OUTSIDE_SCOPE_WEEKLY';
 SELECT tass_capture_snapshot(1,1,1,'[{"demand_id":1,"teacher_id":1,"reason":"Giữ phân công thủ công đã chốt (demo)"}]'::jsonb);
 INSERT INTO assignment_plan(id,round_id,plan_code,created_by) VALUES(1,1,'DEMO_PLAN_HK1',1);
 INSERT INTO plan_version(id,plan_id,version_no,status,input_snapshot_id,created_by)

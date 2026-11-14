@@ -30,9 +30,16 @@ class BackendContextTest {
     @Autowired SchoolService schools;
 
     @Test
-    void registersTwentyControllersServicesAndRepositories() {
-        assertEquals(20, context.getBeansWithAnnotation(RestController.class).size());
-        assertEquals(20, context.getBeansWithAnnotation(Service.class).size());
+    void registersCrudPlanAndReadinessWithTwentyJpaRepositories() {
+        assertTrue(context.getBeansWithAnnotation(RestController.class).keySet().containsAll(java.util.List.of(
+            "assignmentPlanController","roundReadinessController","solverRunController","planResultController","planAssignmentController")));
+        assertTrue(context.containsBean("planAssignmentService"));
+        for (String prefix:java.util.List.of("school","academicYear","semester","educationLevel","grade","schoolClass","subject","teacher",
+                "teachingDemand","department","teacherEmployment","teachingQualification","teachingExperience","assignmentRound","roundSubjectScope",
+                "classSubjectApplicability","requiredDemandComponent","teacherWorkloadBasis","teachingHistory","teacherDuty")) {
+            assertTrue(context.containsBean(prefix+"Controller"),prefix+" controller");
+            assertTrue(context.containsBean(prefix+"ServiceImpl"),prefix+" service");
+        }
         assertEquals(20, context.getBeanNamesForType(org.springframework.data.jpa.repository.JpaRepository.class).length);
     }
 

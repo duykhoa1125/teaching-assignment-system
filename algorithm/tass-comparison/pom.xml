@@ -5,6 +5,16 @@
   <properties><maven.compiler.release>17</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><algorithm.class>CP_SAT</algorithm.class></properties>
   <dependencies><dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>5.11.4</version><scope>test</scope></dependency></dependencies>
   <build><plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><version>3.6.2</version>
+      <executions><execution><id>require-team-java</id><phase>validate</phase><goals><goal>enforce</goal></goals>
+        <configuration><rules>
+          <requireJavaVersion><version>[17,18)</version><message>TASS requires JDK 17. Use scripts/mvn17.ps1 or set JAVA_HOME to JDK 17; compiler release alone does not select the running JDK.</message></requireJavaVersion>
+          <requireMavenVersion><version>[3.9,)</version></requireMavenVersion>
+        </rules></configuration>
+      </execution></executions>
+    </plugin>
+
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.2</version><configuration><systemPropertyVariables><algorithm.class>${algorithm.class}</algorithm.class><tass.fixtures>${project.basedir}/../tass-cpsat/fixtures</tass.fixtures></systemPropertyVariables></configuration></plugin>
   </plugins></build>

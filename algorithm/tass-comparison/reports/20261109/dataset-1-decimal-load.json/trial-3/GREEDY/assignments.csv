@@ -1,0 +1,3 @@
+demandId,classId,subjectId,demandType,periods,teacherId,reasonCode,reason
+"D1","10A","MATH","STANDARD","1.25","FLEX","",""
+"D2","10A","PHYSICS","STANDARD","1.875","FLEX","",""

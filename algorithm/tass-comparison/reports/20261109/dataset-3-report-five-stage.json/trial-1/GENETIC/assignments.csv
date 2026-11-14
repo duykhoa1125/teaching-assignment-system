@@ -1,0 +1,3 @@
+demandId,classId,subjectId,demandType,periods,teacherId,reasonCode,reason
+"D1","CLASS0","MATH","STANDARD","1","MATH-ONLY","",""
+"D2","CLASS1","MATH","STANDARD","1","FLEX","",""

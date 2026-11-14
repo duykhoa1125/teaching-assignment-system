@@ -62,6 +62,12 @@ miktex-*/
 target/
 *.class
 .runtime/
+/backend/bin/
+
+# Local Docker configuration; commit only the example.
+.env
+.env.*
+!.env.example
 *.jar
 *.war
 *.ear
@@ -107,4 +113,11 @@ $RECYCLE.BIN/
 !/docs/images/hcmut.png
 !/docs/diagrams/
 !/docs/diagrams/**
+!/docs/project.md
+!/docs/git-flow.md
+!/docs/DEVELOPMENT.md
+!/docs/BACKLOG.md
+!/docs/CLEANUP.md
+!/docs/history/
+!/docs/history/**
 

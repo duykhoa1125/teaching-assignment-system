@@ -2,6 +2,7 @@ package vn.edu.tass.backend.integration;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -39,7 +40,21 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(40, spec.path("paths").size());
+        assertEquals(56, spec.path("paths").size());
+        for(String suffix:java.util.List.of("/{assignmentId}","/{assignmentId}/lock","/{assignmentId}/unlock","/locks","/unlocks")) {
+            var operation=spec.path("paths").path("/api/plan-versions/{id}/assignments"+suffix).path(suffix.equals("/{assignmentId}")?"patch":"post");
+            for(String code:java.util.List.of("200","400","401","403","404","409","422")) assertTrue(operation.path("responses").has(code),suffix+" response "+code);
+            assertFalse(operation.path("responses").has("201"));
+            assertTrue(operation.path("requestBody").path("content").path("application/json").path("example").isObject());
+            assertEquals("Manual assignments",operation.path("tags").get(0).asText());
+        }
+        assertTrue(spec.path("paths").path("/internal/health").isMissingNode());
+        assertTrue(spec.path("paths").path("/api/plan-versions/{id}/validation").path("post").path("responses").has("201"));
+        for(String suffix:new String[]{"assignments","workloads","optimization","validation"}) {
+            assertTrue(spec.path("paths").path("/api/plan-versions/{id}/"+suffix).path("get").path("responses").has("403"));
+        }
+        assertTrue(spec.path("paths").path("/api/plan-versions/{id}/solver-runs").path("post").path("responses").has("202"));
+        assertTrue(spec.path("paths").path("/api/plan-versions/{id}/solver-runs").path("post").path("responses").has("503"));
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",

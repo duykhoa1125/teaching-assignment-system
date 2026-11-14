@@ -10,6 +10,16 @@
     <dependency><groupId>org.junit.jupiter</groupId><artifactId>junit-jupiter</artifactId><version>${junit.version}</version><scope>test</scope></dependency>
   </dependencies>
   <build><plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><version>3.6.2</version>
+      <executions><execution><id>require-team-java</id><phase>validate</phase><goals><goal>enforce</goal></goals>
+        <configuration><rules>
+          <requireJavaVersion><version>[17,18)</version><message>TASS requires JDK 17. Use scripts/mvn17.ps1 or set JAVA_HOME to JDK 17; compiler release alone does not select the running JDK.</message></requireJavaVersion>
+          <requireMavenVersion><version>[3.9,)</version></requireMavenVersion>
+        </rules></configuration>
+      </execution></executions>
+    </plugin>
+
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-jar-plugin</artifactId><version>3.4.1</version><configuration><forceCreation>true</forceCreation></configuration><executions><execution><id>test-helpers</id><goals><goal>test-jar</goal></goals></execution><execution><id>reusable-core</id><goals><goal>jar</goal></goals><configuration><classifier>core</classifier></configuration></execution></executions></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.13.0</version></plugin>
     <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.5.2</version></plugin>

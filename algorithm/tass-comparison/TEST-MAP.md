@@ -1,34 +1,18 @@
 # Ma trận kiểm thử dùng chung
 
-Các dòng sau lấy lại scenario/assertions nghiệp vụ từ `tass-cpsat/src/test/java/vn/edu/tass/solver/SolverTest.java` và `AssignmentServiceIT.java`. Chúng nằm trong **một nguồn duy nhất** `shared-tests/vn/edu/tass/solver/CommonSolverTest.java`, được chạy 3 lần bằng adapter CP-SAT, Greedy và GA.
+Nguồn duy nhất: [CommonSolverTest.java](shared-tests/vn/edu/tass/solver/CommonSolverTest.java), được build trong Greedy/GA/benchmark bằng core/test-helpers CP-SAT. Fixture đọc từ ../tass-cpsat/fixtures, không sao chép thành dữ liệu riêng cho từng thuật toán.
 
-| Test nguồn CP-SAT | Test chung |
-|---|---|
-| checkedInFixtures (4 tệp) | originalFixturesAndExpectedCoverage (4 lượt) |
-| invalidInputs / poc16BadDataStopsBeforeModel (19 dòng) | originalInvalidInputs / originalInputValidationMatrix (19 lượt), gọi trực tiếp source matrix từ test-JAR |
-| poc01GreedyTrapSavesFlexibleTeacherForOnlyPossibleDemand | poc01GreedyTrap |
-| poc03NoCandidateDoesNotInventTeacher | poc03UnverifiedQualificationIsNotEligibility |
-| poc04CapacityReturnsPartialAndLocalReason | poc04CapacityAndHonestLocalReason |
-| poc05And11ExactDecimalsOutsideAndConvertedLoad | poc05And11OriginalDecimalFixture |
-| poc17AssignedComponentsCannotUseDifferentTeachers | poc17ComponentsNeverUseDifferentTeachers |
-| poc18LeaveIsNotUnderloadAndNoCrossSemesterEligibility | poc18LeaveAndOtherSemesterNotEligible |
-| levelQualificationIsNotInherited | originalWrongLevelCase |
-| annualConstraintUsesItsOwnCoefficientsAndUnits | originalAnnualExpressionUsesOwnUnit |
-| fixedLoadViolationCanMakeModelInfeasibleEvenWithUnassignedVariables | originalBaselineInfeasibilityCase |
-| noTeachersProducesAllUnassigned | originalNoTeachersCase |
-| coveragePeriodsAndComponentsAreDifferentObjectives / completeGroupObjectiveAndPartialGroupsAreReported | originalCoverageModes (cả 3 mode) |
-| poc10ChangesCountTeacherSwitchOnceAndAddedRemovedSeparately | poc10OriginalChangeMetricCase |
-| scalingDoesNotChangeRelativeLoadExperienceWeights | originalScalingInvariant |
-| poc09CancelledRunHasNoApplicableCandidate | poc09Cancellation |
-| nativeSolveValidateAndAtomicApplyKeepsDraft | originalApplyAndStaleRevision |
-| poc15TwoConcurrentAppliesExactlyOneWins | originalConcurrentApplyCase |
-| poc15ChangedSourceTokenOrVersionOrStateRejectsLateResult | originalChangedTokenVersionSnapshotStateCases |
-| cancellationAndFailurePreserveSavedAssignments | originalCancelledApplyPreservesSavedData |
-| partialDraftCanBeAppliedButCannotPassOpeningDataGuard | originalPartialDraftCanApplyButNotOpen |
-| Kiểm chứng bổ sung | sameSeedReproducesDecisionsWhenNoTimeLimitIntervenes |
+| Phạm vi | Kiểm tra tiêu biểu |
+| --- | --- |
+| Fixture và input lỗi | originalFixturesAndExpectedCoverage; originalInputValidationMatrix dùng SolverTest.invalidInputs |
+| Ứng viên/công tác/chuyên môn | poc01GreedyTrap; poc03UnverifiedQualificationIsNotEligibility; poc18LeaveAndOtherSemesterNotEligible; originalWrongLevelCase |
+| Thành phần độc lập | poc17ComponentsCanUseDifferentTeachers; không ép cùng người cho chính khóa/chuyên đề/tăng cường |
+| Tải/precision/đơn vị | poc04CapacityAndHonestLocalReason; poc05And11OriginalDecimalFixture; originalAnnualExpressionUsesOwnUnit; originalScalingInvariant |
+| Nghiệm thiếu/coverage | originalNoTeachersCase; originalCoverageModes; originalBaselineInfeasibilityCase |
+| Giữ mềm và CAS | poc10OriginalChangeMetricCase; originalApplyAndStaleRevision; originalConcurrentApplyCase; originalChangedTokenVersionSnapshotStateCases |
+| Hủy/fallback | poc09Cancellation; originalCancelledApplyPreservesSavedData |
+| Năm mục tiêu/khóa | reportV2FixtureUsesFiveElementScore; locksAreRespectedByEveryAlgorithm; ineligibleLockReturnsExplicitConflictForEveryAlgorithm |
 
-**43 test executions mỗi thuật toán**, gồm 4 fixture + 19 dòng input lỗi + 20 test methods còn lại. Không có bản fixture sao chép riêng cho Greedy/GA. Common suite gọi lại `Fixtures` và các hàm kiểm tra số gốc từ test-JAR. Các thông số thời gian và status/proof được phân biệt theo loại thuật toán.
+Hồ sơ09/11 ghi **46 lượt CommonSolverTest mỗi thuật toán**, ba lần chạy; CP-SAT riêng63 unit+8 integration. Tổng209 là lượt thực thi, không phải209 yêu cầu độc lập. [Hồ sơ gốc](../tass-cpsat/docs/TEST-RESULTS-20261109.md) giữ môi trường/phạm vi của lần chạy đó; không gọi đây là lượt test mới trong lúc dọn repo.
 
-CP-SAT vẫn chạy nguyên bộ 54 tests riêng, gồm 30 bài toán vét cạn trong một test, kiểm tra pha 1/2 UNKNOWN/FEASIBLE/OPTIMAL, proof/bound, JAR native và API áp dụng. Không dùng những test chứng minh optimum làm điều kiện bắt buộc cho một heuristic; khi so sánh chất lượng, ghi điểm và độ phủ thực đạt thay vì thay assertion để che một nghiệm kém.
-
-Nguồn test được dùng trực tiếp, nên khi đổi matrix input lỗi hoặc fixture chuẩn trong CP-SAT, lần chạy tiếp của cả ba sẽ thấy thay đổi đó. Nếu thay contract lớn, cần cập nhật suite chung và kiểm thử đồng bộ.
+Các ca oracle/proof và trạng thái inject nằm ở CP-SAT; không yêu cầu Greedy/GA phải chứng minh tối ưu. Backend PostgreSQL/HTTP, Principal và transaction apply được kiểm chứng ở bộ riêng, xem [backend](../../backend/docs/SOLVER_API_VERIFICATION.md).

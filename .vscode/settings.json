@@ -1,4 +1,10 @@
 {
+  // Application/Maven terminals use the project JDK. The Java language server manages its own JRE.
+  "terminal.integrated.env.windows": {
+    "JAVA_HOME": "${workspaceFolder}\\.runtime\\jdk-17",
+    "PATH": "${workspaceFolder}\\.runtime\\jdk-17\\bin;${env:PATH}"
+  },
+  "maven.terminal.useJavaHome": false,
   // ========================================
   //          LATEX CONFIGURATION
   // ========================================

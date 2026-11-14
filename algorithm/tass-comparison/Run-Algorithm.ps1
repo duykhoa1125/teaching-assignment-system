@@ -3,8 +3,9 @@ $ErrorActionPreference='Stop'
 $siblingRoot=Split-Path -Parent $PSScriptRoot
 $cpRoot=Join-Path $siblingRoot 'tass-cpsat'
 if (-not $Fixture) { $Fixture=Join-Path $cpRoot 'fixtures\greedy-trap.json' }
-if (-not $JavaHome) { $jdk=Get-ChildItem -LiteralPath (Join-Path $cpRoot '.runtime\jdk') -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\java.exe') } | Select-Object -First 1; if ($jdk) { $JavaHome=$jdk.FullName } }
-if (-not $JavaHome) { throw 'Set -JavaHome or set up the local JDK in tass-cpsat.' }
+$repoRoot=Split-Path -Parent $siblingRoot
+. (Join-Path $repoRoot 'scripts/java17.ps1')
+$JavaHome=Resolve-TassJava17 -JavaHome $JavaHome -RepositoryRoot $repoRoot
 $module=@{CP_SAT='tass-cpsat';GREEDY='tass-greedy';GENETIC='tass-genetic'}[$Algorithm]
 $moduleRoot=Join-Path $siblingRoot $module
 $jarName=if ($Algorithm -eq 'CP_SAT') { 'tass-cpsat-0.1.0.jar' } else { $module+'-0.1.0-all.jar' }

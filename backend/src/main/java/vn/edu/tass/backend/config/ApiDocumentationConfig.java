@@ -53,8 +53,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và API nghiệp vụ phase 2 tiếp theo. "
+            .description("20 nhóm CRUD dữ liệu đầu vào và API plan/current DRAFT/refresh snapshot/readiness, sửa/khóa/mở khóa phân công theo dòng hoặc nhóm, đọc tải/metadata và lưu validation. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. API plan/solver yêu cầu principal tin cậy; có async run/poll/cancel và apply nghiệm có hậu kiểm/transaction; chưa có login. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -73,7 +73,137 @@ public class ApiDocumentationConfig {
                 .addProperty("code", new StringSchema().example("INVALID_REQUEST"))
                 .addProperty("message", new StringSchema().example("JSON hoặc tham số không hợp lệ")));
             openApi.getPaths().forEach((path, item) -> documentPath(path, item, examples));
+            documentPlanOperations(openApi);
+            documentReadiness(openApi);
+            documentSolverRuns(openApi);
+            documentPlanResults(openApi);
+            documentAssignmentMutations(openApi);
         };
+    }
+
+    private static void documentAssignmentMutations(OpenAPI api) {
+        String base="/api/plan-versions/{id}/assignments";
+        for(String suffix:List.of("/{assignmentId}","/{assignmentId}/lock","/{assignmentId}/unlock","/locks","/unlocks")) {
+            var item=api.getPaths().get(base+suffix); if(item==null) continue;
+            item.readOperationsMap().forEach((method,operation)->{
+                operation.setTags(List.of("Manual assignments"));
+                var responses=operation.getResponses(); if(responses==null) { responses=new ApiResponses(); operation.setResponses(responses); }
+                if(responses.get("200")!=null) responses.get("200").description("Atomic operation completed. Inspect changed_count and actual version.revision_no. No-op does not increase revision.");
+                responses.addApiResponse("400",error("Malformed body, missing explicit teacher_id, invalid selector, duplicate IDs or missing reasons.","Bad Request","INVALID_REQUEST"));
+                responses.addApiResponse("401",error("Trusted principal required; actor is never read from body.","Unauthorized","AUTHENTICATION_REQUIRED"));
+                responses.addApiResponse("403",error("Academic manager scope required.","Forbidden","PLAN_ACCESS_DENIED"));
+                responses.addApiResponse("404",error("Version/assignment/group not found in this version.","Not Found","RESOURCE_NOT_FOUND"));
+                responses.addApiResponse("409",error("CURRENT_DRAFT_REQUIRED, REVISION_CONFLICT, STALE_INPUT, ASSIGNMENT_LOCKED, ASSIGNMENT_NOT_ASSIGNED, LOCK_CONFLICT or CONCURRENT_MODIFICATION. Pure unlock allows stale source.","Conflict","REVISION_CONFLICT"));
+                responses.addApiResponse("422",error("Ineligible assignment, hard workload violation or unsupported/missing captured source. Partial coverage and missing annual data alone do not block a valid edit.","Unprocessable Entity","ASSIGNMENT_HARD_VIOLATION"));
+                if(operation.getRequestBody()!=null && operation.getRequestBody().getContent()!=null) {
+                    var media=operation.getRequestBody().getContent().get("application/json");
+                    if(media!=null) {
+                        if(suffix.equals("/{assignmentId}")) media.setExample(Map.of("expected_revision",7,"teacher_id",12,"change_reason","Điều chỉnh phân công đã thống nhất"));
+                        else if(suffix.equals("/locks")||suffix.equals("/unlocks")) media.setExample(Map.of("expected_revision",7,"class_id",10,"subject_id",2,"reason","Giữ phân công chính khóa và tăng cường đã xác nhận"));
+                        else media.setExample(Map.of("expected_revision",7,"reason","Xác nhận phân công thành phần"));
+                    }
+                }
+            });
+        }
+    }
+
+    private static void documentPlanResults(OpenAPI api) {
+        for(String suffix:List.of("assignments","workloads","optimization","validation")) {
+            var item=api.getPaths().get("/api/plan-versions/{id}/"+suffix); if(item==null) continue;
+            item.readOperationsMap().forEach((method,operation)->{
+                operation.setTags(List.of("Saved plan results"));
+                var responses=operation.getResponses(); if(responses==null) { responses=new ApiResponses(); operation.setResponses(responses); }
+                if(method==PathItem.HttpMethod.POST) {
+                    var ok=responses.remove("200"); responses.addApiResponse("201",ok==null?new ApiResponse().description("Immutable validation report created; inspect overall_status."):ok.description("Validation report created; Location identifies this report. May contain violations or missing data."));
+                    responses.addApiResponse("409",error("CURRENT_VERSION_REQUIRED, REVISION_CONFLICT, STALE_INPUT or CONCURRENT_MODIFICATION.","Conflict","REVISION_CONFLICT"));
+                }
+                responses.addApiResponse("400",error("Invalid ID/filter/pagination/body. limit 1..200, offset >=0.","Bad Request","INVALID_REQUEST"));
+                responses.addApiResponse("401",error("Trusted principal required.","Unauthorized","AUTHENTICATION_REQUIRED"));
+                responses.addApiResponse("403",error("Manager scope required; these are not Teacher portal endpoints.","Forbidden","PLAN_ACCESS_DENIED"));
+                responses.addApiResponse("404",error("Version/report not found.","Not Found","RESOURCE_NOT_FOUND"));
+                if(suffix.equals("workloads")||method==PathItem.HttpMethod.POST) responses.addApiResponse("422",error("Captured source cannot be normalized/validated; unsupported segmentation or missing confirmed workload source.","Unprocessable Entity","UNSUPPORTED_DEMAND_INTERVAL"));
+            });
+        }
+    }
+
+    private static void documentSolverRuns(OpenAPI api) {
+        for (String path:List.of("/api/plan-versions/{id}/solver-runs","/api/solver-runs/{id}","/api/solver-runs/{id}/cancel")) {
+            var item=api.getPaths().get(path); if(item==null) continue;
+            item.readOperationsMap().forEach((method,operation)->{
+                operation.setTags(List.of("Solver runs"));
+                var responses=operation.getResponses();
+                if(responses==null) { responses=new ApiResponses(); operation.setResponses(responses); }
+                if(path.endsWith("/solver-runs")) {
+                    var success=responses.remove("200");
+                    responses.addApiResponse("202",success==null?new ApiResponse().description("Queued; Location points to run."):success.description("Accepted; poll Location for status."));
+                    responses.addApiResponse("409",error("SOLVER_RUN_ACTIVE includes Location of active run. Also CURRENT_DRAFT_REQUIRED, REVISION_CONFLICT, STALE_INPUT, SNAPSHOT_REFRESH_REQUIRED or LOCK_CONFLICT.","Conflict","SOLVER_RUN_ACTIVE")
+                        .addHeaderObject("Location",new io.swagger.v3.oas.models.headers.Header().description("Present for SOLVER_RUN_ACTIVE: URL to poll existing run.").schema(new StringSchema())));
+                    responses.addApiResponse("422",error("Readiness or normalized solver input failed.","Unprocessable Entity","SOLVER_NOT_READY"));
+                    responses.addApiResponse("503",error("Bounded queue full or coordinator unavailable. Retry after polling existing runs.","Service Unavailable","SOLVER_QUEUE_FULL"));
+                }
+                responses.addApiResponse("400",error("Invalid request.","Bad Request","INVALID_REQUEST"));
+                responses.addApiResponse("401",error("Trusted authenticated principal required.","Unauthorized","AUTHENTICATION_REQUIRED"));
+                responses.addApiResponse("403",error("Manager scope required.","Forbidden","PLAN_ACCESS_DENIED"));
+                responses.addApiResponse("404",error("Version/run missing.","Not Found","RESOURCE_NOT_FOUND"));
+            });
+        }
+    }
+
+    private static void documentReadiness(OpenAPI openApi) {
+        PathItem item=openApi.getPaths().get("/api/assignment-rounds/{id}/readiness");
+        if (item==null || item.getGet()==null) return;
+        Operation operation=item.getGet();
+        operation.setTags(List.of("Chuẩn bị phân công"));
+        operation.setSummary("Kiểm tra dữ liệu và phạm vi có thể chạy solver");
+        operation.setDescription("Đọc nhất quán theo source token, không tạo snapshot hoặc sửa dữ liệu. "
+            + "Gửi cả optimization_config_id và rule_set_version_id hoặc bỏ cả hai để dùng current snapshot. "
+            + "Thiếu ứng viên là cảnh báo; thiếu tải tuần hoặc khoảng hiệu lực chưa hỗ trợ chặn solver. "
+            + "can_run_solver là tiền kiểm nguồn (preflight_only=true), chưa thay InputValidator/hậu kiểm; "
+            + "can_open_feedback và can_export xét coverage, validation còn mới và vòng đời riêng. "
+            + "Yêu cầu principal tin cậy, tài khoản ACTIVE, vai trò/phạm vi quản lý như plan API.");
+        documentParameters(operation);
+        ApiResponses responses=operation.getResponses();
+        if (responses==null) { responses=new ApiResponses(); operation.setResponses(responses); }
+        responses.addApiResponse("400",error("ID sai hoặc chỉ gửi một ID cấu hình/quy tắc.","Bad Request","INVALID_REQUEST"));
+        responses.addApiResponse("401",error("Chưa có principal xác thực.","Unauthorized","AUTHENTICATION_REQUIRED"));
+        responses.addApiResponse("403",error("Không có quyền quản lý phạm vi đợt.","Forbidden","PLAN_ACCESS_DENIED"));
+        responses.addApiResponse("404",error("Không tìm thấy đợt.","Not Found","RESOURCE_NOT_FOUND"));
+    }
+
+    private static void documentPlanOperations(OpenAPI openApi) {
+        for (String path : List.of("/api/assignment-rounds/{id}/plan", "/api/plan-versions/{id}",
+                "/api/plan-versions/{id}/refresh-snapshot")) {
+            PathItem item = openApi.getPaths().get(path);
+            if (item == null) continue;
+            item.readOperationsMap().forEach((method, operation) -> {
+                operation.setTags(List.of("Phương án phân công"));
+                boolean create = method == PathItem.HttpMethod.POST && path.endsWith("/plan");
+                boolean refresh = path.endsWith("/refresh-snapshot");
+                operation.setSummary(create ? "Tạo plan và current DRAFT đầu tiên"
+                    : refresh ? "Làm mới snapshot của current DRAFT" : "Đọc phương án và metadata snapshot");
+                operation.setDescription("Yêu cầu principal do server xác thực, tài khoản ACTIVE, vai trò ACADEMIC_MANAGER "
+                    + "và phạm vi quản lý phủ toàn đợt. Chưa triển khai login trong backend. "
+                    + "Snapshot do server chụp từ DB, chưa phải đầu vào solver. "
+                    + (refresh ? "expected_revision phải khớp; giữ khóa hợp lệ, xung đột khóa rollback toàn bộ. " : "")
+                    + "revision_no trả về là giá trị thực do trigger quản lý.");
+                documentParameters(operation);
+                ApiResponses responses = operation.getResponses();
+                if (responses == null) { responses = new ApiResponses(); operation.setResponses(responses); }
+                if (create) {
+                    ApiResponse success = responses.remove("200");
+                    responses.addApiResponse("201", success == null ? new ApiResponse().description("Đã tạo DRAFT; Location trỏ đến version.")
+                        : success.description("Đã tạo DRAFT; Location trỏ đến version."));
+                }
+                responses.addApiResponse("400", error("Request không hợp lệ hoặc chứa trường actor/snapshot không được nhận.", "Bad Request", "INVALID_REQUEST"));
+                responses.addApiResponse("401", error("Chưa có principal xác thực.", "Unauthorized", "AUTHENTICATION_REQUIRED"));
+                responses.addApiResponse("403", error("Tài khoản/vai trò/phạm vi không hợp lệ.", "Forbidden", "PLAN_ACCESS_DENIED"));
+                responses.addApiResponse("404", error("Không tìm thấy đợt/plan/version.", "Not Found", "RESOURCE_NOT_FOUND"));
+                if (method == PathItem.HttpMethod.POST) {
+                    responses.addApiResponse("409", error("PLAN_ALREADY_EXISTS, CURRENT_DRAFT_REQUIRED, REVISION_CONFLICT, LOCK_CONFLICT hoặc CONCURRENT_MODIFICATION.", "Conflict", create ? "PLAN_ALREADY_EXISTS" : "REVISION_CONFLICT"));
+                    responses.addApiResponse("422", error("Cấu hình/quy tắc chưa được xác nhận hoặc không phủ học kỳ.", "Unprocessable Entity", "CONFIGURATION_NOT_CONFIRMED"));
+                }
+            });
+        }
     }
 
     private static void documentPath(String path, PathItem item, Map<String, Map<String, Object>> examples) {
