@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>vn.edu.tass</groupId>
+  <artifactId>tass-integration</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <!-- Aggregation only: modules keep their own parents and dependency management. -->
+  <modules>
+    <module>algorithm/tass-cpsat</module>
+    <module>backend</module>
+  </modules>
+  <build><plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId><artifactId>maven-enforcer-plugin</artifactId><version>3.6.2</version>
+      <executions><execution><id>require-team-java</id><phase>validate</phase><goals><goal>enforce</goal></goals>
+        <configuration><rules>
+          <requireJavaVersion><version>[17,18)</version><message>TASS requires JDK 17. Use scripts/mvn17.ps1 or set JAVA_HOME to JDK 17; compiler release alone does not select the running JDK.</message></requireJavaVersion>
+          <requireMavenVersion><version>[3.9,)</version></requireMavenVersion>
+        </rules></configuration>
+      </execution></executions>
+    </plugin>
+  </plugins></build>
+</project>

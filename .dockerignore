@@ -1,0 +1,23 @@
+# Only build inputs enter the context; exclude local JDKs, caches, secrets and IDE output.
+**
+!pom.xml
+!backend/
+!backend/pom.xml
+!backend/Dockerfile
+!backend/src/
+!backend/src/**
+!backend/sql/
+!backend/sql/**
+!algorithm/
+!algorithm/tass-cpsat/
+!algorithm/tass-cpsat/pom.xml
+!algorithm/tass-cpsat/src/
+!algorithm/tass-cpsat/src/**
+!algorithm/tass-cpsat/fixtures/
+!algorithm/tass-cpsat/fixtures/**
+!frontend/
+!frontend/Dockerfile
+!frontend/index.html
+!infra/
+!infra/docker/
+!infra/docker/**

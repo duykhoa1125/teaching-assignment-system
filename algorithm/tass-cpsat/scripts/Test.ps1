@@ -1,19 +1,16 @@
 param([string]$JavaHome, [switch]$Offline)
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
-if (-not $JavaHome) {
-    $jdkRoot = Join-Path $projectRoot '.runtime\jdk'
-    if (Test-Path -LiteralPath $jdkRoot) {
-        $jdk = Get-ChildItem -LiteralPath $jdkRoot -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\java.exe') } | Select-Object -First 1
-        if ($jdk) { $JavaHome = $jdk.FullName }
-    }
-}
+$repoRoot=Split-Path -Parent (Split-Path -Parent $projectRoot)
+. (Join-Path $repoRoot 'scripts/java17.ps1')
+$JavaHome=Resolve-TassJava17 -JavaHome $JavaHome -RepositoryRoot $repoRoot
+$oldPath=$env:Path
 $oldJavaHome = $env:JAVA_HOME
 Push-Location $projectRoot
 try {
-    if ($JavaHome) { $env:JAVA_HOME = $JavaHome }
+    Set-TassJava17 $JavaHome
     $arguments = @('-B','-ntp',('-Dmaven.repo.local=' + (Join-Path $projectRoot '.m2')),'verify')
     if ($Offline) { $arguments += '-o' }
     & mvn.cmd @arguments
     if ($LASTEXITCODE -ne 0) { throw 'Maven verification failed' }
-} finally { $env:JAVA_HOME = $oldJavaHome; Pop-Location }
+} finally { $env:JAVA_HOME = $oldJavaHome; $env:Path=$oldPath; Pop-Location }

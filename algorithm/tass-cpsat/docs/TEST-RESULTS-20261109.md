@@ -37,7 +37,7 @@ Chứng cứ:
 
 - `verification-20261109.json`: kết quả JUnit theo suite và SHA-256 nguồn Java.
 - `algorithm/tass-comparison/results/test-summary.csv`: tổng hợp suite của lượt build cuối.
-- `algorithm/tass-comparison/results/report-20261109/`: manifest, runs.csv, summary.csv và snapshot/result từng lượt của phép so sánh bổ sung.
+- `algorithm/tass-comparison/reports/20261109/`: manifest, runs.csv, summary.csv và snapshot/result từng lượt của phép so sánh bổ sung.
 - Log build: `D:\HCMUT\DACN\tmp\algorithm-20261109-final-build.log`.
 
 ## Giới hạn còn lại

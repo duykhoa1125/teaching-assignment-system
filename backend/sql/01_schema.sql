@@ -425,9 +425,13 @@ CREATE TABLE solver_run (
     finished_at TIMESTAMPTZ,
     status VARCHAR(40) NOT NULL CHECK (btrim(status) <> ''),
     result_summary_json JSONB,
+    solver_input_schema_version TEXT,
+    solver_input_json JSONB,
+    solver_input_canonical TEXT,
+    solver_input_hash VARCHAR(64),
     applied_revision_no BIGINT CHECK (applied_revision_no >= 0),
     CHECK (finished_at IS NULL OR finished_at >= started_at),
-    CHECK (applied_revision_no IS NULL OR applied_revision_no > base_revision_no),
+    CONSTRAINT ck_solver_applied_revision CHECK (applied_revision_no IS NULL OR applied_revision_no >= base_revision_no),
     source_revision_token VARCHAR(255) NOT NULL
 );
 
@@ -577,8 +581,23 @@ CREATE TABLE teacher_period_workload (
     source_version_id BIGINT,
     verification_status VARCHAR(40) NOT NULL,
     evidence_ref TEXT,
+    input_confirmation_json JSONB,
+    input_confirmed_by BIGINT REFERENCES user_account(id),
+    input_confirmed_at TIMESTAMPTZ,
+    CONSTRAINT ck_workload_input_confirmation CHECK (
+      (input_confirmation_json IS NULL AND input_confirmed_by IS NULL AND input_confirmed_at IS NULL) OR
+      (input_confirmation_json IS NOT NULL AND input_confirmed_by IS NOT NULL AND input_confirmed_at IS NOT NULL
+       AND jsonb_typeof(input_confirmation_json) IS NOT DISTINCT FROM 'object'
+       AND input_confirmation_json->>'contract_version' IS NOT DISTINCT FROM '1'
+       AND jsonb_typeof(input_confirmation_json->'round_id') IS NOT DISTINCT FROM 'number'
+       AND jsonb_typeof(input_confirmation_json->'in_scope_demand_ids') IS NOT DISTINCT FROM 'array'
+       AND jsonb_typeof(input_confirmation_json->'outside_demand_ids') IS NOT DISTINCT FROM 'array'
+       AND jsonb_typeof(input_confirmation_json->'reduction_items') IS NOT DISTINCT FROM 'array'
+       AND jsonb_typeof(input_confirmation_json->'conversion_items') IS NOT DISTINCT FROM 'array'
+       AND nullif(btrim(input_confirmation_json->>'evidence_ref'),'') IS NOT NULL)),
     UNIQUE (teacher_id, calculation_period_id)
 );
+CREATE INDEX ix_workload_input_confirmed_by ON teacher_period_workload(input_confirmed_by);
 
 -- 42. teaching_history
 CREATE TABLE teaching_history (
@@ -1459,6 +1478,12 @@ BEGIN
  SELECT * INTO rr FROM assignment_round WHERE id=p.round_id FOR SHARE;
  IF p.current_version_id IS DISTINCT FROM vid OR v.status<>'DRAFT' THEN
   RAISE EXCEPTION 'Assignments can change only in current DRAFT' USING ERRCODE='23514'; END IF;
+ -- Pure unlock may resolve stale/ineligible source without modifying the saved decision.
+ IF TG_OP='UPDATE' AND OLD.is_locked AND NOT NEW.is_locked
+  AND (to_jsonb(NEW)-ARRAY['is_locked','locked_by','locked_at','lock_reason'])
+   IS NOT DISTINCT FROM (to_jsonb(OLD)-ARRAY['is_locked','locked_by','locked_at','lock_reason']) THEN
+  RETURN NEW;
+ END IF;
  IF sn.source_revision_token IS DISTINCT FROM rr.source_revision_token THEN
   RAISE EXCEPTION 'STALE_INPUT: refresh snapshot before editing' USING ERRCODE='40001'; END IF;
  IF TG_OP='DELETE' THEN
@@ -1732,4 +1757,133 @@ END;
 $$;
 CREATE TRIGGER a_export_guard BEFORE INSERT ON export_record FOR EACH ROW EXECUTE FUNCTION tass_guard_export();
 
+
+-- SOL-05 normalized input archive (also available as migration 05).
+DO $$ BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conrelid='solver_run'::regclass AND conname='ck_solver_input_archive') THEN
+  ALTER TABLE solver_run ADD CONSTRAINT ck_solver_input_archive CHECK (
+   (solver_input_schema_version IS NULL AND solver_input_json IS NULL AND solver_input_canonical IS NULL AND solver_input_hash IS NULL)
+   OR (solver_input_schema_version IS NOT NULL AND solver_input_schema_version='tass-solver/2'
+    AND solver_input_json IS NOT NULL AND jsonb_typeof(solver_input_json)='object'
+    AND solver_input_canonical IS NOT NULL AND solver_input_hash IS NOT NULL
+    AND solver_input_hash ~ '^[0-9a-f]{64}$'
+    AND solver_input_json=solver_input_canonical::jsonb
+    AND solver_input_hash=encode(sha256(convert_to(solver_input_canonical,'UTF8')),'hex')));
+ END IF;
+END $$;
+
+CREATE OR REPLACE FUNCTION tass_guard_solver_input() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE p assignment_plan%ROWTYPE; v plan_version%ROWTYPE; sn input_snapshot%ROWTYPE;
+        rr assignment_round%ROWTYPE; pid BIGINT; school_key BIGINT; j JSONB;
+BEGIN
+ IF TG_OP='DELETE' THEN
+  IF OLD.solver_input_canonical IS NOT NULL THEN RAISE EXCEPTION 'Archived solver input cannot be deleted' USING ERRCODE='23514'; END IF;
+  RETURN OLD;
+ END IF;
+ IF TG_OP='UPDATE' THEN
+  IF ROW(NEW.solver_input_schema_version,NEW.solver_input_json,NEW.solver_input_canonical,NEW.solver_input_hash)
+    IS DISTINCT FROM ROW(OLD.solver_input_schema_version,OLD.solver_input_json,OLD.solver_input_canonical,OLD.solver_input_hash)
+   OR (OLD.solver_input_canonical IS NOT NULL AND
+    ROW(NEW.plan_version_id,NEW.input_snapshot_id,NEW.base_revision_no,NEW.source_revision_token,NEW.requested_by)
+    IS DISTINCT FROM ROW(OLD.plan_version_id,OLD.input_snapshot_id,OLD.base_revision_no,OLD.source_revision_token,OLD.requested_by)) THEN
+    RAISE EXCEPTION 'Normalized solver input/identity is immutable' USING ERRCODE='23514';
+  END IF;
+  RETURN NEW;
+ END IF;
+ IF NEW.solver_input_canonical IS NULL THEN RETURN NEW; END IF;
+ SELECT plan_id INTO pid FROM plan_version WHERE id=NEW.plan_version_id;
+ SELECT * INTO p FROM assignment_plan WHERE id=pid FOR UPDATE;
+ SELECT * INTO v FROM plan_version WHERE id=NEW.plan_version_id FOR UPDATE;
+ SELECT * INTO rr FROM assignment_round WHERE id=p.round_id FOR SHARE;
+ SELECT * INTO sn FROM input_snapshot WHERE id=NEW.input_snapshot_id;
+ SELECT y.school_id INTO school_key FROM semester se JOIN academic_year y ON y.id=se.academic_year_id WHERE se.id=rr.semester_id;
+ IF p.current_version_id IS DISTINCT FROM v.id OR v.status IS DISTINCT FROM 'DRAFT'
+  OR v.revision_no IS DISTINCT FROM NEW.base_revision_no OR v.input_snapshot_id IS DISTINCT FROM sn.id
+  OR sn.round_id IS DISTINCT FROM rr.id OR sn.source_revision_token IS DISTINCT FROM rr.source_revision_token
+  OR NEW.source_revision_token IS DISTINCT FROM sn.source_revision_token
+  OR sn.content_hash IS DISTINCT FROM md5(sn.payload_json::text) THEN
+  RAISE EXCEPTION 'STALE_INPUT: normalized input must match current DRAFT, revision and live source' USING ERRCODE='40001';
+ END IF;
+ j:=NEW.solver_input_json;
+ IF j->>'schemaVersion' IS DISTINCT FROM 'tass-solver/2'
+  OR j#>>'{identity,schoolId}' IS DISTINCT FROM school_key::text
+  OR j#>>'{identity,semesterId}' IS DISTINCT FROM rr.semester_id::text
+  OR j#>>'{identity,roundId}' IS DISTINCT FROM rr.id::text
+  OR j#>>'{identity,planId}' IS DISTINCT FROM p.id::text
+  OR j#>>'{identity,versionId}' IS DISTINCT FROM v.id::text
+  OR j#>>'{identity,baseRevision}' IS DISTINCT FROM NEW.base_revision_no::text
+  OR j#>>'{identity,snapshotId}' IS DISTINCT FROM sn.id::text
+  OR j#>>'{identity,sourceRevisionToken}' IS DISTINCT FROM NEW.source_revision_token
+  OR j#>>'{identity,ruleSetVersion}' IS DISTINCT FROM format('%s:%s',sn.rule_set_version_id,sn.payload_json#>>'{rule_set,version_no}')
+  OR j#>>'{identity,optimizationConfigVersion}' IS DISTINCT FROM format('%s:%s',sn.optimization_config_id,sn.payload_json#>>'{optimization_config,version_no}') THEN
+  RAISE EXCEPTION 'Normalized solver identity does not match its DB source/run' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END;
+$$;
+DROP TRIGGER IF EXISTS b_solver_input_contract ON solver_run;
+CREATE TRIGGER b_solver_input_contract BEFORE INSERT OR UPDATE OR DELETE ON solver_run FOR EACH ROW EXECUTE FUNCTION tass_guard_solver_input();
+DROP TRIGGER IF EXISTS b_solver_run_no_truncate ON solver_run;
+CREATE TRIGGER b_solver_run_no_truncate BEFORE TRUNCATE ON solver_run FOR EACH STATEMENT EXECUTE FUNCTION tass_append_only();
+COMMENT ON COLUMN solver_run.solver_input_canonical IS 'Exact UTF-8 canonical JSON from solver Json.MAPPER; immutable; SHA-256 is checked independently of jsonb text formatting.';
+
+-- SOL-06 execution fields (also available as migration 06 for existing databases).
+ALTER TABLE solver_run ADD COLUMN queued_at TIMESTAMPTZ;
+ALTER TABLE solver_run ADD COLUMN execution_started_at TIMESTAMPTZ;
+ALTER TABLE solver_run ADD COLUMN preparation_ms BIGINT;
+ALTER TABLE solver_run ADD COLUMN solve_ms BIGINT;
+ALTER TABLE solver_run ADD COLUMN archive_write_ms BIGINT;
+ALTER TABLE solver_run ADD COLUMN cancellation_requested_at TIMESTAMPTZ;
+ALTER TABLE solver_run ADD COLUMN failure_code TEXT;
+ALTER TABLE solver_run ADD COLUMN solver_result_json JSONB;
+ALTER TABLE solver_run ADD COLUMN apply_ms BIGINT;
+CREATE UNIQUE INDEX uq_solver_run_active_version ON solver_run(plan_version_id)
+ WHERE queued_at IS NOT NULL AND status IN ('QUEUED','RUNNING','CANCEL_REQUESTED');
+
+COMMIT;
+
+-- SOL-08: append-only reports, captured workloads and exact report/result consistency.
+BEGIN;
+ALTER TABLE validation_run ADD COLUMN IF NOT EXISTS validator_version TEXT;
+ALTER TABLE validation_run ADD COLUMN IF NOT EXISTS workloads_json JSONB;
+ALTER TABLE validation_run ADD COLUMN IF NOT EXISTS summary_json JSONB;
+ALTER TABLE validation_result ADD COLUMN IF NOT EXISTS details_json JSONB;
+CREATE OR REPLACE FUNCTION tass_guard_validation_report() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE v plan_version%ROWTYPE; p assignment_plan%ROWTYPE; token TEXT;
+BEGIN
+ IF NEW.validator_version IS NULL THEN RETURN NEW; END IF;
+ IF NEW.validator_version<>'tass-validation/1' OR jsonb_typeof(NEW.workloads_json) IS DISTINCT FROM 'array'
+  OR jsonb_typeof(NEW.summary_json) IS DISTINCT FROM 'object'
+  OR COALESCE((NEW.summary_json->>'finding_count')::integer,0)<1 THEN
+  RAISE EXCEPTION 'Invalid validation report contract' USING ERRCODE='23514'; END IF;
+ SELECT ap.* INTO STRICT p FROM assignment_plan ap JOIN plan_version pv ON pv.plan_id=ap.id WHERE pv.id=NEW.plan_version_id FOR UPDATE OF ap;
+ SELECT * INTO STRICT v FROM plan_version WHERE id=NEW.plan_version_id FOR UPDATE;
+ SELECT source_revision_token INTO STRICT token FROM assignment_round WHERE id=p.round_id FOR SHARE;
+ IF p.current_version_id IS DISTINCT FROM v.id OR NEW.revision_no<>v.revision_no OR NEW.input_snapshot_id<>v.input_snapshot_id
+  OR NEW.source_revision_token IS DISTINCT FROM token
+  OR NOT EXISTS(SELECT 1 FROM input_snapshot WHERE id=v.input_snapshot_id AND source_revision_token=token AND content_hash=md5(payload_json::text)) THEN
+  RAISE EXCEPTION 'STALE_INPUT: validation must match current version/revision/snapshot/source' USING ERRCODE='40001'; END IF;
+ RETURN NEW;
+END $$;
+DROP TRIGGER IF EXISTS b_validation_report_contract ON validation_run;
+CREATE TRIGGER b_validation_report_contract BEFORE INSERT ON validation_run FOR EACH ROW EXECUTE FUNCTION tass_guard_validation_report();
+CREATE OR REPLACE FUNCTION tass_validation_report_complete() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE r validation_run%ROWTYPE; total BIGINT; expected TEXT; run_key BIGINT;
+BEGIN
+ IF TG_TABLE_NAME='validation_run' THEN run_key:=NEW.id; ELSE run_key:=NEW.validation_run_id; END IF;
+ SELECT * INTO r FROM validation_run WHERE id=run_key;
+ IF r.validator_version IS NULL THEN RETURN NULL; END IF;
+ SELECT count(*),CASE WHEN bool_or(result_status='VIOLATION') THEN 'VIOLATION'
+  WHEN bool_or(result_status='INSUFFICIENT_DATA') THEN 'INSUFFICIENT_DATA' ELSE 'PASS' END
+ INTO total,expected FROM validation_result WHERE validation_run_id=r.id;
+ IF total<>(r.summary_json->>'finding_count')::bigint OR expected<>r.overall_status THEN
+  RAISE EXCEPTION 'Validation result set is incomplete or inconsistent with immutable report' USING ERRCODE='23514'; END IF;
+ RETURN NULL;
+END $$;
+DROP TRIGGER IF EXISTS z_validation_report_complete ON validation_run;
+CREATE CONSTRAINT TRIGGER z_validation_report_complete AFTER INSERT ON validation_run DEFERRABLE INITIALLY DEFERRED
+ FOR EACH ROW EXECUTE FUNCTION tass_validation_report_complete();
+DROP TRIGGER IF EXISTS z_validation_results_complete ON validation_result;
+CREATE CONSTRAINT TRIGGER z_validation_results_complete AFTER INSERT ON validation_result DEFERRABLE INITIALLY DEFERRED
+ FOR EACH ROW EXECUTE FUNCTION tass_validation_report_complete();
 COMMIT;

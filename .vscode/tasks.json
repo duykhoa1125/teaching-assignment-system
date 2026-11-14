@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "TASS: Maven verify (JDK 17)",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/mvn17.ps1", "verify"],
+      "group": "build",
+      "problemMatcher": ["$javac"]
+    },
+    {
+      "label": "TASS: Configure local Java 17 workspace",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/configure-java17-workspace.ps1"],
+      "problemMatcher": []
+    },
+    {
+      "label": "TASS: Docker dev",
+      "type": "process",
+      "command": "powershell",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/scripts/docker-dev.ps1", "up"],
+      "problemMatcher": []
+    }
+  ]
+}

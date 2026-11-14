@@ -1,0 +1,27 @@
+{
+  "algorithms" : [ "CP_SAT", "GREEDY", "GENETIC" ],
+  "gaOptions" : {
+    "generations" : 200,
+    "mutationRate" : 0.1,
+    "population" : 40
+  },
+  "javaVendor" : "Eclipse Adoptium",
+  "javaVersion" : "21.0.12.1+1-LTS",
+  "logicalProcessors" : 16,
+  "ortools" : "9.14.6206",
+  "os" : "Windows 11 amd64",
+  "ranking" : "Lexicographic: hard feasibility, then (Z,L1,M,experience,change). softObjective is a legacy L1 alias, not a ranking. Time is reported separately.",
+  "repeats" : 3,
+  "schemaVersion" : "tass-benchmark/1",
+  "sourceSnapshotHashes" : {
+    "component-consistency.json" : "1234e1a27acefea7c612d375d1d43f4cc1a22f9299189b8db604be63e5a60ceb",
+    "decimal-load.json" : "ba58c97dc9b2bcada742d892c6bba0eaae089ccbc2f9069cf4cbf698bc3d0945",
+    "greedy-trap.json" : "7f88a3d1072e7b3561358946a25c06e2370b08f8b2988e8cf0bc80b824b17207",
+    "report-five-stage.json" : "2ed5ed63337e86ba5d134f0f1ebce63d72dbb8d163468dc5cb894cac7d2cb27f",
+    "shortage.json" : "af59de9ae0fb0c81d61def716c33d1f25e7daf1f09ff1238799c5029cd08c6a2"
+  },
+  "timing" : "End-to-end solve() wall time, including preprocessing and independent validation, excluding JSON I/O and one warm-up per algorithm. Algorithms run sequentially with rotating order.",
+  "totalSeconds" : 2.0,
+  "warmupRunsPerAlgorithm" : 1,
+  "workers" : 1
+}

@@ -2,15 +2,14 @@ param([ValidateSet('ALL','GREEDY','GENETIC','CP_SAT')][string]$Algorithm='ALL',[
 $ErrorActionPreference='Stop'
 $siblingRoot=Split-Path -Parent $PSScriptRoot
 $cpRoot=Join-Path $siblingRoot 'tass-cpsat'
-if (-not $JavaHome) {
-    $jdk=Get-ChildItem -LiteralPath (Join-Path $cpRoot '.runtime\jdk') -Directory | Where-Object { Test-Path -LiteralPath (Join-Path $_.FullName 'bin\java.exe') } | Select-Object -First 1
-    if (-not $jdk) { throw 'Set -JavaHome or run tass-cpsat\scripts\Setup-Java.ps1 first.' }
-    $JavaHome=$jdk.FullName
-}
+$repoRoot=Split-Path -Parent $siblingRoot
+. (Join-Path $repoRoot 'scripts/java17.ps1')
+$JavaHome=Resolve-TassJava17 -JavaHome $JavaHome -RepositoryRoot $repoRoot
 $oldJavaHome=$env:JAVA_HOME
+$oldPath=$env:Path
 Push-Location $PSScriptRoot
 try {
-    $env:JAVA_HOME=$JavaHome
+    Set-TassJava17 $JavaHome
     $mavenArguments=@('-B','-ntp',('-Dmaven.repo.local='+(Join-Path $cpRoot '.m2')),'verify')
     if ($Offline) { $mavenArguments+='-o' }
     $module=@{GREEDY=':tass-greedy';GENETIC=':tass-genetic';CP_SAT=':tass-benchmark'}
@@ -31,4 +30,4 @@ try {
     New-Item -ItemType Directory -Force -Path (Join-Path $PSScriptRoot 'results') | Out-Null
     $summary | Export-Csv -LiteralPath (Join-Path $PSScriptRoot 'results\test-summary.csv') -NoTypeInformation -Encoding UTF8
     $summary | Format-Table -AutoSize
-} finally { $env:JAVA_HOME=$oldJavaHome; Pop-Location }
+} finally { $env:JAVA_HOME=$oldJavaHome; $env:Path=$oldPath; Pop-Location }

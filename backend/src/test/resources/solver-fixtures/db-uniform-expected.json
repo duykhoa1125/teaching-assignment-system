@@ -1,0 +1,12 @@
+{
+  "fixture": "uniform-one-teacher-one-standard-demand",
+  "source": "RoundReadinessPostgresTest.fixture; isolated generated IDs",
+  "period": {"starts_on": "2026-08-01", "ends_on": "2026-12-31"},
+  "input": {"teachers": 1, "demands": 1, "periods_per_week": 2, "baseline": 17, "experience_years": 0, "weekly_cap_T": 25},
+  "expected": {
+    "objective_vector": [0, 1500, 1500, 6, 1],
+    "workload": {"b": 17, "f": 0, "a": 2, "c": 0, "r": 0, "t": 2, "delta_t": -15, "under": 15, "over": 0},
+    "validation_status": "INSUFFICIENT_DATA",
+    "annual_status": "INSUFFICIENT_DATA"
+  }
+}

@@ -1,58 +1,32 @@
-# So sánh ba thuật toán TASS
+# So sánh thuật toán TASS
 
-Cấu trúc thư mục ngang hàng:
+Reactor này build CP-SAT, common, Greedy, Genetic và benchmark cùng parent comparison. Các module dùng chung hợp đồng, validator và vector từ điển **(Z,L1,M,experience,change)**. CP-SAT có thể cung cấp proof; Greedy/GA chỉ báo chất lượng nghiệm đã kiểm tra.
 
-```text
-TASS_ChuanHoa_20261022/
-├── tass-cpsat/       CP-SAT gốc, fixture và validator chuẩn
-├── tass-greedy/      thuật toán tham lam
-├── tass-genetic/     thuật toán di truyền
-├── tass-common/      decoder, hợp đồng và xuất kết quả dùng chung
-├── tass-benchmark/   chương trình so sánh cặp
-└── tass-comparison/  build, test chung và script chạy
-```
+## Chạy
 
-Mở PowerShell trong `tass-comparison`:
+Từ thư mục algorithm/tass-comparison:
 
 ```powershell
-# Build/test tất cả. Dùng lại JDK và Maven cache trong tass-cpsat.
 .\Test-All.ps1
-
-# Sau khi tải đủ thư viện có thể kiểm thử không cần mạng.
-.\Test-All.ps1 -Offline
-
-# Cùng 4 fixture, 5 lượt/thuật toán/dataset, cùng ngân sách tổng 2 giây.
-.\Run-Comparison.ps1 -Repeats 5 -Seconds 2
-
-# Chạy riêng từng thuật toán trên cùng input.
+.\Test-All.ps1 -Offline  # chỉ khi cache đã đầy đủ
 .\Run-Algorithm.ps1 -Algorithm CP_SAT
 .\Run-Algorithm.ps1 -Algorithm GREEDY
 .\Run-Algorithm.ps1 -Algorithm GENETIC
+.\Run-Comparison.ps1 -Repeats 3 -Seconds 2
 ```
 
-Có thể truyền `-FixturesDirectory` chứa các snapshot JSON schema gốc để đo trên dữ liệu lớn hơn, `-OutputDirectory` mới hoặc `-JavaHome` trỏ JDK tương thích. `Run-Comparison.ps1` dùng JAR đã build; không tự chạy build vào giữa lượt đo. Kết quả từng thuật toán cũng có thể áp dụng qua `AssignmentService` gốc.
+Mọi script chọn **JDK 17** qua scripts/java17.ps1 ở root; có thể truyền -JavaHome trỏ JDK 17. Không tự chọn runtime21 cũ. Setup chung: từ root chạy scripts/setup-java17.ps1. Cache Maven của các wrapper thuật toán vẫn ở tass-cpsat/.m2 để giữ workflow offline đã có.
 
-## Dùng lại kiểm thử như thế nào
+Root reactor CP-SAT+backend và reactor comparison có mục đích khác nhau. CLI run/comparison cần các JAR đã được build; xóa target khi dọn output sẽ yêu cầu build lại. Không có thao tác tải/build ngầm vào giữa lượt đo.
 
-Một file **CommonSolverTest.java** được biên dịch nguyên vẹn trong cả Greedy, GA và adapter CP-SAT của module benchmark. Ma trận 19 input lỗi gọi trực tiếp `SolverTest.invalidInputs()` từ test-JAR của CP-SAT; các thao tác fixture dùng helper `Fixtures` gốc. Bốn tệp JSON được đọc trực tiếp trong `tass-cpsat/fixtures`, không sao chép thành phiên bản khác.
+## Kiểm thử và hồ sơ
 
-Suite chung lấy các ca POC-01/03/04/05/09/10/11/17/18, capacity/year, decimal/unit, cùng GV, công tác/chuyên môn, thay đổi phiên bản/token và apply đồng thời từ kiểm thử hiện có. Các test độc lập về proof tối ưu, bound, hai pha và so với vét cạn vẫn chạy cho CP-SAT gốc. Không ép Greedy/GA phải trả OPTIMAL hoặc có proof giống CP-SAT; thay vào đó chúng phải qua cùng validator và công thức metric.
+[CommonSolverTest.java](shared-tests/vn/edu/tass/solver/CommonSolverTest.java) là nguồn chung chạy bằng ba adapter; dùng core và test-helpers của CP-SAT, không copy fixture thành ba bản. Chính khóa/chuyên đề/tăng cường được phép dùng giáo viên khác nhau; lock vẫn được bảo toàn. [TEST-MAP.md](TEST-MAP.md) là ma trận hiện hành.
 
-`tass-cpsat/pom.xml` chỉ được bổ sung artifact test-JAR và core-JAR để module khác dùng lại lớp/fixture helper. Source thuật toán và fixture CP-SAT không bị đổi để thích nghi với các phương pháp mới.
+- Hồ sơ module09/11: [209 lượt test](../tass-cpsat/docs/TEST-RESULTS-20261109.md).
+- Hồ sơ benchmark09/11: [45 lượt, manifest/CSV/raw JSON](reports/20261109/README.md).
+- Hồ sơ cũ25/10: [183 lượt test/60 lượt đo](../../docs/history/20261025/algorithm/tass-comparison/TEST-RESULTS.md), không trộn vào kết quả năm bước hiện hành.
 
-## Cách so sánh
+Generated results/ bị ignore; hồ sơ được chọn để bàn giao nằm reports/. Các lần đo mới phải dùng cùng input/seed/ngân sách trong từng bộ ba, validator chung, warm-up và thứ tự luân phiên. Thời gian solve() không bao gồm queue/HTTP/DB hoặc JVM startup, và không phải một thành phần của vector mục tiêu.
 
-Mỗi dataset/lượt chạy được chụp thành **cùng một inputSnapshot và SHA-256** cho cả ba thuật toán: cùng nhu cầu, GV, qualification, tải/rule, coverageMode, W/A, trọng số, previous assignments, seed và ngân sách tổng. CP-SAT dùng một worker và tối đa 45% ngân sách cho mỗi pha, để lại khoảng cho tiền/hậu xử lý. Greedy chạy một lượt xây nghiệm; GA dừng ở 200 thế hệ hoặc ngân sách, điều kiện nào tới trước.
-
-Có một warm-up không tính thời gian cho mỗi thuật toán; chạy tuần tự và xoay thứ tự theo lượt. Thời gian chính là wall time toàn lời gọi solve(), bao gồm tiền kiểm và kiểm tra nghiệm, không bao gồm đọc/ghi JSON. Ghi cả việc vượt ngân sách thực đo. Đây là so sánh triển khai hiện tại với các tiêu chí dừng đã công bố; không khẳng định cả ba đã dùng hết cùng số giây hoặc số phép tính.
-
-Kết quả:
-
-- `manifest.json`: cấu hình thuật toán, GA, runtime, ngân sách và hash nguồn.
-- `runs.csv`: từng lượt, seed/hash, độ phủ, tiết thiếu, nhóm hoàn chỉnh, load/experience/changes, điểm mềm, thời gian và proof.
-- `summary.csv`: số lượt hợp lệ/phủ đủ, min/max/median coverage, khoảng điểm mềm tại mức phủ tốt nhất, median/p95 thời gian, số lượt có proof.
-- Mỗi dataset/lượt/thuật toán có `input-snapshot.json`, `result.json`, assignments và loads CSV để đối chiếu.
-
-Xếp hạng theo thứ tự: **hợp lệ điều kiện cứng → coverageObjective thấp hơn → softObjective thấp hơn**. Thời gian là một tiêu chí riêng; không kết luận nhanh hơn là tốt hơn nếu bỏ sót nhiều nhu cầu hơn. Chỉ đối chiếu điểm mềm khi cùng coverage, cấu hình và đơn vị. UNKNOWN/no candidate không được ghi thành nghiệm có điểm 0.
-
-Các fixture gốc là bài toán rất nhỏ, thích hợp kiểm tra đúng/sai. Chúng chưa đủ để kết luận thuật toán nào hiệu quả nhất ở quy mô trường. Khi có snapshot dữ liệu thật đã ẩn danh và rule được chốt, giữ nguyên pipeline so sánh và chạy nhiều seed/lượt hơn. Các giới hạn về từ điển ERD và tầng quy tắc BR-16–21 của module gốc vẫn áp dụng cho cả ba.
+Không dùng softObjective alias L1 để xếp hạng thay vector năm mục tiêu. Kết quả FEASIBLE không chứng minh tối ưu; dữ liệu đủ không đồng nghĩa đủ điều kiện phát hành phương án. [Backend/API](../../backend/docs/README.md) có kiểm soát lifecycle, revision và source token riêng.

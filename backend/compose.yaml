@@ -1,3 +1,5 @@
+# Legacy database-only setup. Full dev/demo stack: ../compose.yaml (project tass-dev).
+# This file and its existing volume remain separate from the new stack.
 services:
   postgres:
     image: postgres:16

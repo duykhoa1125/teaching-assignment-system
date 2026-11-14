@@ -1,0 +1,3 @@
+demandId,classId,subjectId,demandType,periods,teacherId,reasonCode,reason
+"D1","10A","MATH","STANDARD","1","FLEX","",""
+"D2","10A","PHYSICS","STANDARD","1","","CAPACITY_EXCEEDED","Không thể gán thêm trực tiếp vào nghiệm hiện tại với các giới hạn đã kiểm tra; chưa chứng minh không có phương án đổi gán khác."

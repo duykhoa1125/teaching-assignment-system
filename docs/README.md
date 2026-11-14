@@ -1,5 +1,7 @@
 # Báo cáo LaTeX: cài môi trường và build offline
 
+Tài liệu này chỉ hướng dẫn build báo cáo. Điểm vào dự án: [README root](../README.md), [Java17/dev](DEVELOPMENT.md), [backend/API](../backend/docs/README.md), [backlog](BACKLOG.md) và [hồ sơ lịch sử](history/README.md). Báo cáo chính và hình vẫn ở các đường dẫn bên dưới; các bản SRS/Alternate cũ đã được lưu riêng, không phải đầu vào build.
+
 Nguồn chính là [`report.tex`](report.tex), kết quả là [`report.pdf`](report.pdf). Hướng dẫn dưới đây dành cho Windows 10/11 64-bit và VS Code desktop. Sau khi cài đủ công cụ, package và font, việc sửa báo cáo và tạo PDF chạy trên máy, không cần Internet.
 
 ## 1. Bộ tệp cần giữ cùng nhau

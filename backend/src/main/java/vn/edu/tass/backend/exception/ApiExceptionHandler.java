@@ -15,6 +15,26 @@ import vn.edu.tass.backend.payload.dto.ApiErrorResponse;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+    @ExceptionHandler(SolverRunActiveException.class)
+    ResponseEntity<ApiErrorResponse> activeSolverRun(SolverRunActiveException e) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).header("Location","/api/solver-runs/"+e.getRunId())
+            .body(new ApiErrorResponse("Conflict",e.getCode(),e.getMessage()));
+    }
+    @ExceptionHandler(vn.edu.tass.backend.solver.WorkloadInputException.class)
+    ResponseEntity<ApiErrorResponse> solverInput(vn.edu.tass.backend.solver.WorkloadInputException e) {
+        return error("LOCK_CONFLICT".equals(e.code())?HttpStatus.CONFLICT:HttpStatus.UNPROCESSABLE_ENTITY,e.code(),e.getMessage());
+    }
+
+    @ExceptionHandler(PlanOperationException.class)
+    ResponseEntity<ApiErrorResponse> planOperation(PlanOperationException e) {
+        return error(e.getStatus(), e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(org.springframework.dao.ConcurrencyFailureException.class)
+    ResponseEntity<ApiErrorResponse> concurrentChange(org.springframework.dao.ConcurrencyFailureException e) {
+        return error(HttpStatus.CONFLICT, "CONCURRENT_MODIFICATION", "Dữ liệu đang thay đổi; đọc lại phương án trước khi thử lại.");
+    }
+
     @ExceptionHandler(BadRequestException.class)
     ResponseEntity<ApiErrorResponse> badRequest(BadRequestException e) {
         return error(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", e.getMessage());

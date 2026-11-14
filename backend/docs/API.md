@@ -1,16 +1,54 @@
 # TASS Backend API — dữ liệu đầu vào
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD, gồm 40 URL và 100 tổ hợp method/URL. Các API đăng nhập, hồ sơ tổng hợp, readiness, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD (40 URL, 100 tổ hợp method/URL), 4 thao tác plan/version trên 3 URL, GET readiness, 3 thao tác async solver run/poll/cancel, 5 thao tác đọc kết quả/validation và 5 thao tác sửa/khóa/mở khóa phân công. Tổng cộng 56 URL, 118 tổ hợp method/URL. Worker có hậu kiểm/apply nghiệm nguyên tử, audit, revision thực và chặn stale. Đăng nhập, hồ sơ tổng hợp và workflow phản hồi/tăng nhu cầu chưa triển khai. Xem [PLAN_API.md](PLAN_API.md), [READINESS_API.md](READINESS_API.md), [SOLVER_RUN_API.md](SOLVER_RUN_API.md), [SOLVER_APPLY.md](SOLVER_APPLY.md), [PLAN_RESULTS_API.md](PLAN_RESULTS_API.md) và [ASSIGNMENT_MUTATION_API.md](ASSIGNMENT_MUTATION_API.md).
 
 ## Xem trực tiếp
 
-Chạy backend rồi mở:
+Với Docker dev/demo toàn stack, từ gốc `DACN-code` chạy `.\scripts\docker-dev.ps1 up`, rồi mở `http://127.0.0.1:3000/swagger-ui.html` hoặc `http://127.0.0.1:3000/v3/api-docs`. Hướng dẫn và các dependency còn cần team chốt ở [infra/README.md](../../infra/README.md) và [DOCKER_AUDIT.md](../../infra/DOCKER_AUDIT.md). Backend trực tiếp vẫn publish cổng8080; UI demo cổng3000 hiện chưa gọi API thật.
+
+Nếu chạy backend trực tiếp trên host thay vì Docker, dùng các bước dưới đây.
+
+Từ thư mục gốc `DACN-code`, dùng PowerShell và xác nhận **cả Java lẫn Maven đều chạy JDK 17**:
+
+```powershell
+# Script chỉ chọn JDK .runtime/jdk-17 cho terminal hiện tại.
+# Nếu JAVA_HOME/PATH của bạn đã đúng JDK 17 thì có thể bỏ dòng dot-source này.
+. .\scripts\use-java17.ps1
+java -version
+mvn -version
+
+# Cài artifact solver; BUILD SUCCESS ở bước này mới chỉ xác nhận module solver.
+mvn -pl algorithm/tass-cpsat -am install -DskipTests
+
+Set-Location backend
+docker compose up -d
+
+# Biên dịch backend riêng để thấy rõ lỗi trước khi khởi động.
+mvn clean compile
+mvn spring-boot:run
+```
+
+`spring-boot:run` là chạy ứng dụng, không phải chạy bộ kiểm thử. Giữ terminal này mở và chờ log `Started ...`/Tomcat cổng 8080, rồi mở:
 
 - Swagger UI: `http://127.0.0.1:8080/swagger-ui.html`
 - OpenAPI JSON: `http://127.0.0.1:8080/v3/api-docs`
 - OpenAPI YAML: `http://127.0.0.1:8080/v3/api-docs.yaml`
 
 Swagger UI có schema request/response, ví dụ body và mã phản hồi cho từng endpoint. Các ví dụ body cũng nằm trong `src/main/resources/api-examples.json`.
+
+Kiểm tra OpenAPI từ terminal thứ hai:
+
+```powershell
+$spec = Invoke-RestMethod 'http://127.0.0.1:8080/v3/api-docs'
+$spec.info
+$spec.paths.PSObject.Properties.Count
+```
+
+Checkout hiện có 56 URL trong đặc tả. CRUD đầu vào có thể thử trực tiếp; API plan/solver/kết quả/sửa phân công yêu cầu Principal tin cậy, nên sẽ trả 401 khi chưa nối auth của nhóm. Không truyền actor hoặc tự tạo header user để bỏ qua kiểm tra này.
+
+Nếu gặp hàng loạt `cannot find symbol` cho getter/setter (`getId`, `getConfirmedBy`, ...), kiểm tra `mvn -version` trước. Đã tái hiện lỗi này khi Maven dùng JDK 23 với cấu hình Lombok hiện tại. `<java.version>17</java.version>` chọn Java release đầu ra, không tự đổi JDK mà Maven đang chạy. JDK 23 yêu cầu bật annotation processing tường minh ([Oracle release notes](https://www.oracle.com/java/technologies/javase/23-relnote-issues.html)); dự án dùng JDK 17 theo chuẩn nhóm. Sau khi sửa JAVA_HOME/PATH, mở terminal mới hoặc dot-source script trên rồi `mvn clean compile`.
+
+Compose chỉ nạp schema/seed khi tạo volume mới. Với DB/volume được tạo từ code cũ, cần kiểm tra và áp migration 04–09 theo thứ tự trước khi chạy luồng solver/validation/sửa phân công; `docker compose up -d` không tự cập nhật schema. Không cần xóa volume để giải quyết lỗi Java/Lombok.
 
 ## Quy ước chung
 
@@ -24,7 +62,7 @@ Base path: `http://127.0.0.1:8080/api`. Body và response dùng JSON `snake_case
 | `PUT` | `/api/{resource}/{id}` | `200`, object | Cập nhật bằng body đầy đủ |
 | `DELETE` | `/api/{resource}/{id}` | `204`, không body | Xóa bản ghi |
 
-`limit` mặc định 20, nhận 1–100. `offset` mặc định 0, phải không âm. Danh sách hiện trả **mảng JSON**, chưa có `total` hoặc cursor. `PUT` phải gửi lại mọi trường bắt buộc; trường tùy chọn không gửi sẽ thành `null`. JSON có trường lạ bị từ chối. `id`, `updated_at`, `recorded_at` là trường chỉ đọc. `assignment_round.source_revision_token` và `source_updated_at` cũng chỉ đọc.
+Với CRUD đầu vào, `limit` mặc định 20, nhận 1–100; `offset` mặc định 0, không âm. Danh sách CRUD trả **mảng JSON**, chưa có total/cursor. API assignments/workloads trả trang có total, limit mặc định 50, tối đa 200 (xem PLAN_RESULTS_API.md). `PUT` phải gửi lại mọi trường bắt buộc; trường tùy chọn không gửi sẽ thành `null`. JSON có trường lạ bị từ chối. `id`, `updated_at`, `recorded_at` là trường chỉ đọc. `assignment_round.source_revision_token` và `source_updated_at` cũng chỉ đọc.
 
 ### Bộ lọc
 
@@ -452,9 +490,17 @@ GET /api/teacher-workload-bases?teacher_id=1&semester_id=1&verification_status=V
 ## Chạy và kiểm thử
 
 ```powershell
+# Tại thư mục gốc DACN-code, chuẩn bị dependency solver cho backend:
+mvn -pl algorithm/tass-cpsat -am install -DskipTests
 cd backend
 docker compose up -d
 mvn spring-boot:run
 ```
 
 Mở Swagger UI ở `http://127.0.0.1:8080/swagger-ui.html`. Nếu cần kiểm thử trên PostgreSQL đã nạp schema và seed, chạy `mvn test "-Ddb.integration=true"`. Dữ liệu demo trong `sql/02_seed.sql` không phải dữ liệu pháp lý thực tế.
+
+Build và kiểm thử solver + backend từ source mới bằng `mvn verify` tại thư mục gốc. Chi tiết: [SOLVER_INTEGRATION.md](SOLVER_INTEGRATION.md).
+
+## Sửa/khóa/mở khóa phân công
+
+Các endpoint mới, body, selector toàn nhóm, revision, mã lỗi và ngoại lệ unlock khi stale nằm tại [ASSIGNMENT_MUTATION_API.md](ASSIGNMENT_MUTATION_API.md). Trong Swagger xem nhóm **Manual assignments**. PATCH chỉ đổi giáo viên/lý do chưa gán; POST lock/unlock theo dòng hoặc atomic batch; không đổi số tiết nguồn hay triển khai UI/feedback.
