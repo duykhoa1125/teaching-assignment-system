@@ -78,6 +78,7 @@ target/
 node_modules/
 dist/
 .npm/
+.sites-runtime/
 
 # ==========================================
 # IDE & Editor Settings
@@ -116,6 +117,7 @@ $RECYCLE.BIN/
 !/docs/project.md
 !/docs/git-flow.md
 !/docs/DEVELOPMENT.md
+!/docs/FRONTEND_DEVELOPMENT.md
 !/docs/BACKLOG.md
 !/docs/CLEANUP.md
 !/docs/history/

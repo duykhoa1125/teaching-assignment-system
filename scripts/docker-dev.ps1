@@ -66,11 +66,11 @@ try {
             if ($schema.paths.PSObject.Properties.Name -notcontains $path) { throw "Missing OpenAPI route: $path" }
         }
         $page=Invoke-WebRequest $uiOrigin -UseBasicParsing -TimeoutSec 30
-        if ($page.StatusCode -ne 200 -or $page.Content -notmatch '<title>TASS Studio') { throw 'Demo frontend did not load.' }
+        if ($page.StatusCode -ne 200 -or $page.Content -notmatch '<title>TASS Studio') { throw 'Frontend entry did not load.' }
         Write-Host "Frontend: $uiOrigin"
         Write-Host "Swagger:  $uiOrigin/swagger-ui.html"
         Write-Host "Backend:  $apiOrigin"
-        Write-Host 'UI, API readiness and Swagger proxy checks passed. Demo interactions still use browser data.'
+        Write-Host 'Frontend entry, API readiness and Swagger proxy checks passed. Business UI/auth integration is still pending.'
     }
     Invoke-Compose -Arguments @('--profile','test','--profile','tools','config','--quiet')
     if ($Action -eq 'config') { Write-Host 'Compose configuration is valid.'; return }

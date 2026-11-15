@@ -1,0 +1,37 @@
+.panel {
+    text-align: center;
+    padding: 64px 24px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+}
+.symbol {
+    display: grid;
+    place-items: center;
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 22px;
+    border: 1px solid var(--line);
+    border-radius: 15px;
+    color: var(--muted);
+    background: var(--surface-alt);
+    font-size: 28px;
+}
+.panel h2 {
+    font-size: 21px;
+    letter-spacing: -0.6px;
+    margin: 0 0 12px;
+}
+.description {
+    max-width: 460px;
+    margin-inline: auto;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.9;
+}
+.description p {
+    margin: 0;
+}
+.action {
+    margin-top: 24px;
+}

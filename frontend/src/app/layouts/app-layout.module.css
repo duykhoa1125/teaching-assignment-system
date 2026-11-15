@@ -1,0 +1,242 @@
+.shell {
+    min-height: 100dvh;
+}
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 260px;
+    display: flex;
+    flex-direction: column;
+    padding: 32px 20px 22px;
+    background: var(--surface-alt);
+    border-right: 1px solid var(--line);
+}
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 8px;
+    color: var(--ink);
+    text-decoration: none;
+}
+.brandmark {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: white;
+    background: var(--primary);
+    border-radius: 13px;
+    font-family: Georgia, serif;
+    font-size: 36px;
+    line-height: 1;
+    padding-bottom: 8px;
+}
+.brand strong {
+    display: block;
+    font-size: 20px;
+    letter-spacing: -0.7px;
+}
+.brand strong span {
+    font-weight: 400;
+}
+.brand small {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 2px;
+}
+.workspace {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--soft);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 13px 12px;
+    margin: 34px 0 28px;
+}
+.workspaceIcon {
+    font-size: 26px;
+    color: var(--muted);
+}
+.workspace strong,
+.workspace small {
+    display: block;
+}
+.workspace strong {
+    font-size: 12px;
+    color: var(--ink);
+}
+.workspace small {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+}
+.navLabel {
+    margin: 0 12px 12px;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+}
+.navigation {
+    display: grid;
+    gap: 5px;
+}
+.navLink {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 11px 13px;
+    border-radius: 7px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 13px;
+}
+.navLink:hover {
+    background: var(--soft);
+}
+.navLink.active {
+    background: var(--tint);
+    color: var(--primary);
+    font-weight: 600;
+}
+.navIcon {
+    display: inline-flex;
+    justify-content: center;
+    width: 20px;
+    font-size: 21px;
+    line-height: 1;
+}
+.sidebarFooter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding: 20px 10px 0;
+    font-size: 11px;
+    color: var(--muted);
+}
+.footerDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--muted);
+}
+.content {
+    margin-left: 260px;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+}
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    min-height: 72px;
+    padding: 16px 38px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+}
+.separator {
+    margin: 0 10px;
+    color: var(--line);
+}
+.session {
+    border: 1px solid var(--line);
+    padding: 5px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    font-size: 11px;
+}
+.main {
+    width: 100%;
+    max-width: 1400px;
+    margin-inline: auto;
+    padding: 40px 38px;
+    flex: 1;
+}
+.main:focus {
+    outline: none;
+}
+.footer {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 38px;
+    padding: 18px 0;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+}
+@media (max-width: 1000px) {
+    .sidebar {
+        width: 224px;
+        padding-inline: 14px;
+    }
+    .content {
+        margin-left: 224px;
+    }
+    .main {
+        padding: 30px 24px;
+    }
+    .topbar {
+        padding-inline: 24px;
+    }
+    .footer {
+        margin-inline: 24px;
+    }
+}
+@media (max-width: 720px) {
+    .sidebar {
+        position: static;
+        width: auto;
+        padding: 18px 18px 12px;
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+    }
+    .workspace,
+    .navLabel,
+    .sidebarFooter {
+        display: none;
+    }
+    .brand {
+        padding: 0;
+    }
+    .navigation {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 18px;
+    }
+    .navLink {
+        padding: 9px 10px;
+        font-size: 12px;
+    }
+    .navIcon {
+        display: none;
+    }
+    .content {
+        margin-left: 0;
+        min-height: auto;
+    }
+    .topbar {
+        padding: 12px 18px;
+        min-height: 55px;
+        font-size: 10px;
+    }
+    .separator {
+        margin-inline: 4px;
+    }
+    .main {
+        padding: 28px 18px;
+    }
+    .footer {
+        margin-inline: 18px;
+    }
+}

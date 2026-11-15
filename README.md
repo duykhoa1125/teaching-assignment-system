@@ -10,7 +10,7 @@ Từ root repo, mở Docker Desktop/Linux engine rồi chạy:
 .\scripts\docker-dev.ps1 up
 ```
 
-Helper kiểm tra các cổng thực tế từ .env, build, đợi healthcheck và in URL. Giá trị mặc định trong .env.example là UI3000, backend8080 và PostgreSQL5433; nếu máy có SRM hoặc dịch vụ khác, chọn cổng còn trống trong .env. UI là demo browser, chưa nối business API/auth thật.
+Helper kiểm tra các cổng thực tế từ .env, build, đợi healthcheck và in URL. Giá trị mặc định trong .env.example là UI3000, backend8080 và PostgreSQL5433; nếu máy có SRM hoặc dịch vụ khác, chọn cổng còn trống trong .env. UI hiện là bộ khung React, chưa nối business API/auth thật. Phát triển frontend trực tiếp bằng Vite tại cổng5173 theo [hướng dẫn frontend](frontend/README.md).
 
 Build trực tiếp luôn chọn JDK 17:
 
@@ -30,7 +30,7 @@ Docker dùng Java trong image, không thay JAVA_HOME của Windows. Plain mvn d�
 | algorithm/tass-cpsat/ | Solver chính OR-Tools 9.14.6206, hợp đồng tass-solver/2 và validator |
 | algorithm/tass-common/, tass-greedy/, tass-genetic/ | Thành phần dùng chung và thuật toán đối chứng |
 | algorithm/tass-benchmark/, tass-comparison/ | Reactor/CLI/test chung và hồ sơ so sánh |
-| frontend/ | HTML demo tự chứa, chưa nối backend thật |
+| frontend/ | React/TypeScript/Vite, router, QueryClient, HTTP client và layout ban đầu; demo gốc lưu tại prototype/; chưa nối business API/auth |
 | infra/ | Cấu hình dev, Nginx proxy, scripts kiểm thử/migration/backup |
 | docs/ | Báo cáo chính, hướng dẫn, backlog và lịch sử được gắn mốc |
 
@@ -38,6 +38,7 @@ Root reactor build CP-SAT+backend; reactor comparison build toàn bộ module th
 
 ## Tài liệu hiện hành
 
+- [Quy trình phát triển frontend](docs/FRONTEND_DEVELOPMENT.md): kiến trúc mã nguồn, tích hợp API và lộ trình triển khai; [cài đặt/chạy frontend](frontend/README.md).
 - [Backend/API — mục lục và giới hạn](backend/docs/README.md):56 URL/118 operations; hồ sơ API14/11 có175/175 test qua JUnit trực tiếp. Maven verify/CI vẫn cần xác nhận với cache/mạng đủ.
 - [Mô hình solver](algorithm/tass-cpsat/docs/CURRENT_MODEL.md), [hợp đồng](algorithm/tass-cpsat/docs/CONTRACT.md).
 - [So sánh thuật toán](algorithm/tass-comparison/README.md), [benchmark09/11](algorithm/tass-comparison/reports/20261109/README.md).
