@@ -29,7 +29,7 @@ function RouteEffects() {
     const { pathname } = useLocation();
     useEffect(() => {
         document.title = `${titles[pathname] ?? pageTitle(pathname)} · TASS Studio`;
-        document.getElementById('main-content')?.focus();
+        document.getElementById('main-content')?.focus({ preventScroll: true });
         window.scrollTo(0, 0);
     }, [pathname]);
     return null;

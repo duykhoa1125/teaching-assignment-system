@@ -11,6 +11,7 @@ import teacher9 from '@/assets/demo/teacher-9.svg';
 import teacher10 from '@/assets/demo/teacher-10.svg';
 import teacher11 from '@/assets/demo/teacher-11.svg';
 import teacher12 from '@/assets/demo/teacher-12.svg';
+import styles from './portrait-avatar.module.css';
 
 const TEACHER_PORTRAITS = [
     teacher1,
@@ -49,7 +50,7 @@ export function PortraitAvatar({
     }
 
     const tone = ((Math.trunc(colorIndex) % 6) + 6) % 6;
-    const classes = ['avatar', 'portrait', `c${tone}`, className]
+    const classes = [styles.avatar, 'avatar', 'portrait', `c${tone}`, className]
         .filter(Boolean)
         .join(' ');
 

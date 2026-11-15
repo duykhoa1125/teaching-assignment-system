@@ -2,6 +2,7 @@ import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import type { OverviewTeacherLoad } from '@/features/overview/types';
 import { Icon } from '@/shared/ui/icon';
+import { getShellPortalContainer } from '@/shared/ui/portal';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import { COMPONENT_LABELS, clampPercent, formatPeriods } from './formatters';
 import styles from './overview-page.module.css';
@@ -243,6 +244,6 @@ export function TeacherDrawer({
                 </div>
             </section>
         </div>,
-        document.body,
+        getShellPortalContainer(),
     );
 }

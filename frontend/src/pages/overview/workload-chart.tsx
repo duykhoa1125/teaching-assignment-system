@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { OverviewTeacherLoad } from '@/features/overview/types';
 import { Icon } from '@/shared/ui/icon';
+import { getShellPortalContainer } from '@/shared/ui/portal';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import { clampPercent, formatPeriods } from './formatters';
 import styles from './overview-page.module.css';
@@ -347,7 +348,7 @@ export function WorkloadChart({
                               </div>
                           ))}
                       </div>,
-                      document.body,
+                      getShellPortalContainer(),
                   )
                 : null}
         </>
