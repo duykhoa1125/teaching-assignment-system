@@ -55,6 +55,7 @@ miktex-*/
 !*.svg
 !*.tex
 !*.md
+/AGENTS.md
 
 # ==========================================
 # Java / Spring Boot / Algorithm Modules
@@ -77,6 +78,7 @@ target/
 # ==========================================
 node_modules/
 dist/
+dist-mock/
 .npm/
 .sites-runtime/
 

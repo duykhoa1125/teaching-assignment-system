@@ -1,4 +1,6 @@
 import { Link } from 'react-router';
+import { ArrowUpRight } from 'lucide-react';
+import { Icon } from '@/shared/ui/icon';
 import styles from './overview-page.module.css';
 
 const steps = [
@@ -40,7 +42,8 @@ export function OverviewPage() {
                         nhà trường.
                     </p>
                     <Link to="/teachers" className="button">
-                        Khám phá giáo viên <span aria-hidden="true">↗</span>
+                        Khám phá giáo viên{' '}
+                        <Icon glyph={ArrowUpRight} size={16} />
                     </Link>
                 </div>
                 <div className={styles.illustration} aria-hidden="true">

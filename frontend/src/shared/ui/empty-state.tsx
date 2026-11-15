@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Inbox } from 'lucide-react';
+import { Icon } from './icon';
 import styles from './empty-state.module.css';
 
 type EmptyStateProps = {
@@ -10,7 +12,7 @@ export function EmptyState({ title, children, action }: EmptyStateProps) {
     return (
         <section className={styles.panel}>
             <div className={styles.symbol} aria-hidden="true">
-                ◫
+                <Icon glyph={Inbox} size={24} />
             </div>
             <h2>{title}</h2>
             <div className={styles.description}>{children}</div>

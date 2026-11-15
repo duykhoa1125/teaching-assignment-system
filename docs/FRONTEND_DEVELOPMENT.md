@@ -1,14 +1,22 @@
 # Quy trình phát triển frontend TASS
 
-Cập nhật: **15/11/2026**. Trạng thái: **đã khởi tạo bộ khung FE-01; chưa tích hợp giao diện nghiệp vụ/auth**.
+Cập nhật: **15/11/2026**. Trạng thái: **đã có FE-01, nền tảng UI FE-02A và mock MSW FE-02B; chưa có UI nghiệp vụ/auth/solver hoàn chỉnh**.
 
-Hướng phát triển đã điều chỉnh: **hoàn thiện nền tảng và giao diện với mock data trước, tích hợp API thật sau**. React/TypeScript/Vite, React Router, TanStack Query và HTTP client đã được thiết lập; phiên bản và cách chạy nằm trong [README frontend](../frontend/README.md). Tầng mock, session mô phỏng và các feature nghiệp vụ chưa được triển khai. Tài liệu phân biệt kế hoạch tiếp theo với kết quả FE-01 đã có.
+Hướng phát triển: **hoàn thiện nền tảng và giao diện với mock data trước, tích hợp API thật sau**. React/TypeScript/Vite, React Router, TanStack Query và HTTP client đã có; đã có font Be Vietnam Pro/Manrope, SVG gốc của demo, component dùng chung, MSW và khung điều phối React. Mock giáo viên/danh sách trường đã hoạt động qua HTTP client; session và solver mô phỏng, UI CRUD nghiệp vụ còn ở mốc sau. Xem [README frontend](../frontend/README.md), [UI](../frontend/docs/UI.md) và [mock](../frontend/docs/MOCKS.md).
 
 ## 1. Hiện trạng và mục tiêu
 
+### Quy tắc bắt buộc: sao chép đúng giao diện demo
+
+**Giao diện phải y chang `frontend/prototype/index.html`**: màu sắc, font và trọng lượng chữ, icon/SVG/logo, họa tiết/minh họa, bố cục, kích thước, khoảng cách và các trạng thái/responsive. Không thay bằng thiết kế hoặc tài nguyên gần giống do sở thích hay sự tiện dụng của thư viện. Tái cấu trúc component/mock không được tự làm đổi diện mạo.
+
+Ngoại lệ chỉ gồm lỗi thiết kế đã xác định, tối ưu kỹ thuật/hiệu năng cần thiết, hoặc điều chỉnh cần cho backend. Ưu tiên tối ưu bên trong mà không đổi phần nhìn thấy; nếu buộc thay đổi giao diện, ghi rõ vấn đề, lý do, trước/sau và tác động, giữ phạm vi tối thiểu. Đối chiếu demo và ứng dụng ở cùng viewport/trạng thái trước nghiệm thu; build/test đạt không thay kiểm chứng trực quan.
+
+Bộ khung hiện có vẫn cần tiếp tục đối chiếu và hoàn thiện; không coi nền tảng đã có là toàn bộ giao diện đã khớp demo.
+
 | Khu vực | Hiện trạng | Hướng phát triển |
 | --- | --- | --- |
-| Frontend | `frontend/index.html` là entry React; prototype tự chứa được giữ nguyên tại `frontend/prototype/index.html` | Hoàn thiện UI dùng chung và từng màn hình với mock data tập trung |
+| Frontend | React, font/icon, component dùng chung và MSW; prototype nguyên bản tại `frontend/prototype/index.html` | Dùng nền tảng này để hoàn thiện từng màn hình nghiệp vụ với mock |
 | Backend | Có CRUD, plan/current DRAFT, readiness, async solver, kết quả/validation và sửa/khóa phân công | Tái sử dụng hợp đồng hiện hành |
 | Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Làm session/vai trò mô phỏng cho UI trước; auth thật thuộc giai đoạn tích hợp |
 | Docker | Đã build frontend bằng Node24, Nginx phục vụ `dist`, proxy API và SPA fallback | Giữ quy trình này khi bổ sung feature |
@@ -51,7 +59,7 @@ Chọn thư viện form, bộ UI hoặc công cụ kiểm thử khi có ca sử 
 | Runtime | Phiên bản Node/npm cụ thể đáp ứng Vite được chọn; cách cố định phiên bản | FE-01 |
 | Dependencies | Phiên bản trực tiếp trong `package.json`, lockfile được commit | FE-01 |
 | Phong cách UI | Phần giữ từ demo, token màu/font/khoảng cách, bảng/form/dialog/thông báo và trạng thái tải/rỗng/lỗi | FE-02 |
-| Mock | Cơ chế chặn request, fixture có ID ổn định, độ trễ, scenario lỗi, reset và lưu tạm | FE-02 |
+| Mock | MSW3.0.6, fixture ID ổn định, độ trễ/scenario/reset; dữ liệu trong bộ nhớ và reload về fixture | FE-02B đã có; lưu session/run thuộc mốc sau |
 | Session mô phỏng | Vai trò, trạng thái hết phiên/thiếu quyền, điều hướng và cách khôi phục/reset | FE-04; không cần auth backend |
 | Ngữ cảnh | Trường, học kỳ, đợt, version thống nhất trong fixture và URL | FE-02–07; đối chiếu backend ở FE-09 |
 | Auth thật | Endpoint, cookie hay token, khôi phục phiên, hết hạn, logout, lỗi quyền; CSRF nếu dùng cookie | FE + backend ở FE-09/10 |
@@ -90,7 +98,7 @@ Các script trên đã có sau FE-01. Bổ sung `npm run format`, `npm run forma
 
 ## 4. Kiến trúc mã nguồn
 
-Cấu trúc đích dưới đây bao gồm `features/` và `mocks/` sẽ bổ sung khi triển khai. FE-01 hiện mới có app/pages/shared/styles; không coi sơ đồ này là các module đã tồn tại.
+Cấu trúc đích dưới đây bao gồm phần đã có và phần nghiệp vụ sẽ bổ sung. Hiện có app/pages/shared/styles/mocks và API/types của teachers; auth, queries/components nghiệp vụ và assignment feature chưa được triển khai đầy đủ.
 
 ```text
 frontend/
@@ -162,19 +170,19 @@ Giữ DTO `snake_case` theo backend ở bước đầu. Chỉ tạo mapper/view 
 
 ### 4.3. Thiết kế mock data
 
-Các yêu cầu sau thuộc FE-02 và **chưa được triển khai ở FE-01**:
+MSW và nền tảng fixture/handler/scenario/store/reset đã triển khai trong FE-02B; yêu cầu dưới đây áp dụng tiếp cho các feature sau. Phạm vi hiện có API mock giáo viên, GET danh sách trường và hợp đồng xem thử khung `/api/mock/layout` (không phải endpoint backend/session). Fixture lớp/môn/học kỳ đã có nhưng chưa có handler; session và solver chưa mô phỏng.
 
-- Chọn mock ở tầng HTTP để các query/mutation dùng cùng đường dẫn, request và response như khi nối backend. Chọn thư viện/cơ chế cụ thể trong PR triển khai, không rải dữ liệu giả trong component.
+- Dùng MSW ở tầng HTTP để các query/mutation dùng cùng đường dẫn, request và response như khi nối backend; không rải dữ liệu giả trong component.
 - Khởi động mock xong trước khi render ứng dụng để tránh request đầu tiên đi đến proxy thật. Request nghiệp vụ chưa có handler phải báo lỗi rõ ngay trong mock mode, không chuyển tiếp sang backend; asset và HMR vẫn tải bình thường.
 - Fixture có ID, quan hệ trường/học kỳ/lớp/môn/giáo viên/round/version ổn định. Bảng, dashboard, tải và validation phải dựa trên cùng bộ dữ liệu, tránh mỗi màn hình có một bản riêng lệch nhau.
 - Mock store hỗ trợ tạo/sửa/xóa và các trạng thái cần để đi hết luồng. Query invalidation vẫn đi qua TanStack Query; không sửa state riêng trong component để giả lập lưu thành công.
 - Có scenario chọn được và tái lập: dữ liệu bình thường, rỗng, tải chậm, lỗi400/401/403/409/422/503, snapshot cũ, solver không có nghiệm/bị hủy/thất bại. Không gây lỗi ngẫu nhiên khó tái hiện.
 - Quy định rõ dữ liệu nào mất khi reload và dữ liệu nào được giữ để thử luồng khôi phục session/run. Nếu lưu browser storage, dùng namespace/phiên bản riêng cho mock và không lẫn session/dữ liệu API thật.
 - Có thao tác reset về fixture gốc; reset đồng thời mock store, lượt chạy mô phỏng, session liên quan và query cache để UI đọc lại nhất quán.
-- Solver mock chỉ mô phỏng trạng thái và kết quả đã chuẩn bị theo kịch bản; không chạy CP-SAT hay chứng minh tối ưu. Tải/validation mô phỏng không phải kết quả tính/kiểm chứng của backend.
-- Đăng nhập mock dùng tài khoản/vai trò minh họa, không gọi auth thật hoặc tạo token/header để giả danh trên backend. Giao diện phải có nhãn cho biết đang ở chế độ mock.
+- Ở FE-07, solver mock chỉ mô phỏng trạng thái và kết quả đã chuẩn bị theo kịch bản; không chạy CP-SAT hay chứng minh tối ưu. Tải/validation mô phỏng không phải kết quả tính/kiểm chứng của backend.
+- Ở FE-04, đăng nhập mock dùng tài khoản/vai trò minh họa, không gọi auth thật hoặc tạo token/header để giả danh trên backend. Nhãn dữ liệu mẫu đã có; session/vai trò chưa được triển khai.
 
-Thiết kế dự kiến dùng lựa chọn `mock`/`api` rõ ràng, ví dụ `VITE_DATA_SOURCE`; tên biến và cách nạp phải được ghi vào README khi triển khai. Biến này **chưa có hiệu lực trong mã hiện tại**. Sau FE-02, luồng phát triển UI mặc định dùng mock; chế độ API được chọn có chủ đích khi tích hợp. Giá trị cấu hình không hợp lệ phải báo lỗi; không tự fallback sang mock khi API thật lỗi. Build triển khai thật không bật mock; bản demo mock đóng gói riêng phải được cấu hình và gắn nhãn rõ.
+Lựa chọn `VITE_DATA_SOURCE=mock|api` đã hoạt động. `npm run dev` mặc định mock, `dev:api` bật proxy và gỡ worker cũ nếu có. Giá trị không hợp lệ hoặc ép mock vào build API làm Vite báo lỗi; không tự fallback. `npm run build` tạo bản API không worker/handler/mock tools; `build:mock` tạo bản mẫu có nhãn ở `dist-mock`. Cách chọn scenario, reset và quy tắc reload nằm trong [hướng dẫn mock](../frontend/docs/MOCKS.md).
 
 ## 5. Quản lý state và điều hướng
 
@@ -279,7 +287,7 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 
 ### 8.1. Khi phát triển
 
-- Chạy frontend bằng `npm ci` và `npm run dev` tại `frontend/`. FE-01 hiện chỉ có bộ khung và không phát request nghiệp vụ. Sau khi FE-02 hoàn tất, mock mode phải chạy độc lập bằng quy trình này, không cần backend/PostgreSQL.
+- Chạy frontend bằng `npm ci` và `npm run dev` tại `frontend/`, mặc định mock và không cần backend/PostgreSQL. `/dev/ui` xem component và kiểm tra GET giáo viên qua HTTP client/TanStack Query/MSW; trang giáo viên nghiệp vụ còn chờ FE-03.
 - Chỉ khởi động PostgreSQL/backend theo [hướng dẫn hạ tầng](../infra/README.md) khi chủ đích kiểm tra API thật; đây là bước của giai đoạn tích hợp.
 - Vite dùng cổng5173; Nginx toàn stack mặc định dùng3000. Kiểm tra xung đột trước khi chạy.
 - Vite proxy `/api` đến địa chỉ backend được publish trên host, theo `.env` thực tế; không dùng hostname Docker `backend` từ trình duyệt/host.
@@ -294,7 +302,7 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 - Cập nhật allowlist `.dockerignore` cho package, lockfile, cấu hình, `src` và tài nguyên cần build; giữ secrets, cache, `node_modules` và prototype ngoài build nếu không cần phục vụ.
 - Giữ proxy API/OpenAPI/Swagger, `/healthz` và SPA fallback hiện có. Lỗi `/api/...` phải đi tới backend, không bị chuyển thành HTML trang chủ.
 - Thử mở trực tiếp và reload một route con, tải asset. Khi kiểm tra API mode, thêm proxy API và đăng nhập khi auth đã có.
-- Chưa thay đổi Docker runtime trong lần sửa tài liệu này: Compose hiện vẫn khởi động toàn stack và phụ thuộc healthcheck backend. Nếu cần image demo mock độc lập, bổ sung cách build/chạy rõ ở FE-02/08; không coi cấu hình đó là đã có.
+- Docker runtime vẫn build bản API; Compose khởi động toàn stack và phụ thuộc healthcheck backend. Bản demo mock độc lập đã có qua build:mock/preview, chưa thêm image Docker mock riêng.
 - Không xóa volume PostgreSQL để giải quyết lỗi frontend; kiểm tra migrations theo hướng dẫn backend.
 
 ## 9. Thứ tự triển khai và đầu ra
@@ -303,7 +311,8 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 | --- | --- | --- |
 | FE-00 | Tài liệu quy trình này và liên kết tra cứu | Có phạm vi, kiến trúc, phụ thuộc và tiêu chí nghiệm thu |
 | FE-01 | Scaffold, runtime, scripts, router/providers, HTTP client, chuyển Docker build | Typecheck/lint/build đạt; Docker phục vụ ứng dụng đã build; demo gốc được bảo toàn |
-| FE-02 | Nền tảng UI và mock dùng chung | Design tokens, layout, form/bảng/dialog/thông báo; handlers/fixtures/scenarios/store/reset, chọn chế độ rõ; chạy độc lập không phát request nghiệp vụ ra backend |
+| FE-02A | Nền tảng UI dùng chung | Be Vietnam Pro/Manrope, SVG gốc demo, tokens/layout, form/bảng/dialog/thông báo và trạng thái; có trang xem thử, desktop/mobile và bàn phím |
+| FE-02B | Hạ tầng mock MSW | Fixtures/handlers/scenarios/store/reset, chọn chế độ rõ; API giáo viên và danh sách trường làm mẫu; không gửi request nghiệp vụ ra backend |
 | FE-03 | Giáo viên với mock | Danh sách, tìm kiếm, phân trang, thêm/sửa/xóa và lỗi tham chiếu; dữ liệu cập nhật nhất quán, reset được |
 | FE-04 | Đăng nhập/session mô phỏng và ngữ cảnh | Thử vai trò, login/logout, reload, hết phiên, thiếu quyền và chuyển trường/học kỳ/đợt bằng mock; không cần auth thật |
 | FE-05 | Lớp, môn, nhu cầu và readiness với mock | Màn hình nguồn, bộ lọc/form và các scenario dữ liệu đủ/thiếu, có issue chặn |
@@ -316,7 +325,7 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 
 FE-02–08 ưu tiên hoàn thiện UI và mock; việc backend chuẩn bị auth/API/fixture có thể diễn ra song song, không chặn nghiệm thu UI. Chỉ chuyển trọng tâm sang API thật sau khi giai đoạn mock đạt tiêu chí FE-08 và phạm vi tích hợp đã được xác định. Trong cả mock và API mode, thử readiness tiền kiểm trước khi tạo plan bằng lựa chọn config/rule rõ ràng; sau khi có DRAFT thì đọc lại theo snapshot/current version.
 
-Mỗi mốc có thể tách thành nhiều PR nhỏ. FE-00 và bộ khung kỹ thuật FE-01 đã thực hiện; FE-02 mới có layout ban đầu, chưa có tầng mock/bộ UI đầy đủ. Các feature từ FE-03 trở đi chưa triển khai. Bảng này thay thứ tự cũ ưu tiên API thật tại FE-03.
+Mỗi mốc có thể tách thành nhiều PR nhỏ. FE-00/01 và nền tảng FE-02A/02B đã có; FE-03 trở đi chưa triển khai thành các màn hình nghiệp vụ hoàn chỉnh. API mock giáo viên và panel kiểm tra ở FE-02B không thay thế màn hình CRUD FE-03. Khi thêm feature mới, tiếp tục mở rộng bộ UI và handler tương ứng; không coi toàn bộ giai đoạn UI mock đã hoàn tất.
 
 Các màn hình trong prototype là tham chiếu giao diện và tương tác, không tự mở rộng phạm vi nghiệp vụ đã chốt. Nếu làm UI lifecycle/feedback/phát hành/PDF hoặc hồ sơ giáo viên tổng hợp trước khi API có, ghi rõ đó là mock theo hợp đồng dự kiến và theo dõi phụ thuộc trong [backlog](BACKLOG.md); không báo chúng đã được backend hỗ trợ.
 
@@ -406,3 +415,31 @@ Kết quả kiểm chứng:
 | Prototype | SHA-256 giữ nguyên giá trị trong README frontend |
 
 Đây là hồ sơ kiểm chứng của bước khởi tạo, không phải nghiệm thu mock. Kiểm thử Docker dùng container riêng trên cổng loopback ngẫu nhiên, GET qua backend dev đang chạy để kiểm tra proxy; không thay thế các service dev hoặc sửa dữ liệu DB. Chưa nghiệm thu responsive trên thiết bị nhỏ, session mock, CRUD từ UI hoặc luồng solver mô phỏng. Bộ khung chưa có CI frontend; trạng thái commit/merge/push tra trực tiếp trong Git.
+
+## 14. Nền tảng UI và mock — FE-02A/02B, 15/11/2026
+
+Hai phần được triển khai trực tiếp trên checkout frontend hiện có; không giao cho agent khác. FE-02A bổ sung Be Vietnam Pro (self-hosted), Lucide, tokens, button/fields/table/pagination/dialog/confirm/toast và loading/empty/error. FE-02B dùng MSW3.0.6 với fixture tập trung, store trong bộ nhớ, scenario/reset và API mock giáo viên/danh sách trường. Giấy phép font/icon được giữ trong public/licenses.
+
+`/dev/ui` là trang xem thử component và công cụ mock, chỉ có trong dev hoặc bản build mock. Kiểm tra API client qua TanStack Query/MSW ở trang này không đánh dấu màn hình CRUD giáo viên FE-03 hoàn thành. Các trang nghiệp vụ hiện vẫn chờ mốc tiếp theo.
+
+Kết quả kiểm chứng của thay đổi này:
+
+- Typecheck, lint, format check đạt; Node test runner **27/27 ca đạt**, gồm HTTP client, lựa chọn mode và MSW CRUD/filter/pagination/error/reset/abort.
+- `npm run build` và `npm run build:mock` đạt. Kiểm tra output: bản API không có worker/handler mock; bản mock có worker và công cụ phát triển.
+- Docker build qua `npm ci` và build API thành công với font/icon mới.
+- Trình duyệt: font tiếng Việt nạp thành công; biểu mẫu và lỗi nhập, thông báo, xác nhận busy, phân trang, scenario empty/503 và reset hoạt động.
+- Dialog: focus trường nhập/nút Hủy phù hợp, Tab/Shift+Tab quay vòng trong modal, Escape đóng và trả focus về nút mở.
+- Kiểm tra màn hình390px: trang chính/trang component không tràn ngang; dialog vừa màn hình.
+- Bản mock build tĩnh chạy qua preview, đọc dữ liệu qua HTTP client/MSW mà không cần proxy/backend. Khi chuyển cùng origin sang dev:api, trang mở lại và panel/nhãn mock biến mất.
+- Prototype vẫn giữ SHA-256 gốc; không thao tác ghi lên backend hoặc thay đổi DB trong bước này.
+
+Giới hạn: chưa có UI CRUD giáo viên đầy đủ, session hoặc solver mock, lưu dữ liệu mock qua reload hay đồng bộ giữa các tab. Chưa có image Docker mock riêng/CI frontend. Các kiểm tra giao diện ở trên là lượt kiểm chứng thủ công bằng trình duyệt, chưa có bộ E2E UI tự động.
+
+
+## 15. Chuyển khung điều phối sang React — 15/11/2026
+
+Đã chuyển logo/sidebar13 mục và3 nhóm/header/breadcrumb/footer, responsive mobile, bảng chọn học kỳ, tìm kiếm nhanh, thông báo và hộp tài khoản. Font/CSS/ảnh đại diện trích từ prototype bằng `npm run assets:shell`, giữ nguyên file gốc. Font thân bài Be Vietnam Pro và tiêu đề Manrope; SVG dùng bộ gốc đã trích. Không thay React entry bằng toàn bộ HTML demo.
+
+Đã đối chiếu phần khung ở1280×900 và390×844, gồm cả menu active, popover/modal và điều hướng bàn phím. Thay backdrop/div bằng native dialog để quản lý focus; giữ thông số nhìn thấy và motion của demo. Kết quả và phạm vi chi tiết ở [UI](../frontend/docs/UI.md).
+
+Khung dùng MSW GET `/api/mock/layout` qua HTTP client; không tạo endpoint backend hoặc session giả. Chọn học kỳ chỉ thay ngữ cảnh xem thử của khung, chưa chứng minh dữ liệu nghiệp vụ/lưu đợt/phiên bản/PDF hoạt động. Nút đổi ảnh, phiên/quyền/đăng xuất và cài đặt còn chờ feature tài khoản. Dashboard, CRUD và giao diện các vai trò khác chưa chuyển đầy đủ. Bước tiếp theo là chuyển từng màn hình theo demo với mock, bắt đầu tổng quan; không nối API thật ở bước này.

@@ -1,0 +1,30 @@
+:root {
+    --font-body: 'Be Vietnam Pro', 'Segoe UI', sans-serif;
+    --text-xs: 0.75rem;
+    --text-sm: 0.8125rem;
+    --text-base: 0.875rem;
+    --text-lg: 1.125rem;
+    --text-xl: 1.5rem;
+    --text-title: 1.875rem;
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-10: 40px;
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --line-strong: #c7cbc0;
+    --success: #287e72;
+    --success-soft: #e7f2ed;
+    --danger: #bb2e23;
+    --danger-hover: #98251c;
+    --focus-ring: #a9311b;
+    --shadow-popover: 0 8px 28px #22231f12;
+    --shadow-dialog: 0 24px 80px #22231f30;
+    --motion-fast: 150ms;
+    --z-toast: 60;
+}

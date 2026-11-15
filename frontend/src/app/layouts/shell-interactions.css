@@ -1,0 +1,48 @@
+/* Native modal host; inner layout and animation come unchanged from the demo. */
+.tass-shell .shell-dialog {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+    padding: 24px;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    overflow: auto;
+}
+.tass-shell .shell-dialog[open] {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.tass-shell .shell-dialog::backdrop {
+    background: #14181055;
+    backdrop-filter: blur(5px);
+    animation: fade-in 0.2s;
+}
+.tass-shell .shell-dialog .modal {
+    margin: auto;
+}
+@media (max-width: 700px) {
+    .tass-shell .shell-dialog {
+        padding: 12px;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    .tass-shell .shell-dialog::backdrop {
+        animation: none;
+    }
+}
+@media print {
+    .tass-shell .shell-dialog {
+        display: none !important;
+    }
+}
+.tass-shell .shell-preview-note {
+    margin-top: 16px;
+    font-size: 12px;
+    color: var(--muted);
+}

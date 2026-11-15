@@ -30,7 +30,7 @@ Docker dùng Java trong image, không thay JAVA_HOME của Windows. Plain mvn d�
 | algorithm/tass-cpsat/ | Solver chính OR-Tools 9.14.6206, hợp đồng tass-solver/2 và validator |
 | algorithm/tass-common/, tass-greedy/, tass-genetic/ | Thành phần dùng chung và thuật toán đối chứng |
 | algorithm/tass-benchmark/, tass-comparison/ | Reactor/CLI/test chung và hồ sơ so sánh |
-| frontend/ | React/TypeScript/Vite, router, QueryClient, HTTP client và layout ban đầu; demo gốc lưu tại prototype/; chưa nối business API/auth |
+| frontend/ | React/TypeScript/Vite, UI dùng chung (Be Vietnam Pro/Lucide), MSW với scenario/reset và handler giáo viên mẫu; chưa có UI CRUD/auth/solver hoàn chỉnh; demo gốc tại prototype/ |
 | infra/ | Cấu hình dev, Nginx proxy, scripts kiểm thử/migration/backup |
 | docs/ | Báo cáo chính, hướng dẫn, backlog và lịch sử được gắn mốc |
 
