@@ -39,6 +39,9 @@ export const scenarios = {
         message: 'Kịch bản mẫu: hàng chờ đã đầy.',
     },
     reference: { label: 'Xóa bản ghi đang được tham chiếu' },
+    readinessReady: { label: 'Readiness · Đủ dữ liệu sẵn sàng' },
+    readinessMissing: { label: 'Readiness · Thiếu dữ liệu nhu cầu' },
+    readinessBlocked: { label: 'Readiness · Có issue chặn' },
 } as const;
 export type MockScenario = keyof typeof scenarios;
 export function isMockScenario(value: string): value is MockScenario {

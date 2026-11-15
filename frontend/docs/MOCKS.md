@@ -1,5 +1,13 @@
 # Hạ tầng mock — FE-02B
 
+## Bổ sung FE-05
+
+`handlers/preparation.ts`, `preparation-store.ts` và `fixtures/preparation.ts` bổ sung CRUD cho danh mục/năm học/học kỳ/đợt, phạm vi khối–môn, áp dụng lớp–môn, thành phần bắt buộc và nhu cầu giảng dạy. Endpoint và kiểu dữ liệu nằm trong `features/catalogs/api.ts`, `features/preparation/api.ts`; UI gọi qua HTTP client/TanStack Query. Các handler hiện được mô phỏng tại trình duyệt, chưa nối backend thật.
+
+Thay đổi đầu vào cập nhật token nguồn và làm mất xác nhận tập thành phần liên quan; xóa nhu cầu gỡ liên kết khỏi thành phần bắt buộc để readiness báo thiếu. Có kiểm tra FK, trùng, khoảng ngày/nhu cầu ACTIVE giao nhau và số tiết dương tối đa hai chữ số thập phân. Nhập nhiều lớp xem trước trước khi lưu; nếu một request lỗi giữa chừng, UI báo kết quả, không có transaction nhiều request giả.
+
+Trong `/dev/ui`, chọn `readinessReady`, `readinessMissing`, `readinessBlocked` để xem đủ dữ liệu/thiếu nhu cầu/lỗi chặn. Các scenario cố định chỉ phục vụ thử UI; chọn `normal` để kiểm tra readiness tính theo store hiện tại. Reset mock khôi phục cả store chuẩn bị, scenario và query cache, đồng thời xóa phiên mô phỏng như cơ chế hiện có. Reload cũng trở về fixture. Scenario sẵn sàng không chứng minh solver hoặc quyền/backend thật hoạt động.
+
 Mock sử dụng **MSW3.0.6**. Browser worker khởi động xong trước khi React render; tính năng gọi qua API client như bình thường. Không cần backend hoặc PostgreSQL cho chế độ mock.
 
 ## Chạy và chọn nguồn dữ liệu

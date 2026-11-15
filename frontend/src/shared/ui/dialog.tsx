@@ -11,6 +11,8 @@ type DialogProps = {
     description?: string;
     children: ReactNode;
     busy?: boolean;
+    variant?: 'default' | 'prototype';
+    wide?: boolean;
 };
 
 export function Dialog({
@@ -20,6 +22,8 @@ export function Dialog({
     description,
     children,
     busy = false,
+    variant = 'default',
+    wide = false,
 }: DialogProps) {
     const ref = useRef<HTMLDialogElement>(null);
     const id = useId();
@@ -46,7 +50,11 @@ export function Dialog({
     return (
         <dialog
             ref={ref}
-            className={styles.dialog}
+            className={
+                variant === 'prototype'
+                    ? 'shell-dialog prototype-dialog'
+                    : styles.dialog
+            }
             aria-labelledby={`${id}-title`}
             aria-describedby={description ? `${id}-description` : undefined}
             onKeyDown={(event) => {
@@ -92,6 +100,10 @@ export function Dialog({
             }}
             onClick={(event) => {
                 if (busy || event.target !== event.currentTarget) return;
+                if (variant === 'prototype') {
+                    onOpenChange(false);
+                    return;
+                }
                 const rect = event.currentTarget.getBoundingClientRect();
                 if (
                     event.clientX < rect.left ||
@@ -102,16 +114,35 @@ export function Dialog({
                     onOpenChange(false);
             }}
         >
-            <div className={styles.panel}>
-                <header className={styles.header}>
+            <div
+                className={
+                    variant === 'prototype'
+                        ? `modal${wide ? ' wide' : ''}`
+                        : styles.panel
+                }
+            >
+                <header
+                    className={
+                        variant === 'prototype' ? 'modal-header' : styles.header
+                    }
+                >
                     <div>
+                        {variant === 'prototype' && (
+                            <div className="eyebrow">
+                                <span className="section-index">
+                                    TASS / WORKSPACE
+                                </span>
+                            </div>
+                        )}
                         <h2 id={`${id}-title`}>{title}</h2>
                         {description && (
                             <p id={`${id}-description`}>{description}</p>
                         )}
                     </div>
                     <button
-                        className={styles.close}
+                        className={
+                            variant === 'prototype' ? 'icon-btn' : styles.close
+                        }
                         type="button"
                         aria-label="Đóng hộp thoại"
                         disabled={busy}
@@ -120,7 +151,11 @@ export function Dialog({
                         <Icon glyph={X} />
                     </button>
                 </header>
-                {children}
+                {variant === 'prototype' ? (
+                    <div className="modal-body">{children}</div>
+                ) : (
+                    children
+                )}
             </div>
         </dialog>
     );
@@ -135,30 +170,54 @@ export function ConfirmDialog({
     busy = false,
     confirmLabel = 'Xác nhận',
     destructive = false,
+    variant = 'default',
 }: Omit<DialogProps, 'children'> & {
     onConfirm: () => void;
     confirmLabel?: string;
     destructive?: boolean;
 }) {
     return (
-        <Dialog {...{ open, onOpenChange, title, description, busy }}>
-            <div className={styles.actions}>
-                <Button
-                    variant="secondary"
-                    data-dialog-autofocus
-                    disabled={busy}
-                    onClick={() => onOpenChange(false)}
-                >
-                    Hủy
-                </Button>
-                <Button
-                    variant={destructive ? 'danger' : 'primary'}
-                    loading={busy}
-                    onClick={onConfirm}
-                >
-                    {confirmLabel}
-                </Button>
-            </div>
+        <Dialog {...{ open, onOpenChange, title, description, busy, variant }}>
+            {variant === 'prototype' ? (
+                <div className="modal-footer">
+                    <button
+                        type="button"
+                        className="btn"
+                        data-dialog-autofocus
+                        disabled={busy}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Hủy
+                    </button>
+                    <button
+                        type="button"
+                        className={`btn ${destructive ? 'danger' : 'primary'}`}
+                        disabled={busy}
+                        aria-busy={busy || undefined}
+                        onClick={onConfirm}
+                    >
+                        {busy ? 'Đang xử lý…' : confirmLabel}
+                    </button>
+                </div>
+            ) : (
+                <div className={styles.actions}>
+                    <Button
+                        variant="secondary"
+                        data-dialog-autofocus
+                        disabled={busy}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        Hủy
+                    </Button>
+                    <Button
+                        variant={destructive ? 'danger' : 'primary'}
+                        loading={busy}
+                        onClick={onConfirm}
+                    >
+                        {confirmLabel}
+                    </Button>
+                </div>
+            )}
         </Dialog>
     );
 }

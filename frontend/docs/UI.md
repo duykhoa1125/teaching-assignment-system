@@ -1,5 +1,19 @@
 # Nền tảng UI — FE-02A
 
+## FE-05 — Danh mục, đợt và chuẩn bị dữ liệu
+
+Các trang `/admin/catalogs`, `/admin/periods`, `/preparation`, `/demands`, `/checks` đã có UI và mock. Bảng và hộp thoại dùng `variant="prototype"` để tái sử dụng lớp CSS, font, SVG, kích thước và animation gốc; biến thể mặc định vẫn phục vụ component gallery. Đã bỏ KPI tự thêm ở danh mục/đợt/nhu cầu, khôi phục tiêu đề, bộ lọc loại nhu cầu và số bước trong vòng tròn. Đã gỡ CSS tiêu đề cũ ghi đè font/weight/responsive của demo.
+
+**Điều chỉnh cần thiết theo mô hình dữ liệu, khác với nội dung HTML demo:**
+
+- Danh mục chỉ có môn/lớp/khối/cấp trong hợp đồng hiện tại; chưa có Tổ chuyên môn. Cột và form phản ánh mã, hiệu lực, khóa ngoại thật của hợp đồng mock; không dựng trạng thái hoặc trường dữ liệu chưa hỗ trợ. Năm học được kèm tên trường để phân biệt hai bản ghi trùng mã năm.
+- Năm học/học kỳ/đợt là ba tài nguyên riêng nên có tab, bộ lọc và form riêng; token cùng thời điểm cập nhật nguồn chỉ đọc. Chưa giả lập số tuần hay phiên bản quy tắc từ bảng gộp của demo.
+- Chuẩn bị tách phạm vi khối–môn, áp dụng lớp–môn và xác nhận tập thành phần theo mô hình backend. Có bộ chọn đợt rõ ràng; KPI cuối dùng readiness thay tiến độ gán vì workspace/plan thuộc FE-06.
+- Nhu cầu có lọc lớp/môn/trạng thái/ngày hiệu lực, tạo lẻ và xem trước nhập nhiều lớp. Chưa hiển thị giáo viên phụ trách/khóa gán vì chưa có plan trong feature này. Dòng lỗi xem trước được xuống dòng; bảng rộng cuộn trong vùng riêng.
+- Trung tâm kiểm tra đọc readiness theo cặp cấu hình/bộ quy tắc, hiển thị coverage và issue từ response. Đây là tiền kiểm đầu vào, chưa phải lịch sử lượt validation theo version/revision của phương án như demo; chạy lại không tạo bản ghi validation hay chạy solver.
+
+**Đối chiếu trình duyệt:** năm trang ở 1280×900 và 390×844; đủ bốn bước chuẩn bị; kiểu bảng/modal/stepper, bộ lọc mobile 2×2, năm học theo trường, metadata nguồn và ba scenario readiness. Đã thử lỗi xung đột nhập nhiều lớp bị chặn lưu, Escape/trả focus, nhập trong drawer và Escape ở hộp xác nhận chỉ đóng hộp xác nhận. Các trang không tràn ngang; bảng có thể cuộn ngang. Kết quả đối chiếu không đồng nghĩa dữ liệu/cột nghiệp vụ đã giống bảng HTML khi hợp đồng khác nhau như các điểm trên.
+
 **Demo là nguồn chuẩn, phải sao chép y chang mọi chi tiết thị giác.** Giữ màu/font/icon/họa tiết/bố cục và các trạng thái. Chỉ đổi khi có lỗi thiết kế cụ thể, tối ưu kỹ thuật cần thiết hoặc cần phù hợp backend; ghi rõ lý do và phạm vi trước/sau. Xem quy tắc bắt buộc trong [quy trình frontend](../../docs/FRONTEND_DEVELOPMENT.md). Nền tảng hiện tại còn cần đối chiếu các màn hình, chưa được nghiệm thu là bản sao hoàn chỉnh.
 
 Xem và thử component tại `/dev/ui` khi chạy `npm run dev`. Route này có trong dev và bản build mock, không có trong bản build API triển khai thật. Trang chỉ phục vụ kiểm tra thành phần, chưa phải màn hình CRUD giáo viên.

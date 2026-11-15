@@ -6,16 +6,10 @@ import {
 } from './fixtures/accounts.ts';
 import { isMockScenario, type MockScenario } from './scenarios/index.ts';
 import type { Teacher, TeacherRequest } from '../features/teachers/types.ts';
+import { MockError } from './mock-error.ts';
+import { preparationStore } from './preparation-store.ts';
 
-export class MockError extends Error {
-    readonly status: number;
-    readonly code: string;
-    constructor(status: number, code: string, message: string) {
-        super(message);
-        this.status = status;
-        this.code = code;
-    }
-}
+export { MockError };
 let data = structuredClone(fixtureTeachers);
 let nextId = Math.max(...fixtureTeachers.map((teacher) => teacher.id)) + 1;
 let scenario: MockScenario = 'normal';
@@ -37,6 +31,7 @@ export const mockStore = {
     reset() {
         data = structuredClone(fixtureTeachers);
         nextId = Math.max(...data.map((teacher) => teacher.id)) + 1;
+        preparationStore.reset();
         scenario = 'normal';
         generation++;
     },

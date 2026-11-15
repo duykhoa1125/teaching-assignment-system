@@ -1,0 +1,22 @@
+.tass-shell .demand-preview-message {
+    white-space: normal;
+    min-width: 220px;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 700px) {
+    .tass-shell .demand-filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        width: 100%;
+    }
+    .tass-shell .demand-filters > :is(select, input) {
+        min-width: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+    .tass-shell .demand-filters > button {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+}

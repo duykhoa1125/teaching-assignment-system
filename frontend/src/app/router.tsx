@@ -36,6 +36,11 @@ import {
     TeacherLoadPage,
 } from '@/pages/teacher/teacher-pages';
 import { TeachersPage } from '@/pages/teachers/teachers-page';
+import { AdminCatalogsPage } from '@/pages/admin/admin-catalogs-page';
+import { AdminPeriodsPage } from '@/pages/admin/admin-periods-page';
+import { ChecksPage } from '@/pages/checks/checks-page';
+import { DemandsPage } from '@/pages/demands/demands-page';
+import { PreparationPage } from '@/pages/preparation/preparation-page';
 import { LoadingState } from '@/shared/ui/data-state';
 
 const UiPreviewPage =
@@ -54,8 +59,6 @@ const LoginPage =
 
 const adminPlaceholderPaths = [
     'admin/teachers',
-    'admin/catalogs',
-    'admin/periods',
     'admin/rules',
     'admin/sources',
     'admin/audit',
@@ -64,7 +67,12 @@ const adminPlaceholderPaths = [
 const titles: Record<string, string> = {
     '/': 'Tổng quan',
     '/teachers': 'Giáo viên',
+    '/preparation': 'Chuẩn bị dữ liệu',
+    '/demands': 'Nhu cầu giảng dạy',
+    '/checks': 'Trung tâm kiểm tra',
     '/assignment': 'Phân công giảng dạy',
+    '/admin/catalogs': 'Danh mục môn · lớp · khối',
+    '/admin/periods': 'Năm học · học kỳ · đợt',
     ...(UiPreviewPage ? { '/dev/ui': 'Thư viện giao diện' } : {}),
 };
 
@@ -180,12 +188,24 @@ export function AppRouter() {
                                     path="teachers"
                                     element={<TeachersPage />}
                                 />
+                                <Route
+                                    path="preparation"
+                                    element={<PreparationPage />}
+                                />
+                                <Route
+                                    path="demands"
+                                    element={<DemandsPage />}
+                                />
+                                <Route path="checks" element={<ChecksPage />} />
                                 {navigation
                                     .filter(
                                         (item) =>
                                             ![
                                                 '/',
                                                 '/teachers',
+                                                '/preparation',
+                                                '/demands',
+                                                '/checks',
                                                 '/assignment',
                                             ].includes(item.path),
                                     )
@@ -211,6 +231,14 @@ export function AppRouter() {
                                 <Route
                                     path="admin/access"
                                     element={<AdminAccessPage />}
+                                />
+                                <Route
+                                    path="admin/catalogs"
+                                    element={<AdminCatalogsPage />}
+                                />
+                                <Route
+                                    path="admin/periods"
+                                    element={<AdminPeriodsPage />}
                                 />
                                 {adminPlaceholderPaths.map((path) => (
                                     <Route

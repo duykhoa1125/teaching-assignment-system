@@ -1,6 +1,7 @@
 import { setupWorker } from 'msw/browser';
 import { handlers } from './handlers/index.ts';
-export const worker = setupWorker(...handlers);
+import { preparationHandlers } from './handlers/preparation.ts';
+export const worker = setupWorker(...preparationHandlers, ...handlers);
 
 export async function startMocking() {
     await worker.start({

@@ -1,0 +1,23 @@
+/* Keep the original modal footer flush when a feature form owns its buttons. */
+.tass-shell .prototype-dialog .modal-body .modal-footer {
+    margin: 20px -27px -25px;
+}
+@media (max-width: 700px) {
+    .fe05-page .panel-head {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .fe05-page .panel-head > div {
+        width: 100%;
+        min-width: 0;
+    }
+    .fe05-page .panel-head .btn {
+        max-width: 100%;
+        white-space: normal;
+        height: auto;
+        min-height: 44px;
+    }
+    .tass-shell .prototype-dialog .modal-body .modal-footer {
+        margin: 20px -20px -22px;
+    }
+}

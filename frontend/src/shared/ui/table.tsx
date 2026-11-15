@@ -16,21 +16,29 @@ export function DataTable<Row>({
     rows,
     rowKey,
     emptyMessage = 'Chưa có dữ liệu.',
+    variant = 'default',
 }: {
     caption: string;
     columns: Column<Row>[];
     rows: Row[];
     rowKey: (row: Row) => string | number;
     emptyMessage?: string;
+    variant?: 'default' | 'prototype';
 }) {
     return (
         <div
-            className={styles.scroll}
+            className={variant === 'prototype' ? 'table-scroll' : styles.scroll}
             role="region"
             aria-label={caption}
             tabIndex={0}
         >
-            <table className={styles.table}>
+            <table
+                className={
+                    variant === 'prototype'
+                        ? 'data-table mvp-table'
+                        : styles.table
+                }
+            >
                 <caption className="sr-only">{caption}</caption>
                 <thead>
                     <tr>
