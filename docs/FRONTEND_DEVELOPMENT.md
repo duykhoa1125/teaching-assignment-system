@@ -2,19 +2,21 @@
 
 Cập nhật: **15/11/2026**. Trạng thái: **đã khởi tạo bộ khung FE-01; chưa tích hợp giao diện nghiệp vụ/auth**.
 
-Tài liệu này hướng dẫn chuyển prototype thành frontend gọi API thật, từ khởi tạo đến nghiệm thu. React/TypeScript/Vite, React Router, TanStack Query và HTTP client đã được thiết lập; phiên bản và cách chạy nằm trong [README frontend](../frontend/README.md). Cơ chế auth và các feature nghiệp vụ vẫn cần triển khai theo lộ trình bên dưới.
+Hướng phát triển đã điều chỉnh: **hoàn thiện nền tảng và giao diện với mock data trước, tích hợp API thật sau**. React/TypeScript/Vite, React Router, TanStack Query và HTTP client đã được thiết lập; phiên bản và cách chạy nằm trong [README frontend](../frontend/README.md). Tầng mock, session mô phỏng và các feature nghiệp vụ chưa được triển khai. Tài liệu phân biệt kế hoạch tiếp theo với kết quả FE-01 đã có.
 
 ## 1. Hiện trạng và mục tiêu
 
 | Khu vực | Hiện trạng | Hướng phát triển |
 | --- | --- | --- |
-| Frontend | `frontend/index.html` là entry React; prototype tự chứa được giữ nguyên tại `frontend/prototype/index.html` | Router/layout/HTTP client đã có; chuyển từng màn hình nghiệp vụ sang component và dữ liệu API |
+| Frontend | `frontend/index.html` là entry React; prototype tự chứa được giữ nguyên tại `frontend/prototype/index.html` | Hoàn thiện UI dùng chung và từng màn hình với mock data tập trung |
 | Backend | Có CRUD, plan/current DRAFT, readiness, async solver, kết quả/validation và sửa/khóa phân công | Tái sử dụng hợp đồng hiện hành |
-| Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Phối hợp backend để chốt và tích hợp |
+| Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Làm session/vai trò mô phỏng cho UI trước; auth thật thuộc giai đoạn tích hợp |
 | Docker | Đã build frontend bằng Node24, Nginx phục vụ `dist`, proxy API và SPA fallback | Giữ quy trình này khi bổ sung feature |
 | Nghiệp vụ còn thiếu | Hồ sơ giáo viên tổng hợp, API xác nhận nguồn tải, lifecycle/feedback và các phần khác trong backlog | Theo dõi phụ thuộc, không coi là API đã có |
 
-Mục tiêu đầu tiên là frontend có cấu trúc rõ ràng, kế thừa phong cách demo, và màn hình giáo viên đọc/ghi dữ liệu thật. Sau đó hoàn thiện luồng người quản lý:
+Mục tiêu trước mắt là frontend chạy độc lập, kế thừa phong cách demo, có đầy đủ trạng thái giao diện và tương tác với mock data. Thứ tự: **nền tảng UI/mock → các màn hình và luồng mô phỏng → nghiệm thu UI → tích hợp backend**. Backend, PostgreSQL và auth thật không phải điều kiện để phát triển hoặc nghiệm thu giai đoạn mock.
+
+Luồng người quản lý cần hoàn thiện bằng mock trước, rồi kiểm chứng lại bằng backend ở giai đoạn sau:
 
 ```text
 Đăng nhập → chọn học kỳ/đợt → chuẩn bị dữ liệu → readiness
@@ -38,23 +40,25 @@ Phạm vi là phân công cố định theo học kỳ/lớp/môn/thành phần.
 | Styling | CSS variables + CSS Modules | Màu sắc, typography, khoảng cách và style theo component |
 | Package manager | npm | Một lockfile thống nhất và `npm ci` cho môi trường tái lập |
 
-Frontend là SPA, backend Spring Boot tiếp tục cung cấp nghiệp vụ. Chọn cách tổ chức này để phù hợp với Nginx và backend riêng hiện có. Khởi đầu bằng state của React cùng TanStack Query; chỉ bổ sung công cụ quản lý state khác khi có nhu cầu cụ thể.
+Frontend là SPA. Trong giai đoạn UI, tầng mock mô phỏng response và trạng thái thay đổi dữ liệu; khi tích hợp, backend Spring Boot cung cấp nghiệp vụ thật. Cả hai dùng cùng feature API và query/mutation hooks. Khởi đầu bằng state của React cùng TanStack Query; chỉ bổ sung công cụ quản lý state khác khi có nhu cầu cụ thể.
 
 Chọn thư viện form, bộ UI hoặc công cụ kiểm thử khi có ca sử dụng cụ thể, rồi ghi lý do vào PR. Component tương tác như dialog, menu, combobox phải hỗ trợ bàn phím, focus và nhãn truy cập; nếu dùng thư viện hỗ trợ, thống nhất trước khi nhân rộng.
 
-### 2.2. Các quyết định phải có khi bắt đầu tích hợp
+### 2.2. Các quyết định theo giai đoạn
 
 | Quyết định | Nội dung cần ghi | Phụ thuộc |
 | --- | --- | --- |
 | Runtime | Phiên bản Node/npm cụ thể đáp ứng Vite được chọn; cách cố định phiên bản | FE-01 |
 | Dependencies | Phiên bản trực tiếp trong `package.json`, lockfile được commit | FE-01 |
-| Phong cách UI | Phần giữ từ demo, token màu/font/khoảng cách, cách dựng bảng/form | FE-01/02 |
-| Auth | Endpoint, cookie hay token, khôi phục phiên, hết hạn, logout, lỗi quyền; CSRF nếu dùng cookie | FE + backend, trước FE-04 |
-| Ngữ cảnh | Cách xác định trường, học kỳ, đợt, version; nguồn dữ liệu lựa chọn | FE + backend |
-| Dataset dev | Dữ liệu CRUD và fixture đủ nguồn/xác nhận để chạy solver; tài khoản hợp lệ khi auth sẵn sàng | FE + backend |
-| Cấu hình/quy tắc | Nguồn lấy ID và metadata đã xác nhận; API lựa chọn chưa có thì ghi phụ thuộc | FE + backend |
+| Phong cách UI | Phần giữ từ demo, token màu/font/khoảng cách, bảng/form/dialog/thông báo và trạng thái tải/rỗng/lỗi | FE-02 |
+| Mock | Cơ chế chặn request, fixture có ID ổn định, độ trễ, scenario lỗi, reset và lưu tạm | FE-02 |
+| Session mô phỏng | Vai trò, trạng thái hết phiên/thiếu quyền, điều hướng và cách khôi phục/reset | FE-04; không cần auth backend |
+| Ngữ cảnh | Trường, học kỳ, đợt, version thống nhất trong fixture và URL | FE-02–07; đối chiếu backend ở FE-09 |
+| Auth thật | Endpoint, cookie hay token, khôi phục phiên, hết hạn, logout, lỗi quyền; CSRF nếu dùng cookie | FE + backend ở FE-09/10 |
+| Dataset tích hợp | Fixture DB đủ nguồn/xác nhận để chạy solver; tài khoản hợp lệ | FE + backend ở FE-09/10 |
+| Cấu hình/quy tắc thật | Nguồn lấy ID và metadata đã xác nhận; API lựa chọn chưa có thì ghi phụ thuộc | FE + backend ở FE-09/10 |
 
-Không tự đặt endpoint login hoặc chọn JWT chỉ vì demo có màn hình đăng nhập. Quyền thực thi luôn được backend kiểm tra. Việc ẩn nút trên giao diện chỉ hỗ trợ trải nghiệm sử dụng.
+Session mock không quyết định dùng JWT hay cookie cho auth thật. Những luồng chưa có API backend được ghi là hợp đồng dự kiến, không đặt endpoint giả vào danh sách API đã triển khai. Khi tích hợp, backend kiểm tra quyền thực; việc ẩn nút trên giao diện chỉ hỗ trợ trải nghiệm sử dụng.
 
 ## 3. Khởi tạo trong repository
 
@@ -68,7 +72,7 @@ Thực hiện lần lượt khi bắt đầu FE-01:
 4. Sinh template `react-ts` ở thư mục tạm trong workspace, rồi đưa các file cần thiết vào `frontend/`; đối chiếu từng file trùng tên. Không chạy trình scaffold đè trực tiếp lên thư mục đang có demo/Dockerfile.
 5. Thiết lập TypeScript strict, lint, format và alias `@/` thống nhất giữa TypeScript và Vite. Giữ UTF-8, LF; quy ước định dạng phù hợp `.editorconfig`.
 6. Tạo router, layout cơ bản, QueryClient và HTTP client. Chỉ tạo thư mục có mã sử dụng.
-7. Cập nhật Dockerfile và `.dockerignore` trong cùng thay đổi chuyển ứng dụng: Dockerfile hiện chỉ copy HTML, `.dockerignore` hiện chỉ cho phép các file frontend cụ thể. Không để Docker phục vụ Vite entry HTML chưa build.
+7. Cập nhật Dockerfile và `.dockerignore` trong cùng thay đổi chuyển ứng dụng: thay cách copy HTML demo bằng build frontend và cho phép các đầu vào build cần thiết. Bước này đã thực hiện trong FE-01; không để Docker phục vụ Vite entry HTML chưa build.
 8. Cập nhật README, file cấu hình mẫu và cách chạy. Bản demo vẫn là tài liệu tham chiếu; nếu cần tiếp tục phục vụ demo, ghi rõ URL/cách mở.
 
 Các script cần có sau khởi tạo:
@@ -85,6 +89,8 @@ Các script cần có sau khởi tạo:
 Các script trên đã có sau FE-01. Bổ sung `npm run format`, `npm run format:check` và `npm test` (Node test runner cho HTTP client). `preview` chỉ phục vụ build tĩnh, không có API proxy; dùng Vite dev hoặc Docker khi kiểm tra cùng backend. CI frontend chưa được thiết lập; khi bổ sung, dùng cùng các lệnh kiểm tra của nhóm.
 
 ## 4. Kiến trúc mã nguồn
+
+Cấu trúc đích dưới đây bao gồm `features/` và `mocks/` sẽ bổ sung khi triển khai. FE-01 hiện mới có app/pages/shared/styles; không coi sơ đồ này là các module đã tồn tại.
 
 ```text
 frontend/
@@ -108,6 +114,12 @@ frontend/
 │   │   │   └── index.ts       # Giao diện công khai khi cần
 │   │   ├── teaching-demands/
 │   │   └── assignment/        # Plan, readiness, sửa/khóa, solver, kết quả
+│   ├── mocks/                 # Chỉ được nạp khi chọn chế độ mock
+│   │   ├── browser.ts         # Khởi động tầng chặn request trước khi render
+│   │   ├── handlers/          # Mô phỏng response theo tài nguyên/luồng
+│   │   ├── fixtures/          # Bộ dữ liệu gốc, ID và quan hệ ổn định
+│   │   ├── scenarios/         # Thành công, rỗng, chậm và lỗi
+│   │   └── store.ts           # Dữ liệu mock thay đổi được và thao tác reset
 │   ├── shared/
 │   │   ├── api/               # HTTP client và lỗi dùng chung
 │   │   ├── ui/                # Button, Dialog, trạng thái tải/rỗng/lỗi
@@ -139,21 +151,39 @@ app → pages → features → shared
 ### 4.2. Luồng đọc và ghi dữ liệu
 
 ```text
-Page/component → query hoặc mutation hook → feature API → HTTP client → backend
+Page/component → query hoặc mutation hook → feature API → HTTP client
+                                                        ├─ mock handler → mock store
+                                                        └─ backend thật (giai đoạn sau)
 ```
 
-Component hiển thị dữ liệu và nhận tương tác. `api.ts` định nghĩa request/response; `queries.ts` quản lý cache và tác động sau mutation. HTTP client xử lý giao thức, không quyết định điều kiện nghiệp vụ của giáo viên hoặc phương án.
+Component hiển thị dữ liệu và nhận tương tác. `api.ts` định nghĩa request/response; `queries.ts` quản lý cache và tác động sau mutation. Component/hook không import trực tiếp fixture và không có nhánh xử lý riêng theo chế độ dữ liệu. HTTP client xử lý giao thức, không quyết định điều kiện nghiệp vụ của giáo viên hoặc phương án. `app` là điểm khởi động mock; mock có thể dùng kiểu dữ liệu của feature nhưng feature không phụ thuộc ngược vào mock.
 
 Giữ DTO `snake_case` theo backend ở bước đầu. Chỉ tạo mapper/view model khi giao diện cần dữ liệu khác cấu trúc response; không chuyển đổi toàn bộ dữ liệu bằng quy tắc đổi tên ngầm.
+
+### 4.3. Thiết kế mock data
+
+Các yêu cầu sau thuộc FE-02 và **chưa được triển khai ở FE-01**:
+
+- Chọn mock ở tầng HTTP để các query/mutation dùng cùng đường dẫn, request và response như khi nối backend. Chọn thư viện/cơ chế cụ thể trong PR triển khai, không rải dữ liệu giả trong component.
+- Khởi động mock xong trước khi render ứng dụng để tránh request đầu tiên đi đến proxy thật. Request nghiệp vụ chưa có handler phải báo lỗi rõ ngay trong mock mode, không chuyển tiếp sang backend; asset và HMR vẫn tải bình thường.
+- Fixture có ID, quan hệ trường/học kỳ/lớp/môn/giáo viên/round/version ổn định. Bảng, dashboard, tải và validation phải dựa trên cùng bộ dữ liệu, tránh mỗi màn hình có một bản riêng lệch nhau.
+- Mock store hỗ trợ tạo/sửa/xóa và các trạng thái cần để đi hết luồng. Query invalidation vẫn đi qua TanStack Query; không sửa state riêng trong component để giả lập lưu thành công.
+- Có scenario chọn được và tái lập: dữ liệu bình thường, rỗng, tải chậm, lỗi400/401/403/409/422/503, snapshot cũ, solver không có nghiệm/bị hủy/thất bại. Không gây lỗi ngẫu nhiên khó tái hiện.
+- Quy định rõ dữ liệu nào mất khi reload và dữ liệu nào được giữ để thử luồng khôi phục session/run. Nếu lưu browser storage, dùng namespace/phiên bản riêng cho mock và không lẫn session/dữ liệu API thật.
+- Có thao tác reset về fixture gốc; reset đồng thời mock store, lượt chạy mô phỏng, session liên quan và query cache để UI đọc lại nhất quán.
+- Solver mock chỉ mô phỏng trạng thái và kết quả đã chuẩn bị theo kịch bản; không chạy CP-SAT hay chứng minh tối ưu. Tải/validation mô phỏng không phải kết quả tính/kiểm chứng của backend.
+- Đăng nhập mock dùng tài khoản/vai trò minh họa, không gọi auth thật hoặc tạo token/header để giả danh trên backend. Giao diện phải có nhãn cho biết đang ở chế độ mock.
+
+Thiết kế dự kiến dùng lựa chọn `mock`/`api` rõ ràng, ví dụ `VITE_DATA_SOURCE`; tên biến và cách nạp phải được ghi vào README khi triển khai. Biến này **chưa có hiệu lực trong mã hiện tại**. Sau FE-02, luồng phát triển UI mặc định dùng mock; chế độ API được chọn có chủ đích khi tích hợp. Giá trị cấu hình không hợp lệ phải báo lỗi; không tự fallback sang mock khi API thật lỗi. Build triển khai thật không bật mock; bản demo mock đóng gói riêng phải được cấu hình và gắn nhãn rõ.
 
 ## 5. Quản lý state và điều hướng
 
 | Loại state | Nơi quản lý | Quy tắc |
 | --- | --- | --- |
-| Dữ liệu backend | TanStack Query | Không sao chép toàn bộ danh sách/plan vào một global store khác |
+| Dữ liệu qua API client (mock hoặc thật) | TanStack Query | Không sao chép toàn bộ danh sách/plan vào một global store UI khác; mock store nằm phía handler |
 | Học kỳ, round, version, bộ lọc/phân trang | URL khi cần khôi phục/chia sẻ | Parse và kiểm tra giá trị; đổi filter thì reset offset |
 | Form đang nhập, dialog, chọn dòng | State/form trong feature | Giữ trong phạm vi màn hình; bỏ chọn khi ngữ cảnh dữ liệu đổi |
-| Session và quyền hiển thị | Module session, cung cấp qua provider | Backend quyết định quyền thực; cơ chế lưu theo hợp đồng auth |
+| Session và quyền hiển thị | Module session, cung cấp qua provider | Mock mô phỏng vai trò để thử UI; API thật kiểm tra quyền ở backend |
 | Theme/sidebar | State giao diện, có thể lưu localStorage | Chỉ lưu tùy chọn giao diện |
 
 Query key phải có đủ ngữ cảnh thực tế và tham số lọc. Ví dụ minh họa:
@@ -166,11 +196,11 @@ Query key phải có đủ ngữ cảnh thực tế và tham số lọc. Ví d�
 
 Không dùng object chứa giá trị chưa chuẩn hóa từ form làm ngữ cảnh. Dọn cache có dữ liệu người dùng khi logout/đổi tài khoản. Khi chuyển round/version, hủy hoặc bỏ qua response cũ để không hiển thị lẫn ngữ cảnh.
 
-Sau mutation phân công, cập nhật metadata revision backend trả về rồi làm mới các query liên quan: assignments, workloads, readiness, optimization và validation. Báo cáo validation cũ vẫn được hiển thị như lịch sử nếu có nhãn freshness rõ ràng.
+Sau mutation phân công, cập nhật metadata revision từ response của handler/backend rồi làm mới các query liên quan: assignments, workloads, readiness, optimization và validation. Báo cáo validation cũ vẫn được hiển thị như lịch sử nếu có nhãn freshness rõ ràng.
 
 ## 6. Quy ước tích hợp API
 
-Nguồn hợp đồng là [API.md](../backend/docs/API.md), các tài liệu nghiệp vụ liên quan và OpenAPI của backend đang chạy. Nếu DTO/tài liệu/code khác nhau, xác minh với backend và cập nhật hợp đồng trong cùng công việc liên quan; không tự suy đoán trường dữ liệu.
+Nguồn hợp đồng là [API.md](../backend/docs/API.md), các tài liệu nghiệp vụ liên quan và OpenAPI khi kiểm tra backend. Các API đã có dùng cùng hợp đồng cho mock và tích hợp thật. Với màn hình chưa có API, ghi riêng DTO/luồng dự kiến và phụ thuộc backend; vẫn có thể phát triển và nghiệm thu UI bằng mock. Nếu DTO/tài liệu/code khác nhau, xác minh với backend và cập nhật hợp đồng liên quan.
 
 ### 6.1. HTTP và dữ liệu
 
@@ -205,17 +235,19 @@ Không retry tự động mutation thay đổi dữ liệu. Retry GET cần gi�
 
 ### 7.1. Auth và dữ liệu phát triển
 
-Auth backend là phụ thuộc của luồng plan/readiness/solver/results/mutation. CRUD hiện chưa có cơ chế phân quyền hoàn chỉnh; việc CRUD chạy được không chứng minh auth đã tích hợp.
+Giai đoạn UI dùng session/vai trò mô phỏng và fixture trong frontend. Có thể đi hết luồng plan/readiness/solver/results/mutation bằng mock mà không cần khởi động backend, PostgreSQL hoặc đăng nhập thật. Đây là đầu ra được nghiệm thu của giai đoạn UI, không phải nghiệm thu tích hợp.
 
-Trong thời gian chờ auth, có thể làm layout, CRUD và mock theo đúng hợp đồng. Mock chỉ hoạt động trong môi trường phát triển có nhãn rõ, không tự bật khi API lỗi và không được tính là nghiệm thu tích hợp. Không thêm header actor/user giả hoặc dùng tài khoản seed DISABLED để vượt quyền.
+Ở giai đoạn API thật, auth backend là phụ thuộc của các endpoint nghiệp vụ trên. CRUD hiện chưa có cơ chế phân quyền hoàn chỉnh; việc CRUD chạy được không chứng minh auth đã tích hợp. Không thêm header actor/user giả hoặc dùng tài khoản seed DISABLED để vượt quyền.
 
-Fixture solver cần đủ dữ liệu nguồn, inventory và các xác nhận mà backend yêu cầu. Một vài giáo viên/lớp/môn tạo bằng CRUD chưa đủ để chạy solver. Các nguồn chưa có API quản trị cần fixture được backend chuẩn bị và ghi rõ giới hạn giao diện.
+Fixture DB để tích hợp solver cần đủ dữ liệu nguồn, inventory và xác nhận mà backend yêu cầu; fixture giao diện không thay thế được bộ dữ liệu này. Một vài giáo viên/lớp/môn tạo bằng CRUD chưa đủ để chạy solver. Các nguồn chưa có API quản trị cần fixture được backend chuẩn bị ở giai đoạn tích hợp.
+
+Các quy tắc ở mục7.2–7.4 là hành vi đích để handler mô phỏng các trạng thái quan trọng, rồi kiểm chứng lại với backend thật. Mock không cần tái triển khai toàn bộ bộ tính tải, validator hoặc thuật toán tối ưu.
 
 ### 7.2. Plan, snapshot và sửa phân công
 
 - Đọc plan của round trước; chỉ tạo khi chưa có plan. API hiện không tự tạo DRAFT kế tiếp.
 - Chỉ cho sửa/khóa/chạy solver khi trạng thái và quyền phù hợp; backend vẫn kiểm tra lại ở thời điểm ghi.
-- Gửi `expected_revision` từ backend, không tự cộng 1. Một thao tác có thể tăng revision nhiều lần hoặc không đổi trong trường hợp no-op.
+- Gửi `expected_revision` từ response API client, không tự cộng1 trong UI. Handler mô phỏng revision/no-op/xung đột; khi tích hợp, dùng revision backend trả về vì một thao tác có thể tăng nhiều lần hoặc không đổi.
 - `assignmentId` là ID dòng `plan_demand` từ GET assignments, khác `demand_id`.
 - Khóa nhóm không ép các thành phần cùng giáo viên. Batch là atomic; không báo thành công một phần khi backend rollback.
 - Snapshot cũ cần được hiển thị và xử lý theo hợp đồng refresh; không tự refresh rồi ghi lại thao tác cũ âm thầm.
@@ -237,7 +269,7 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 ### 7.4. Tải và validation
 
 - Dùng tên, số tiết và tải theo snapshot/version từ API kết quả; không trộn dữ liệu nguồn sống với lịch sử.
-- Lấy chính sách tải từ cấu hình/backend. Demo hiện dùng 24 trong JS, seed minh họa có 25; không hardcode một trong hai thành ngưỡng chung.
+- Lấy chính sách tải từ fixture cấu hình trong mock mode và từ backend khi tích hợp. Demo hiện dùng24 trong JS, seed minh họa có25; không hardcode một trong hai thành ngưỡng chung trong component.
 - Giữ `INSUFFICIENT_DATA`, `NOT_APPLICABLE` và `null` đúng ý nghĩa; chưa có dữ liệu năm không có nghĩa tải năm bằng 0.
 - `201` khi tạo validation nghĩa báo cáo được lưu; `overall_status` vẫn có thể là `VIOLATION`.
 - Nhãn freshness và `matches_version` quyết định báo cáo/proof có còn mô tả phương án hiện tại. Sửa tay có thể làm kết quả kiểm tra cũ hết hiệu lực.
@@ -247,10 +279,12 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 
 ### 8.1. Khi phát triển
 
-- Chạy PostgreSQL và backend theo [hướng dẫn hạ tầng](../infra/README.md); có thể chỉ khởi động hai service này khi dùng Vite trên host.
-- Chạy Vite trên một cổng riêng được ghi trong README. Cổng 3000 mặc định đang dành cho Nginx demo, nên kiểm tra xung đột trước khi cấu hình.
+- Chạy frontend bằng `npm ci` và `npm run dev` tại `frontend/`. FE-01 hiện chỉ có bộ khung và không phát request nghiệp vụ. Sau khi FE-02 hoàn tất, mock mode phải chạy độc lập bằng quy trình này, không cần backend/PostgreSQL.
+- Chỉ khởi động PostgreSQL/backend theo [hướng dẫn hạ tầng](../infra/README.md) khi chủ đích kiểm tra API thật; đây là bước của giai đoạn tích hợp.
+- Vite dùng cổng5173; Nginx toàn stack mặc định dùng3000. Kiểm tra xung đột trước khi chạy.
 - Vite proxy `/api` đến địa chỉ backend được publish trên host, theo `.env` thực tế; không dùng hostname Docker `backend` từ trình duyệt/host.
 - Đích proxy chỉ thuộc cấu hình dev server, có thể dùng biến như `DEV_API_PROXY_TARGET`. Base URL phía client mặc định là `/api`.
+- Khi mock bật, handler xử lý request nghiệp vụ trước proxy và không để request chưa được hỗ trợ lọt tới backend. Khi mock tắt, proxy phục vụ kiểm tra API thật; không lẫn hai nguồn dữ liệu trong một phiên.
 - Biến `VITE_*` sẽ được đưa vào bundle phía trình duyệt; không chứa secret. Giữ `.env` backend/root tách với cấu hình frontend và commit file mẫu phù hợp.
 - Khi auth dùng đường dẫn ngoài `/api`, cập nhật proxy/cookie/CSRF theo hợp đồng auth. Thử trên cấu hình thực trước khi nghiệm thu session.
 
@@ -259,7 +293,8 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 - Build nhiều giai đoạn: Node chạy `npm ci`/build, Nginx phục vụ `dist`.
 - Cập nhật allowlist `.dockerignore` cho package, lockfile, cấu hình, `src` và tài nguyên cần build; giữ secrets, cache, `node_modules` và prototype ngoài build nếu không cần phục vụ.
 - Giữ proxy API/OpenAPI/Swagger, `/healthz` và SPA fallback hiện có. Lỗi `/api/...` phải đi tới backend, không bị chuyển thành HTML trang chủ.
-- Thử mở trực tiếp và reload một route con, tải asset, gọi API và đăng nhập khi auth đã có.
+- Thử mở trực tiếp và reload một route con, tải asset. Khi kiểm tra API mode, thêm proxy API và đăng nhập khi auth đã có.
+- Chưa thay đổi Docker runtime trong lần sửa tài liệu này: Compose hiện vẫn khởi động toàn stack và phụ thuộc healthcheck backend. Nếu cần image demo mock độc lập, bổ sung cách build/chạy rõ ở FE-02/08; không coi cấu hình đó là đã có.
 - Không xóa volume PostgreSQL để giải quyết lỗi frontend; kiểm tra migrations theo hướng dẫn backend.
 
 ## 9. Thứ tự triển khai và đầu ra
@@ -268,33 +303,51 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 | --- | --- | --- |
 | FE-00 | Tài liệu quy trình này và liên kết tra cứu | Có phạm vi, kiến trúc, phụ thuộc và tiêu chí nghiệm thu |
 | FE-01 | Scaffold, runtime, scripts, router/providers, HTTP client, chuyển Docker build | Typecheck/lint/build đạt; Docker phục vụ ứng dụng đã build; demo gốc được bảo toàn |
-| FE-02 | Layout và bộ UI tối thiểu theo demo | Điều hướng, focus, loading/empty/error hoạt động trên các kích thước màn hình mục tiêu |
-| FE-03 | Giáo viên qua API thật | Danh sách, tìm kiếm, phân trang, thêm/sửa/xóa và lỗi tham chiếu; reload vẫn đọc đúng dữ liệu |
-| FE-04 | Session, người dùng/quyền và ngữ cảnh | Backend auth sẵn sàng; login, reload, hết phiên, logout, 401/403 được kiểm chứng |
-| FE-05 | Dữ liệu đầu vào và readiness | Các màn hình nguồn cần thiết; nhận biết nguồn thiếu; fixture đủ điều kiện; config/rule IDs có nguồn rõ |
-| FE-06 | Plan/DRAFT, assignments, sửa và khóa | Tạo/đọc/refresh, revision thực, batch và xung đột hoạt động theo hợp đồng |
-| FE-07 | Solver, tải và validation | Submit/poll/cancel/khôi phục; phân biệt apply; đọc kết quả đã lưu và báo cáo còn/cũ |
-| FE-08 | Nghiệm thu và bàn giao | Luồng tích hợp chạy với dataset/tài khoản hợp lệ; tài liệu, checks và Docker được cập nhật |
+| FE-02 | Nền tảng UI và mock dùng chung | Design tokens, layout, form/bảng/dialog/thông báo; handlers/fixtures/scenarios/store/reset, chọn chế độ rõ; chạy độc lập không phát request nghiệp vụ ra backend |
+| FE-03 | Giáo viên với mock | Danh sách, tìm kiếm, phân trang, thêm/sửa/xóa và lỗi tham chiếu; dữ liệu cập nhật nhất quán, reset được |
+| FE-04 | Đăng nhập/session mô phỏng và ngữ cảnh | Thử vai trò, login/logout, reload, hết phiên, thiếu quyền và chuyển trường/học kỳ/đợt bằng mock; không cần auth thật |
+| FE-05 | Lớp, môn, nhu cầu và readiness với mock | Màn hình nguồn, bộ lọc/form và các scenario dữ liệu đủ/thiếu, có issue chặn |
+| FE-06 | Workspace plan/DRAFT với mock | Tạo/đọc/refresh, sửa/khóa từng dòng/nhóm, no-op và xung đột revision/snapshot được mô phỏng |
+| FE-07 | Solver, tải, validation và dashboard với mock | Submit/poll/cancel/khôi phục, APPLIED/STALE/lỗi, báo cáo còn/cũ; dashboard cùng nguồn fixture với các màn hình |
+| FE-08 | Nghiệm thu giao diện với mock | Các luồng chính tương tác được, desktop/mobile và loading/empty/error đủ; không cần backend/PostgreSQL |
+| FE-09 | Chuẩn bị tích hợp API thật | Chốt auth, rà hợp đồng đang mock, endpoint còn thiếu, dataset DB và mapping ID/config/quyền |
+| FE-10 | Nối API thật theo từng feature | Chọn API mode, nối CRUD rồi nghiệp vụ; xác minh session, revision, snapshot, run/apply và lỗi từ backend |
+| FE-11 | Nghiệm thu tích hợp và bàn giao | Luồng thật chạy với dataset/tài khoản hợp lệ; checks và Docker/tài liệu được cập nhật |
 
-FE-04 có thể được backend chuẩn bị song song với FE-01–03; cần hoàn tất trước khi nghiệm thu các API nghiệp vụ có bảo vệ. Trong FE-05, đọc readiness tiền kiểm trước khi tạo plan bằng lựa chọn config/rule rõ ràng; sau khi có DRAFT thì đọc lại theo snapshot/current version.
+FE-02–08 ưu tiên hoàn thiện UI và mock; việc backend chuẩn bị auth/API/fixture có thể diễn ra song song, không chặn nghiệm thu UI. Chỉ chuyển trọng tâm sang API thật sau khi giai đoạn mock đạt tiêu chí FE-08 và phạm vi tích hợp đã được xác định. Trong cả mock và API mode, thử readiness tiền kiểm trước khi tạo plan bằng lựa chọn config/rule rõ ràng; sau khi có DRAFT thì đọc lại theo snapshot/current version.
 
-Mỗi mốc có thể tách thành nhiều PR nhỏ. FE-00 và bộ khung kỹ thuật FE-01 đã thực hiện; FE-02 có layout ban đầu nhưng chưa phải bộ UI đầy đủ. Các feature từ FE-03 trở đi chưa triển khai. Lifecycle/feedback/phát hành/PDF và hồ sơ giáo viên tổng hợp được bổ sung sau khi API và phạm vi tương ứng sẵn sàng, theo [backlog](BACKLOG.md).
+Mỗi mốc có thể tách thành nhiều PR nhỏ. FE-00 và bộ khung kỹ thuật FE-01 đã thực hiện; FE-02 mới có layout ban đầu, chưa có tầng mock/bộ UI đầy đủ. Các feature từ FE-03 trở đi chưa triển khai. Bảng này thay thứ tự cũ ưu tiên API thật tại FE-03.
+
+Các màn hình trong prototype là tham chiếu giao diện và tương tác, không tự mở rộng phạm vi nghiệp vụ đã chốt. Nếu làm UI lifecycle/feedback/phát hành/PDF hoặc hồ sơ giáo viên tổng hợp trước khi API có, ghi rõ đó là mock theo hợp đồng dự kiến và theo dõi phụ thuộc trong [backlog](BACKLOG.md); không báo chúng đã được backend hỗ trợ.
 
 ## 10. Quy trình cho một công việc frontend
 
 1. **Xác định hành vi:** người dùng nào, màn hình nào, đầu vào/đầu ra và ca lỗi cần xử lý.
-2. **Đối chiếu API:** request/response, quyền, ID, pagination, revision và dữ liệu phụ thuộc. Thiếu API thì ghi rõ phần mock/phần chờ backend.
-3. **Làm trọn một luồng nhỏ:** UI → hook → API → dữ liệu thật; gồm các trạng thái tải/rỗng/lỗi/thành công.
-4. **Kiểm chứng:** chạy checks phù hợp, thử ca thành công và lỗi nghiệp vụ quan trọng; cập nhật tài liệu khi hợp đồng/cấu hình thay đổi.
+2. **Định nghĩa dữ liệu và scenario:** đối chiếu hợp đồng đã có; thiết kế fixture/handler, quyền mô phỏng, ID, pagination, revision và lỗi. Thiếu API thì ghi hợp đồng dự kiến/phụ thuộc backend.
+3. **Làm trọn một luồng nhỏ:** UI → hook → API client → mock handler/store; gồm tải/rỗng/lỗi/thành công và cập nhật dữ liệu sau thao tác. Không bỏ qua tầng query/mutation bằng fixture trong component.
+4. **Kiểm chứng:** chạy checks phù hợp, thử scenario thành công/lỗi/reset và các kích thước màn hình mục tiêu; cập nhật tài liệu. Ở FE-10/11, thay nguồn dữ liệu bằng API mode và kiểm chứng lại luồng trên backend.
 5. **Mở PR vào `dev`:** mô tả vấn đề, hành vi sau thay đổi, ảnh nếu đổi giao diện, cách kiểm chứng và phụ thuộc còn lại. Review/merge theo quy trình repo.
 
-Không đánh dấu hoàn thành tích hợp khi chỉ chạy mock hoặc chỉ nhận HTTP 200 mà chưa kiểm tra nội dung nghiệp vụ. Nếu môi trường thiếu auth/dataset thì ghi phần đã kiểm chứng và phần chưa kiểm chứng cụ thể.
+Ghi riêng **hoàn thành UI với mock** và **hoàn thành tích hợp API thật**. Mock là đầu ra chính của giai đoạn hiện tại, không phải cách chữa tạm khi backend lỗi. Khi nghiệm thu tích hợp, HTTP200 riêng lẻ chưa chứng minh hành vi nghiệp vụ đúng; ghi phần đã/chưa kiểm chứng cụ thể.
 
 ## 11. Kiểm thử và tiêu chí hoàn thành
 
-Kiểm thử tự động tập trung vào hành vi dễ sai: tạo request đúng trường, phân trang không có total, chuyển trạng thái solver, xử lý xung đột và cập nhật dữ liệu sau mutation. Dùng mock API cho lỗi khó tái hiện; các ca quan trọng phải có lượt chạy với backend thật trước nghiệm thu.
+### 11.1. Nghiệm thu giao diện với mock — FE-02–08
 
-Các kịch bản tích hợp tối thiểu:
+Kiểm thử tự động tập trung vào hành vi dễ sai: request đúng trường, phân trang, chuyển trạng thái solver mô phỏng, xử lý lỗi và cập nhật dữ liệu sau mutation. Không cần backend hoặc PostgreSQL ở giai đoạn này.
+
+- Chạy ứng dụng khi backend tắt; mọi request nghiệp vụ được handler xử lý hoặc báo chưa hỗ trợ, không lọt ra backend.
+- Đi được các luồng chính bằng fixture dùng chung; thêm/sửa/xóa và dashboard/danh sách liên quan cập nhật nhất quán.
+- Chọn được scenario loading, empty, error, success; lỗi400/401/403/409/422/503 có thông báo/hành động phù hợp.
+- Thử session/vai trò mô phỏng, đổi ngữ cảnh, hết phiên và dọn cache; không lẫn dữ liệu giữa các ngữ cảnh.
+- Thử revision/snapshot cũ, khóa batch thất bại, các trạng thái solver/cancel/apply/validation bằng scenario tái lập. Reload khôi phục theo chính sách lưu mock đã ghi rõ.
+- Reset trả về fixture gốc và xóa state/cache mô phỏng liên quan. Có nhãn mock; không hiển thị kết quả mô phỏng như đã chạy CP-SAT thật.
+- Xem desktop/mobile, thao tác bàn phím, focus/dialog/form, route con và trang404; không có tràn ngang hoặc thông báo bị khuất ở kích thước mục tiêu.
+- Typecheck/lint/format/test/build phù hợp đạt; README nêu cách bật mock, chọn scenario và reset. Build API thật không tự bật mock.
+
+### 11.2. Nghiệm thu tích hợp thật — FE-09–11
+
+Chạy lại các luồng quan trọng bằng API mode với tài khoản và fixture DB hợp lệ, không bật handler/session mock. Các kịch bản tích hợp tối thiểu:
 
 - CRUD giáo viên, lỗi dữ liệu/khóa ngoại, trang rỗng và reload.
 - Đăng nhập, khôi phục/hết phiên, logout và thiếu quyền khi auth sẵn sàng.
@@ -306,9 +359,12 @@ Các kịch bản tích hợp tối thiểu:
 - Báo cáo validation có VIOLATION hoặc đã cũ; không hiển thị thành PASS hiện hành.
 - Truy cập trực tiếp route con trong Docker và lỗi API không bị trả thành trang HTML.
 
-Checklist cho mỗi PR, đánh dấu mục không áp dụng và giải thích khi cần:
+### 11.3. Checklist cho mỗi PR
 
-- [ ] Phạm vi và API được đối chiếu; không có hành vi dựa vào endpoint chưa tồn tại.
+Đánh dấu mục không áp dụng và giải thích khi cần:
+
+- [ ] Phạm vi/giai đoạn/mock hay API được ghi rõ; hợp đồng hiện có và hợp đồng dự kiến được phân biệt.
+- [ ] Fixture/handler/scenario tập trung, reset được; mock mode không gửi request nghiệp vụ ra backend hoặc tự bật khi API lỗi.
 - [ ] Typecheck, lint và build đạt sau khi scripts đã được thiết lập.
 - [ ] Kiểm thử phù hợp với thay đổi đã chạy; kết quả/giới hạn được ghi rõ.
 - [ ] Loading/empty/error, chống gửi lặp và thông báo kết quả đã được xử lý.
@@ -320,7 +376,7 @@ Checklist cho mỗi PR, đánh dấu mục không áp dụng và giải thích k
 
 ## 12. Tài liệu tra cứu
 
-- [Trạng thái frontend demo](../frontend/README.md).
+- [Trạng thái và cách chạy frontend](../frontend/README.md).
 - [Backend: mục lục hiện hành](../backend/docs/README.md), [API chung](../backend/docs/API.md).
 - [Plan và revision](../backend/docs/PLAN_API.md), [readiness](../backend/docs/READINESS_API.md).
 - [Sửa/khóa phân công](../backend/docs/ASSIGNMENT_MUTATION_API.md).
@@ -349,4 +405,4 @@ Kết quả kiểm chứng:
 | Trình duyệt | Đã xem bố cục desktop, điều hướng, tải lại trực tiếp route con và trang404 trên bản dev/Docker |
 | Prototype | SHA-256 giữ nguyên giá trị trong README frontend |
 
-Kiểm thử Docker dùng container riêng trên cổng loopback ngẫu nhiên, GET qua backend dev đang chạy để kiểm tra proxy; không thay thế các service dev hoặc sửa dữ liệu DB. Chưa nghiệm thu responsive trên thiết bị nhỏ, đăng nhập, CRUD từ UI hoặc luồng solver xuyên suốt; các phần này thuộc mốc tiếp theo. Bộ khung chưa có CI frontend và chưa được merge/push trong bước khởi tạo.
+Đây là hồ sơ kiểm chứng của bước khởi tạo, không phải nghiệm thu mock. Kiểm thử Docker dùng container riêng trên cổng loopback ngẫu nhiên, GET qua backend dev đang chạy để kiểm tra proxy; không thay thế các service dev hoặc sửa dữ liệu DB. Chưa nghiệm thu responsive trên thiết bị nhỏ, session mock, CRUD từ UI hoặc luồng solver mô phỏng. Bộ khung chưa có CI frontend; trạng thái commit/merge/push tra trực tiếp trong Git.

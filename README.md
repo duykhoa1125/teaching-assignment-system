@@ -38,7 +38,7 @@ Root reactor build CP-SAT+backend; reactor comparison build toàn bộ module th
 
 ## Tài liệu hiện hành
 
-- [Quy trình phát triển frontend](docs/FRONTEND_DEVELOPMENT.md): kiến trúc mã nguồn, tích hợp API và lộ trình triển khai; [cài đặt/chạy frontend](frontend/README.md).
+- [Quy trình phát triển frontend](docs/FRONTEND_DEVELOPMENT.md): ưu tiên nền tảng/giao diện với mock data, nghiệm thu UI rồi tích hợp API thật; [cài đặt/chạy frontend](frontend/README.md).
 - [Backend/API — mục lục và giới hạn](backend/docs/README.md):56 URL/118 operations; hồ sơ API14/11 có175/175 test qua JUnit trực tiếp. Maven verify/CI vẫn cần xác nhận với cache/mạng đủ.
 - [Mô hình solver](algorithm/tass-cpsat/docs/CURRENT_MODEL.md), [hợp đồng](algorithm/tass-cpsat/docs/CONTRACT.md).
 - [So sánh thuật toán](algorithm/tass-comparison/README.md), [benchmark09/11](algorithm/tass-comparison/reports/20261109/README.md).

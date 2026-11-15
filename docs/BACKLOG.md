@@ -1,4 +1,4 @@
-# Backlog hiện hành — 14/11/2026
+# Backlog hiện hành — 15/11/2026
 
 Danh sách này giữ các việc chưa làm khi lưu trữ kế hoạch cũ. Người phụ trách cần được nhóm phân công; các dòng dưới không phải tính năng đã triển khai.
 
@@ -10,13 +10,16 @@ Danh sách này giữ các việc chưa làm khi lưu trữ kế hoạch cũ. Ng
 | P0 | Chuẩn hóa ngày dữ liệu theo học kỳ | Code hiện buộc các demand cùng khoảng, chưa buộc khoảng đó bằng toàn học kỳ; bổ sung guard/test theo phạm vi đã chốt |
 | P0 | Lifecycle plan/version | Bản DRAFT kế tiếp, chuyển trạng thái, mở/đóng nhận phản hồi, phát hành; giữ cùng CAS/token/validation/audit |
 | P0 | Feedback và duyệt tăng nhu cầu theo lớp | Tách nguyện vọng tổng tiết môn với tăng nhu cầu một lớp/thành phần; xác định lớp/môn/nguồn/số tiết và quyết định quản lý; không tự gán phần tăng cho người gửi |
-| P0 | Nối frontend thật | Auth → readiness → DRAFT → sửa/khóa → run/poll/cancel → tải/validation; xử lý409/422/503 và revision thực |
+| P0 — FE trước mắt | Nền tảng UI/mock và hoàn thiện giao diện | FE-02–08: UI dùng chung, mock tập trung, scenario/reset, session mô phỏng và các màn hình tương tác; chạy độc lập không cần backend/PostgreSQL |
+| P0 — giai đoạn tích hợp FE | Nối frontend với API thật sau nghiệm thu UI mock | FE-09–11: chốt auth/dataset/hợp đồng còn thiếu rồi nối CRUD → readiness → DRAFT → sửa/khóa → run/poll/cancel → tải/validation; xử lý409/422/503 và revision thực |
 | P0 | Nghiệm thu build/tích hợp nhóm | Maven verify/CI và Docker test profile với mạng/cache đủ; logs JUnit trực tiếp không thay bằng chứng Maven thành công |
 | P1 | Quy tắc nghiệp vụ thực tế, tải năm | Evaluator hiện ILLUSTRATIVE_MVP_V1; annual thiếu giữ INSUFFICIENT_DATA. Chốt nguồn/quy tắc và thêm handler có kiểm thử, không chỉ bỏ nhãn demo |
 | P1 | PDF và phản hồi/restore mở rộng | Chỉ xuất từ kết quả còn phù hợp với lifecycle/revision/token; thống nhất quyền truy cập |
 | Theo FE | CRUD pagination total và lỗi chuẩn hóa | Không phá mảng response cũ nếu chưa chốt phiên bản hợp đồng |
 
 ## Phần đã có, không giao lại như việc chưa làm
+
+Frontend đã có bộ khung FE-01: React/TypeScript/Vite, router/layout ban đầu, QueryClient, HTTP client, scripts kiểm tra và Docker build. Tầng mock, session mô phỏng và UI nghiệp vụ chưa triển khai. Thứ tự làm và tiêu chí nghiệm thu riêng cho mock/API nằm trong [quy trình frontend](FRONTEND_DEVELOPMENT.md); backend auth/API có thể chuẩn bị song song, không chặn giai đoạn UI mock.
 
 Plan/current DRAFT/refresh, readiness, chuẩn bị tải/kinh nghiệm, snapshot tass-solver/2, async run/poll/cancel, hậu kiểm/apply nguyên tử, đọc kết quả/tải/tối ưu/validation và API sửa/khóa/mở khóa theo dòng/nhóm đã có. Xem [backend docs](../backend/docs/README.md).
 

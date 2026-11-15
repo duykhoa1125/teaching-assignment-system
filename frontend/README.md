@@ -2,7 +2,15 @@
 
 Ứng dụng React/TypeScript/Vite được khởi tạo ngày **15/11/2026**, theo [quy trình phát triển frontend](../docs/FRONTEND_DEVELOPMENT.md). Có router, layout responsive ban đầu, QueryClient, HTTP client và các trang tổng quan/giáo viên/phân công/không tìm thấy.
 
-**Đây là bộ khung FE-01. Trang giáo viên và phân công hiện là màn hình chờ triển khai; chưa có CRUD, phiên đăng nhập hoặc kết nối solver trong giao diện.** Không hiển thị dữ liệu nghiệp vụ giả. HTTP client và proxy đã sẵn sàng cho các feature tiếp theo.
+**Đây là bộ khung FE-01. Trang giáo viên và phân công hiện là màn hình chờ triển khai; chưa có CRUD, phiên đăng nhập, tầng mock hoặc kết nối solver trong giao diện.** HTTP client và proxy đã sẵn sàng cho các feature tiếp theo.
+
+## Hướng phát triển tiếp theo: UI với mock data
+
+Ưu tiên **hoàn thiện nền tảng UI và giao diện với mock data trước, tích hợp API thật sau**. Các mốc FE-02–08 xây bộ UI, mock dùng chung, session/vai trò mô phỏng và các màn hình; FE-09–11 mới chuẩn bị/nối/nghiệm thu backend.
+
+Tầng mock dự kiến chặn request ở lớp HTTP, dùng fixtures/handlers/scenarios/store tập trung; component tiếp tục dùng query/mutation hooks và API client. Có dữ liệu thay đổi được, kịch bản tải/rỗng/lỗi, reset và nhãn mock; không tự chuyển sang mock khi API thật lỗi. Các phần này **chưa được cài đặt**. Biến lựa chọn chế độ như `VITE_DATA_SOURCE` trong tài liệu quy trình là thiết kế dự kiến, hiện chưa có hiệu lực.
+
+Auth thật, backend và PostgreSQL không phải điều kiện để hoàn thiện hoặc nghiệm thu UI mock. Tích hợp thật sẽ dùng lại các màn hình/hooks, rà các hợp đồng đã mock và kiểm chứng lại với backend; session/solver mô phỏng không chứng minh xác thực hoặc tối ưu thật đã hoạt động.
 
 ## Môi trường
 
@@ -12,13 +20,7 @@
 
 ## Chạy local bằng PowerShell
 
-Tại gốc repo, khởi động backend/PostgreSQL theo [hướng dẫn hạ tầng](../infra/README.md). Nếu chỉ cần hai service này và root `.env` đã có:
-
-```powershell
-docker compose up -d --build --wait postgres backend
-```
-
-Sau đó, từ gốc repo:
+Phát triển giao diện không cần khởi động backend/PostgreSQL. Từ gốc repo:
 
 ```powershell
 Set-Location frontend
@@ -28,7 +30,15 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm run dev
 ```
 
-Mở [Vite local](http://127.0.0.1:5173/). Frontend vẫn mở được khi backend chưa chạy; những request API được bổ sung sau này cần backend hoạt động. Port5173 cố định, Vite báo lỗi nếu đã có tiến trình khác sử dụng.
+Mở [Vite local](http://127.0.0.1:5173/). FE-01 hiện chỉ hiển thị bộ khung và chưa phát request nghiệp vụ; tầng mock sẽ bổ sung ở FE-02 để phát triển tiếp các màn hình độc lập. Port5173 cố định, Vite báo lỗi nếu đã có tiến trình khác sử dụng.
+
+### Khi chủ đích kiểm tra API thật
+
+Chỉ cần bước sau ở giai đoạn tích hợp hoặc kiểm tra proxy. Tại gốc repo, khởi động backend/PostgreSQL theo [hướng dẫn hạ tầng](../infra/README.md). Nếu root `.env` đã có:
+
+```powershell
+docker compose up -d --build --wait postgres backend
+```
 
 Trong `frontend/.env`, đặt `DEV_API_PROXY_TARGET` theo cổng backend thực tế ở root `.env`, ví dụ `http://127.0.0.1:8080`. Khởi động lại Vite sau khi đổi cấu hình. Không dùng hostname Docker `backend` khi Vite chạy trên host.
 
@@ -64,6 +74,8 @@ prototype/   # Demo gốc, không đưa vào production build
 
 Alias `@/` trỏ đến `src/` trong TypeScript và Vite. Tạo `src/features/<nghiep-vu>/` khi triển khai feature đầu tiên, theo cấu trúc API/types/queries/components trong tài liệu quy trình; chưa tạo các module nghiệp vụ rỗng.
 
+FE-02 sẽ bổ sung `src/mocks/` gồm khởi động mock, handlers, fixtures, scenarios và store/reset. Đây là cấu trúc dự kiến, không phải mã đã có trong FE-01. Component/feature không import fixture trực tiếp; mock khởi động trước render và request nghiệp vụ chưa có handler không được chuyển tới backend.
+
 `apiRequest<T>(path, options)` nhận đường dẫn như `/teachers`, tự thêm `/api`, và hỗ trợ `query`, `json`, headers, method, `AbortSignal`. Client xử lý JSON, `204`, lỗi có `code/message`, non-JSON và lỗi mạng/hủy; **kiểu T không thay kiểm tra dữ liệu runtime**. Không tự retry request ghi. QueryClient chỉ retry đọc một lần với lỗi mạng/5xx; các feature phải phân biệt 400/401/403/409/422 theo hợp đồng backend.
 
 ## Docker
@@ -74,7 +86,7 @@ Từ gốc repo, helper hiện có tiếp tục chạy toàn stack:
 .\scripts\docker-dev.ps1 up
 ```
 
-Frontend image `tass-frontend:dev` được build hai giai đoạn: `npm ci`/`npm run build` rồi copy `dist` vào Nginx. Mở [frontend Docker mặc định](http://127.0.0.1:3000/) theo `FRONTEND_PORT` thực tế. Nginx giữ `/healthz`, proxy API/Swagger và fallback cho route con. Không cần migrate/xóa volume DB cho thay đổi frontend này.
+Frontend image `tass-frontend:dev` được build hai giai đoạn: `npm ci`/`npm run build` rồi copy `dist` vào Nginx. Mở [frontend Docker mặc định](http://127.0.0.1:3000/) theo `FRONTEND_PORT` thực tế. Nginx giữ `/healthz`, proxy API/Swagger và fallback cho route con. Compose hiện vẫn khởi động toàn stack và đợi backend healthy; chưa có cấu hình demo mock độc lập. Dùng Vite cho công việc UI/mock; không cần migrate/xóa volume DB cho giai đoạn này.
 
 Có thể kiểm tra riêng build image mà không khởi động hoặc thay thế stack:
 
