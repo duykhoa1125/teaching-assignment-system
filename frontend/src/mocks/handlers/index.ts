@@ -2,6 +2,7 @@ import { delay } from 'msw';
 import { http, HttpResponse, type HttpResponseResolver } from 'msw/http';
 import { schools } from '../fixtures/index.ts';
 import { layoutPreview } from '../fixtures/layout.ts';
+import { readOverviewFixture } from '../fixtures/overview.ts';
 import { scenarios } from '../scenarios/index.ts';
 import { mockStore, MockError } from '../store.ts';
 import type { TeacherRequest } from '../../features/teachers/types.ts';
@@ -137,6 +138,25 @@ export const handlers = [
     http.get(
         '*/api/mock/layout',
         guarded(() => HttpResponse.json(structuredClone(layoutPreview))),
+    ),
+    http.get(
+        '*/api/mock/overview',
+        guarded(({ request }) => {
+            const url = new URL(request.url);
+            const contextId = url.searchParams.get('context_id') || 'hk1';
+            const payload = readOverviewFixture(
+                contextId,
+                mockStore.scenario === 'empty',
+            );
+            if (!payload) {
+                return errorResponse(
+                    400,
+                    'INVALID_QUERY',
+                    'Không tìm thấy không gian học kỳ được yêu cầu.',
+                );
+            }
+            return HttpResponse.json(payload);
+        }),
     ),
     http.get(
         '*/api/teachers',

@@ -1,96 +1,352 @@
-import { Link } from 'react-router';
-import { ArrowUpRight } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router';
+import { useOverviewQuery } from '@/features/overview/queries';
+import type { OverviewTeacherLoad } from '@/features/overview/types';
+import type { WorkspacePreview } from '@/features/workspace/types';
+import { Dialog } from '@/shared/ui/dialog';
+import { EmptyState } from '@/shared/ui/empty-state';
 import { Icon } from '@/shared/ui/icon';
+import {
+    ActionIssuesPanel,
+    CompletionBanner,
+    CoveragePanel,
+    DashboardMetrics,
+    PhaseStrip,
+    ReadinessBanner,
+    RecentActivityPanel,
+    type WorkflowActionKind,
+} from './overview-sections';
+import { TeacherDrawer } from './teacher-drawer';
+import { WorkloadChart } from './workload-chart';
 import styles from './overview-page.module.css';
 
-const steps = [
+type OutletWorkspaceContext = WorkspacePreview['contexts'][number] | undefined;
+
+type OverviewModalKind = 'export' | 'solver' | WorkflowActionKind | null;
+
+const MODAL_CONTENT: Record<
+    Exclude<OverviewModalKind, null>,
     {
-        number: '01',
-        title: 'Chuẩn bị dữ liệu',
-        text: 'Giáo viên, chuyên môn và nhu cầu giảng dạy là nền tảng của mỗi phương án.',
+        title: string;
+        description: string;
+        body: string;
+        ctaLabel: string;
+        ctaTo: string;
+    }
+> = {
+    export: {
+        title: 'Báo cáo phân công hiện hành',
+        description:
+            'Chức năng xem trước và xuất tài liệu đang được tách riêng sang màn hình Tài liệu.',
+        body: 'Trong bản dựng hiện tại của Tổng quan, bạn có thể chuyển sang mục Tài liệu để kiểm tra trạng thái các bản đề xuất.',
+        ctaLabel: 'Mở Tài liệu',
+        ctaTo: '/documents',
     },
-    {
-        number: '02',
-        title: 'Xây dựng phương án',
-        text: 'Kiểm tra dữ liệu, phân công và giữ lại những lựa chọn đã thống nhất.',
+    solver: {
+        title: 'Sinh đề xuất phân công',
+        description:
+            'Luồng chạy thuật toán đề xuất được điều phối tại màn hình Lượt chạy đề xuất.',
+        body: 'Phương án hiện hành và các phân công đã khóa sẽ được giữ nguyên cho tới khi bạn xem trước và xác nhận áp dụng.',
+        ctaLabel: 'Tới Lượt chạy đề xuất',
+        ctaTo: '/solver-runs',
     },
-    {
-        number: '03',
-        title: 'Rà soát kết quả',
-        text: 'Đối chiếu tải giảng dạy và các ràng buộc trước khi hoàn thiện phương án.',
+    'open-feedback': {
+        title: 'Mở đợt lấy ý kiến đội ngũ',
+        description:
+            'Thao tác chuyển trạng thái được thực hiện sau khi hoàn tất rà soát phân công.',
+        body: 'Vui lòng mở màn hình Phân công giảng dạy để kiểm tra phương án trước khi chuyển giai đoạn.',
+        ctaLabel: 'Mở Phân công',
+        ctaTo: '/assignment',
     },
-];
+    'close-feedback': {
+        title: 'Đóng nhận phản hồi',
+        description:
+            'Tổng hợp và xử lý ý kiến giáo viên được thực hiện tại màn hình Phản hồi.',
+        body: 'Chuyển tới màn hình Phản hồi để xem các ý kiến đang chờ ghi nhận trong đợt phân công này.',
+        ctaLabel: 'Mở Phản hồi',
+        ctaTo: '/feedback',
+    },
+    ready: {
+        title: 'Hoàn tất phương án',
+        description:
+            'Rà soát lần cuối trước khi chuyển sang giai đoạn Sẵn sàng xuất.',
+        body: 'Hãy kiểm tra lại phân công chi tiết hoặc rà soát tải giáo viên trước khi chốt phương án.',
+        ctaLabel: 'Mở Phân công',
+        ctaTo: '/assignment',
+    },
+};
 
 export function OverviewPage() {
-    return (
-        <>
-            <div className="page-heading">
-                <p className="eyebrow">KHÔNG GIAN ĐIỀU PHỐI</p>
-                <h1>Tổng quan</h1>
-                <p>Cùng chuẩn bị một học kỳ cân bằng hơn.</p>
+    const outletContext = useOutletContext<OutletWorkspaceContext>();
+    const contextId = outletContext?.id ?? 'hk1';
+    const roundLabel = outletContext?.round ?? 'PC-01';
+    const contextTitle = outletContext?.label ?? 'Học kỳ I';
+    const isMockMode = import.meta.env.VITE_DATA_SOURCE === 'mock';
+
+    const navigate = useNavigate();
+    const query = useOverviewQuery(contextId, isMockMode);
+
+    const [selectedTeacherId, setSelectedTeacherId] = useState<number | null>(
+        null,
+    );
+    const [modalKind, setModalKind] = useState<OverviewModalKind>(null);
+    const drawerTriggerRef = useRef<HTMLElement | null>(null);
+
+    const dashboard = query.data;
+    const activeRound = dashboard?.round ?? roundLabel;
+    const activeTitle = dashboard?.context_title ?? contextTitle;
+    const activeYear = dashboard?.academic_year ?? '2026–2027';
+
+    const selectedTeacher: OverviewTeacherLoad | null =
+        selectedTeacherId !== null && dashboard
+            ? (dashboard.teachers.find(
+                  (item) => item.id === selectedTeacherId,
+              ) ?? null)
+            : null;
+
+    const canRunSolver = dashboard?.phase === 'DRAFT';
+
+    const renderPageHeader = (withActions: boolean) => (
+        <div className={`${styles.pageHeading} page-heading`}>
+            <div>
+                <div className={styles.eyebrow}>
+                    <span className={styles.sectionIndex}>{activeRound}</span>
+                    <span className={styles.eyebrowDivider}>/</span>
+                    <span>{`${activeTitle} · ${activeYear}`}</span>
+                </div>
+                <h1>Một góc nhìn. Cả học kỳ.</h1>
+                <p className={styles.subtitle}>
+                    Những điều quan trọng cho kế hoạch giảng dạy, ở cùng một
+                    nơi.
+                </p>
             </div>
-            <section className={styles.hero} aria-labelledby="welcome-title">
-                <div>
-                    <p className={styles.heroLabel}>TEACHING IN BALANCE</p>
-                    <h2 id="welcome-title">
-                        Mỗi phân công hợp lý,
-                        <br />
-                        một khởi đầu tốt hơn.
-                    </h2>
-                    <p>
-                        Không gian chuẩn bị, phân công và rà soát giảng dạy của
-                        nhà trường.
-                    </p>
-                    <Link to="/teachers" className="button">
-                        Khám phá giáo viên{' '}
-                        <Icon glyph={ArrowUpRight} size={16} />
-                    </Link>
+            {withActions ? (
+                <div className={`${styles.headingActions} flex`}>
+                    <button
+                        type="button"
+                        className="btn"
+                        onClick={() => setModalKind('export')}
+                    >
+                        <Icon name="download" />
+                        Xuất báo cáo
+                    </button>
+                    <button
+                        type="button"
+                        className="btn primary"
+                        disabled={!canRunSolver}
+                        onClick={() => setModalKind('solver')}
+                    >
+                        <Icon name="spark" />
+                        Sinh đề xuất
+                    </button>
                 </div>
-                <div className={styles.illustration} aria-hidden="true">
-                    <span className={styles.orbit} />
-                    <span className={styles.orbitInner} />
-                    <span className={styles.balanceLine} />
-                    <span className={styles.balanceCenter} />
-                    <span className={styles.balanceLeft} />
-                    <span className={styles.balanceRight} />
-                    <span className={styles.illustrationCaption}>
-                        SPACE FOR BETTER TEACHING
-                    </span>
-                </div>
-            </section>
-            <section
-                aria-labelledby="workflow-title"
-                className={styles.workflow}
-            >
-                <div className={styles.sectionHeading}>
-                    <div>
-                        <p className="eyebrow">TỪ DỮ LIỆU ĐẾN PHƯƠNG ÁN</p>
-                        <h2 id="workflow-title">Một quy trình rõ ràng</h2>
+            ) : null}
+        </div>
+    );
+
+    if (!isMockMode) {
+        return (
+            <div className={styles.overviewRoot}>
+                {renderPageHeader(false)}
+                <EmptyState
+                    title="Tổng quan chưa nối API thật"
+                    action={
+                        <Link to="/teachers" className="button">
+                            Mở Đội ngũ giáo viên
+                        </Link>
+                    }
+                >
+                    Màn hình Tổng quan hiện sử dụng dữ liệu minh họa tạm thời
+                    (`VITE_DATA_SOURCE=mock`) và chưa gọi API backend chính
+                    thức.
+                </EmptyState>
+            </div>
+        );
+    }
+
+    if (query.isPending) {
+        return (
+            <div className={styles.overviewRoot}>
+                {renderPageHeader(false)}
+                <section className={styles.panel}>
+                    <div
+                        className={`${styles.stateCard} ${styles.stateLoading}`}
+                        role="status"
+                    >
+                        <span className={styles.stateSymbol}>
+                            <Icon name="spark" />
+                        </span>
+                        <h3>Đang tải dữ liệu tổng quan</h3>
+                        <p>
+                            Đang tổng hợp nhịp tải đội ngũ, tiến độ phân công và
+                            các mục cần xử lý…
+                        </p>
                     </div>
-                    <span className={styles.stepCount}>03 bước chuẩn bị</span>
+                </section>
+            </div>
+        );
+    }
+
+    if (query.isError) {
+        return (
+            <div className={styles.overviewRoot}>
+                {renderPageHeader(false)}
+                <section className={styles.panel}>
+                    <div
+                        className={`${styles.stateCard} ${styles.stateError}`}
+                        role="alert"
+                    >
+                        <span className={styles.stateSymbol}>
+                            <Icon name="warning" />
+                        </span>
+                        <h3>Không thể tải dữ liệu tổng quan</h3>
+                        <p>
+                            {query.error.message ||
+                                'Yêu cầu dữ liệu tạm thời chưa thành công.'}
+                        </p>
+                        <div className={styles.stateActions}>
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={() => void query.refetch()}
+                            >
+                                Thử lại
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+
+    const isEmpty =
+        !dashboard ||
+        (dashboard.teachers.length === 0 &&
+            dashboard.summary.total_demands === 0);
+
+    if (isEmpty) {
+        return (
+            <div className={styles.overviewRoot}>
+                {renderPageHeader(false)}
+                <section className={styles.panel}>
+                    <div className={styles.stateCard}>
+                        <span className={styles.stateSymbol}>
+                            <Icon name="book" />
+                        </span>
+                        <h3>Một khoảng trống để bắt đầu</h3>
+                        <p>
+                            Chưa có dữ liệu đội ngũ hoặc nhu cầu giảng dạy cho
+                            đợt phân công này.
+                        </p>
+                        <div className={styles.stateActions}>
+                            <Link to="/preparation" className="btn small">
+                                Chuẩn bị dữ liệu
+                            </Link>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        );
+    }
+
+    const modalConfig = modalKind ? MODAL_CONTENT[modalKind] : null;
+
+    return (
+        <div className={styles.overviewRoot}>
+            <CompletionBanner
+                phase={dashboard.phase}
+                onOpenExport={() => setModalKind('export')}
+            />
+
+            {renderPageHeader(true)}
+
+            <ReadinessBanner readiness={dashboard.readiness} />
+
+            <PhaseStrip
+                dashboard={dashboard}
+                onOpenSolver={() => setModalKind('solver')}
+                onOpenExport={() => setModalKind('export')}
+                onOpenWorkflowAction={(action) => setModalKind(action)}
+            />
+
+            <DashboardMetrics summary={dashboard.summary} />
+
+            <div className={styles.dashboardGrid}>
+                <section className={styles.panel}>
+                    <div className={styles.panelHead}>
+                        <div>
+                            <div className={styles.eyebrow}>
+                                <span className={styles.sectionIndex}>
+                                    01 / WORKLOAD
+                                </span>
+                            </div>
+                            <h2>Nhịp tải giảng dạy</h2>
+                            <p>{`Đủ ${dashboard.teachers.length} giáo viên · tiết / tuần`}</p>
+                        </div>
+                        <Link to="/workload" className="btn small">
+                            Xem chi tiết <Icon name="arrow" />
+                        </Link>
+                    </div>
+                    <div className={styles.panelBody}>
+                        <WorkloadChart
+                            teachers={dashboard.teachers}
+                            onSelectTeacher={(teacher, trigger) => {
+                                drawerTriggerRef.current = trigger;
+                                setSelectedTeacherId(teacher.id);
+                            }}
+                        />
+                    </div>
+                </section>
+
+                <CoveragePanel
+                    phase={dashboard.phase}
+                    summary={dashboard.summary}
+                />
+            </div>
+
+            <div className={styles.dashboardLower}>
+                <ActionIssuesPanel summary={dashboard.summary} />
+                <RecentActivityPanel items={dashboard.recent_activity} />
+            </div>
+
+            <TeacherDrawer
+                teacher={selectedTeacher}
+                returnFocusRef={drawerTriggerRef}
+                onClose={() => setSelectedTeacherId(null)}
+                onInspectAssignment={(assignmentId) => {
+                    setSelectedTeacherId(null);
+                    void navigate(`/assignment?demand=${assignmentId}`);
+                }}
+            />
+
+            <Dialog
+                open={modalConfig !== null}
+                onOpenChange={(open) => {
+                    if (!open) setModalKind(null);
+                }}
+                title={modalConfig?.title ?? ''}
+                description={modalConfig?.description}
+            >
+                <p className={styles.noticeText}>{modalConfig?.body}</p>
+                <div className={styles.noticeActions}>
+                    <button
+                        type="button"
+                        className="btn"
+                        onClick={() => setModalKind(null)}
+                    >
+                        Đóng
+                    </button>
+                    {modalConfig ? (
+                        <Link
+                            to={modalConfig.ctaTo}
+                            className="btn primary"
+                            onClick={() => setModalKind(null)}
+                        >
+                            {modalConfig.ctaLabel}
+                        </Link>
+                    ) : null}
                 </div>
-                <div className={styles.steps}>
-                    {steps.map((step) => (
-                        <article key={step.number} className={styles.step}>
-                            <span className={styles.stepNumber}>
-                                {step.number}
-                            </span>
-                            <h3>{step.title}</h3>
-                            <p>{step.text}</p>
-                        </article>
-                    ))}
-                </div>
-            </section>
-            <aside className={styles.notice}>
-                <span aria-hidden="true">i</span>
-                <div>
-                    <strong>Không gian đang được xây dựng</strong>
-                    <p>
-                        Các màn hình nghiệp vụ và đăng nhập đang được phát
-                        triển. Chưa có dữ liệu nhà trường được hiển thị tại đây.
-                    </p>
-                </div>
-            </aside>
-        </>
+            </Dialog>
+        </div>
     );
 }
