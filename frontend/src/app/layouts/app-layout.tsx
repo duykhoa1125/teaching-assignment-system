@@ -7,14 +7,21 @@ import {
 } from 'react';
 import { flushSync } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Icon } from '@/shared/ui/icon';
+import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import { useToast } from '@/shared/ui/toast-context';
-import { readWorkspacePreview } from '@/features/workspace/api';
-import { navigation, pageTitle } from './navigation';
+import { useTeacherPersonalQuery } from '@/features/session/queries';
+import { PillBadge, RoleStateCard } from '@/features/session/role-ui';
+import {
+    accountPortraitSpec,
+    resolveGuardedPageTitle,
+    roleDefinitions,
+    roleSearchDestinations,
+} from '@/features/session/roles';
+import { useSession } from '@/features/session/use-session';
+import type { AuthRole } from '@/features/session/types';
 import { ShellModal } from './shell-modal';
 import { ShellSearch } from './shell-search';
-import managerPortrait from '@/assets/demo/manager.svg';
 import './shell-interactions.css';
 
 type QuickState = {
@@ -25,33 +32,48 @@ type QuickState = {
 export function AppLayout() {
     const navigate = useNavigate();
     const { pathname } = useLocation();
-    const client = useQueryClient();
     const notify = useToast();
-    const preview = useQuery({
-        queryKey: ['mock-layout'],
-        queryFn: ({ signal }) => readWorkspacePreview(signal),
-        enabled: import.meta.env.VITE_DATA_SOURCE === 'mock',
-        retry: false,
-    });
-    const [contextId, setContextId] = useState('hk1');
-    const context = preview.data?.contexts.find(
-        (item) => item.id === contextId,
-    );
-    const account = preview.data?.account;
+    const {
+        isMockMode,
+        account,
+        role,
+        contexts,
+        contextId,
+        activeContext: context,
+        isAuthenticated,
+        logout,
+        switchRole,
+        switchContext,
+        triggerForbidden,
+        modal,
+        setModal,
+    } = useSession();
+
     const [mobileOpen, setMobileOpen] = useState(false);
     const [quick, setQuick] = useState<QuickState | null>(null);
-    const [modal, setModal] = useState<
-        'profile' | 'session' | 'search' | 'notifications' | null
-    >(null);
     const menuRef = useRef<HTMLButtonElement>(null);
     const workspaceRef = useRef<HTMLButtonElement>(null);
     const searchRef = useRef<HTMLButtonElement>(null);
     const quickRef = useRef<HTMLDivElement>(null);
     const transitionRunning = useRef(false);
+
+    const teacherNotificationsQuery = useTeacherPersonalQuery(
+        contextId,
+        account?.teacherId,
+        isMockMode && role === 'teacher' && modal === 'notifications',
+    );
+
+    const roleDef = roleDefinitions[role];
+    const hasSchoolScope = !isMockMode || Boolean(account?.school);
     const progress = context?.total
         ? Math.round((context.assigned / context.total) * 100)
         : 0;
     const unassigned = context ? context.total - context.assigned : 0;
+    const portraitSpec = accountPortraitSpec(account);
+    const hasMultiRole = Boolean(account && account.roles.length > 1);
+    const roleListLabel = account
+        ? account.roles.map((item) => roleDefinitions[item].label).join(', ')
+        : roleDef.label;
 
     function closeMobile() {
         setMobileOpen(false);
@@ -174,7 +196,7 @@ export function AppLayout() {
             removeEventListener('keydown', onKey);
             removeEventListener('resize', onResize);
         };
-    }, [mobileOpen, quick, modal]);
+    }, [mobileOpen, quick, modal, setModal]);
 
     return (
         <div className={`tass-shell${mobileOpen ? ' mobile-nav-open' : ''}`}>
@@ -203,26 +225,35 @@ export function AppLayout() {
                     type="button"
                     aria-label="Chọn học kỳ và đợt phân công"
                     aria-haspopup="dialog"
-                    disabled={!context}
+                    disabled={
+                        contexts.length === 0 ||
+                        (isMockMode && Boolean(account && !account.school))
+                    }
                     onClick={(event) => openQuick(event.currentTarget)}
                 >
                     <span className="school-symbol">
                         <Icon name="school" />
                     </span>
                     <span className="grow stack">
-                        <strong>{context?.school ?? 'Chưa có đơn vị'}</strong>
+                        <strong>
+                            {isMockMode && account && !account.school
+                                ? 'Chưa có đơn vị'
+                                : (context?.school ?? 'THPT An Hòa')}
+                        </strong>
                         <small>
-                            {context?.label ??
-                                (preview.isFetching
-                                    ? 'Đang tải ngữ cảnh…'
-                                    : 'Chưa chọn học kỳ')}
+                            {isMockMode && account && !account.school
+                                ? 'Liên hệ quản trị viên'
+                                : (context?.label ??
+                                  (isMockMode
+                                      ? 'Đang tải học kỳ…'
+                                      : 'Năm học 2026–2027'))}
                         </small>
                     </span>
                     <Icon name="down" />
                 </button>
-                <div className="nav-label">Không gian điều phối</div>
-                <nav className="nav" aria-label="Các màn hình điều phối">
-                    {navigation.map((item) => (
+                <div className="nav-label">{roleDef.space}</div>
+                <nav className="nav" aria-label={roleDef.space}>
+                    {roleDef.nav.map((item) => (
                         <Fragment key={item.path}>
                             {item.group && (
                                 <div className="mvp-nav-group">
@@ -237,17 +268,25 @@ export function AppLayout() {
                                 aria-current={
                                     pathname === item.path ? 'page' : undefined
                                 }
+                                disabled={
+                                    isMockMode &&
+                                    Boolean(account && !account.school)
+                                }
                                 onClick={() => go(item.path)}
                             >
                                 <Icon name={item.icon} />
                                 <span>{item.label}</span>
-                                {item.count === 'unassigned' &&
+                                {role === 'manager' &&
+                                    hasSchoolScope &&
+                                    item.count === 'unassigned' &&
                                     unassigned > 0 && (
                                         <span className="count">
                                             {unassigned}
                                         </span>
                                     )}
-                                {item.count === 'feedback' &&
+                                {role === 'manager' &&
+                                    hasSchoolScope &&
+                                    item.count === 'feedback' &&
                                     Boolean(context?.feedback) && (
                                         <span className="count">
                                             {context?.feedback}
@@ -258,7 +297,7 @@ export function AppLayout() {
                     ))}
                 </nav>
                 <div className="sidebar-bottom">
-                    {context && context.total > 0 && (
+                    {role === 'manager' && hasSchoolScope && context ? (
                         <div className="semester-box">
                             <div className="between">
                                 <strong>
@@ -277,7 +316,16 @@ export function AppLayout() {
                                 <i style={{ width: `${progress}%` }} />
                             </div>
                         </div>
-                    )}
+                    ) : isMockMode ? (
+                        <div className="role-boundary">
+                            <Icon name="shield" />
+                            <span>
+                                {role === 'teacher'
+                                    ? 'Chỉ dữ liệu cá nhân'
+                                    : 'Phạm vi theo vai trò đang chọn'}
+                            </span>
+                        </div>
+                    ) : null}
                     <button
                         type="button"
                         className="profile account-control"
@@ -286,23 +334,29 @@ export function AppLayout() {
                         title="Hồ sơ, cài đặt và vai trò"
                         onClick={() => {
                             setMobileOpen(false);
+                            if (isMockMode && !isAuthenticated) {
+                                navigate('/login');
+                                return;
+                            }
                             setModal('profile');
                         }}
-                        disabled={!account}
                     >
-                        <span className="avatar portrait c0" aria-hidden="true">
-                            <img
-                                src={managerPortrait}
-                                alt=""
-                                width={80}
-                                height={80}
-                                decoding="async"
-                            />
-                        </span>
+                        <PortraitAvatar
+                            portraitKey={portraitSpec.portraitKey}
+                            colorIndex={portraitSpec.colorIndex}
+                        />
                         <span className="grow stack account-identity">
-                            <strong>{account?.name ?? 'Chưa đăng nhập'}</strong>
+                            <strong>
+                                {isMockMode
+                                    ? (account?.name ?? 'Chưa đăng nhập')
+                                    : 'Nguyễn Minh Khoa'}
+                            </strong>
                             <small>
-                                {account?.role ?? 'Chưa có phiên làm việc'}
+                                {isMockMode
+                                    ? account
+                                        ? roleDef.label
+                                        : 'Mở trang đăng nhập'
+                                    : roleDef.label}
                             </small>
                         </span>
                         <Icon name="down" />
@@ -331,11 +385,18 @@ export function AppLayout() {
                             <Icon name="menu" />
                         </button>
                         <div className="breadcrumb">
-                            <Icon name="assignment" />
+                            <Icon name={roleDef.icon} />
                             <span>/</span>
-                            <span>Không gian điều phối</span>
+                            <span>{roleDef.space}</span>
                             <span>/</span>
-                            <b id="breadcrumb">{pageTitle(pathname)}</b>
+                            <b id="breadcrumb">
+                                {resolveGuardedPageTitle(
+                                    pathname,
+                                    role,
+                                    hasSchoolScope,
+                                    isMockMode,
+                                )}
+                            </b>
                         </div>
                     </div>
                     <div className="top-actions">
@@ -354,6 +415,10 @@ export function AppLayout() {
                             type="button"
                             className="icon-btn"
                             aria-label="Thông báo"
+                            disabled={
+                                isMockMode &&
+                                Boolean(account && !account.school)
+                            }
                             onClick={() => setModal('notifications')}
                         >
                             <Icon name="bell" />
@@ -365,11 +430,15 @@ export function AppLayout() {
                     <footer className="footer role-footer">
                         <span className="flex">
                             <i className="live-dot" />
-                            {account?.role ?? 'Chưa đăng nhập'}
+                            {roleDef.label}
                             <span>·</span>
-                            {context?.school ?? 'Chưa có phạm vi'}
+                            {hasSchoolScope ? 'THPT An Hòa' : 'Chưa có phạm vi'}
                         </span>
-                        <span>Trải nghiệm HTML · Quyền mô phỏng</span>
+                        <span>
+                            {isMockMode
+                                ? 'Trải nghiệm HTML · Quyền mô phỏng'
+                                : 'TASS Studio · Chế độ API'}
+                        </span>
                     </footer>
                 </main>
             </div>
@@ -410,21 +479,15 @@ export function AppLayout() {
                     </div>
                     <div className="quick-body">
                         <>
-                            {preview.data?.contexts.map((item) => (
+                            {contexts.map((item) => (
                                 <button
                                     type="button"
                                     key={item.id}
                                     className={`context-option${item.id === contextId ? ' active' : ''}`}
                                     onClick={() => {
-                                        void client.cancelQueries();
-                                        client.removeQueries({
-                                            predicate: (query) =>
-                                                query.queryKey[0] !==
-                                                'mock-layout',
-                                        });
-                                        setContextId(item.id);
                                         setQuick(null);
                                         setMobileOpen(false);
+                                        void switchContext(item.id);
                                     }}
                                 >
                                     <span className="school-symbol">
@@ -464,78 +527,136 @@ export function AppLayout() {
                 open={modal === 'search'}
                 onClose={() => setModal(null)}
                 title="Tìm trong không gian của bạn."
-                subtitle={account?.role}
+                subtitle={roleDef.label}
             >
-                {modal === 'search' && <ShellSearch onNavigate={go} />}
+                {modal === 'search' && (
+                    <ShellSearch
+                        onNavigate={go}
+                        destinations={roleSearchDestinations(
+                            role,
+                            hasSchoolScope,
+                        )}
+                    />
+                )}
             </ShellModal>
             <ShellModal
                 open={modal === 'notifications'}
                 onClose={() => setModal(null)}
-                title="Điều cần bạn lưu tâm"
-                subtitle="Phương án đang làm việc"
+                title={
+                    role === 'teacher'
+                        ? 'Cập nhật dành cho bạn'
+                        : role === 'admin'
+                          ? 'Thông tin quản trị'
+                          : 'Điều cần bạn lưu tâm'
+                }
+                subtitle={
+                    role === 'teacher'
+                        ? (context?.label ?? 'Học kỳ hiện tại')
+                        : role === 'admin'
+                          ? 'THPT An Hòa'
+                          : 'Phương án đang làm việc'
+                }
             >
-                <div className="modal-body">
-                    <div className="issue">
-                        <span className="issue-symbol">
-                            <Icon name="assignment" />
-                        </span>
-                        <div className="grow">
-                            <strong>{unassigned} nhu cầu chưa phân công</strong>
-                            <p>Rà soát trong bảng phân công.</p>
+                {role === 'teacher' ? (
+                    <>
+                        <div className="modal-body">
+                            <RoleStateCard
+                                kind="success"
+                                title={`${teacherNotificationsQuery.data?.resolved_feedback_count ?? 0} phản hồi đã có kết quả`}
+                                detail="Chỉ hiển thị thông tin thuộc hồ sơ của bạn."
+                            />
                         </div>
-                        <button
-                            className="icon-btn"
-                            type="button"
-                            aria-label={`${unassigned} nhu cầu chưa phân công`}
-                            onClick={() => go('/assignment')}
-                        >
-                            <Icon name="chevron" />
-                        </button>
-                    </div>
-                    <div className="issue">
-                        <span className="issue-symbol">
-                            <Icon name="feedback" />
-                        </span>
-                        <div className="grow">
-                            <strong>
-                                {context?.feedback ?? 0} phản hồi chờ xử lý
-                            </strong>
-                            <p>Ghi nhận kết quả từng ý kiến.</p>
+                        <div className="modal-footer">
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={() => go('/teacher/feedback')}
+                            >
+                                Xem phản hồi của tôi
+                            </button>
                         </div>
-                        <button
-                            className="icon-btn"
-                            type="button"
-                            aria-label={`${context?.feedback ?? 0} phản hồi chờ xử lý`}
-                            onClick={() => go('/feedback')}
-                        >
-                            <Icon name="chevron" />
-                        </button>
+                    </>
+                ) : role === 'admin' ? (
+                    <>
+                        <div className="modal-body">
+                            <RoleStateCard
+                                kind="empty"
+                                title="Không có thông báo quản trị mới"
+                                detail="Bạn có thể kiểm tra trạng thái tài khoản trong không gian quản trị."
+                            />
+                        </div>
+                        <div className="modal-footer">
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={() => go('/admin/accounts')}
+                            >
+                                Xem tài khoản
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="modal-body">
+                        <div className="issue">
+                            <span className="issue-symbol">
+                                <Icon name="assignment" />
+                            </span>
+                            <div className="grow">
+                                <strong>
+                                    {unassigned} nhu cầu chưa phân công
+                                </strong>
+                                <p>Rà soát trong bảng phân công.</p>
+                            </div>
+                            <button
+                                className="icon-btn"
+                                type="button"
+                                aria-label={`${unassigned} nhu cầu chưa phân công`}
+                                onClick={() => go('/assignment')}
+                            >
+                                <Icon name="chevron" />
+                            </button>
+                        </div>
+                        <div className="issue">
+                            <span className="issue-symbol">
+                                <Icon name="feedback" />
+                            </span>
+                            <div className="grow">
+                                <strong>
+                                    {context?.feedback ?? 0} phản hồi chờ xử lý
+                                </strong>
+                                <p>Ghi nhận kết quả từng ý kiến.</p>
+                            </div>
+                            <button
+                                className="icon-btn"
+                                type="button"
+                                aria-label={`${context?.feedback ?? 0} phản hồi chờ xử lý`}
+                                onClick={() => go('/feedback')}
+                            >
+                                <Icon name="chevron" />
+                            </button>
+                        </div>
                     </div>
-                </div>
+                )}
             </ShellModal>
             <ShellModal
-                open={modal === 'profile' || modal === 'session'}
+                open={modal === 'profile'}
                 onClose={() => setModal(null)}
-                title={
-                    modal === 'session'
-                        ? 'Phiên & quyền'
-                        : (account?.name ?? '')
-                }
-                subtitle={account?.role}
+                title={account?.name ?? 'Nguyễn Minh Khoa'}
+                subtitle={roleDef.label}
             >
                 <div className="modal-body">
                     <div className="account-portrait">
-                        <span className="avatar portrait c0" aria-hidden="true">
-                            <img
-                                src={managerPortrait}
-                                alt=""
-                                width={80}
-                                height={80}
-                            />
-                        </span>
+                        <PortraitAvatar
+                            portraitKey={portraitSpec.portraitKey}
+                            colorIndex={portraitSpec.colorIndex}
+                        />
                         <div>
-                            <h3>{account?.email}</h3>
-                            <p>{context?.school}</p>
+                            <h3>{account?.login ?? 'Chế độ API'}</h3>
+                            <p>
+                                {hasSchoolScope
+                                    ? 'THPT An Hòa'
+                                    : 'Chưa có phạm vi truy cập'}
+                            </p>
                             <button
                                 className="btn small"
                                 type="button"
@@ -555,51 +676,232 @@ export function AppLayout() {
                     <div className="detail-grid">
                         <div>
                             <small>Vai trò đang dùng</small>
-                            {account?.roleCode}
+                            {roleDef.name}
                         </div>
                         <div>
                             <small>Vai trò được cấp</small>
-                            {account?.role}
+                            {roleListLabel}
                         </div>
                     </div>
-                    {modal === 'session' && (
-                        <p className="shell-preview-note">
-                            Đây là ngữ cảnh xem thử giao diện, chưa phải phiên
-                            xác thực.
-                        </p>
-                    )}
                 </div>
                 <div className="modal-footer">
                     <button
                         className="btn primary"
                         type="button"
-                        onClick={() => {
-                            setModal(null);
-                            go('/settings');
-                        }}
+                        onClick={() => go('/settings')}
                     >
-                        Hồ sơ & cài đặt
+                        Hồ sơ &amp; cài đặt
                     </button>
                     <button
                         className="btn"
                         type="button"
                         onClick={() => setModal('session')}
                     >
-                        Phiên & quyền
+                        Phiên &amp; quyền
                     </button>
+                    {hasMultiRole ? (
+                        <button
+                            className="btn"
+                            type="button"
+                            onClick={() => setModal('switcher')}
+                        >
+                            Chuyển vai trò
+                        </button>
+                    ) : null}
+                    {isMockMode ? (
+                        <button
+                            className="btn danger"
+                            type="button"
+                            onClick={() => void logout('logout')}
+                        >
+                            Đăng xuất
+                        </button>
+                    ) : null}
+                </div>
+            </ShellModal>
+            <ShellModal
+                open={modal === 'session'}
+                onClose={() => setModal(null)}
+                title="Phiên làm việc & quyền truy cập"
+                subtitle={account?.login ?? 'Chế độ API'}
+            >
+                <div className="modal-body">
+                    <div className="detail-grid">
+                        <div>
+                            <small>Tài khoản</small>
+                            {account?.name ?? 'Nguyễn Minh Khoa'}
+                        </div>
+                        <div>
+                            <small>Vai trò đang dùng</small>
+                            {roleDef.label}
+                        </div>
+                        <div>
+                            <small>Phạm vi</small>
+                            {hasSchoolScope ? 'THPT An Hòa' : 'Chưa được gán'}
+                        </div>
+                        <div>
+                            <small>Không hoạt động tối đa</small>
+                            30 phút
+                        </div>
+                    </div>
+                    <p className="modal-note">
+                        Đăng xuất sẽ kết thúc phiên ở tab này. Các thay đổi đã
+                        lưu trong bản demo được giữ nguyên.
+                    </p>
+                    {isMockMode ? (
+                        <div className="session-simulation">
+                            <span>Trải nghiệm trạng thái phiên</span>
+                            <button
+                                type="button"
+                                className="btn small"
+                                onClick={() => void logout('expired')}
+                            >
+                                <Icon name="clock" />
+                                Giả lập hết phiên
+                            </button>
+                            <button
+                                type="button"
+                                className="btn small"
+                                onClick={() =>
+                                    triggerForbidden({
+                                        title:
+                                            role === 'manager'
+                                                ? 'Tài khoản & vai trò'
+                                                : 'Phân công toàn trường',
+                                        requestedRole:
+                                            role === 'manager'
+                                                ? 'admin'
+                                                : 'manager',
+                                        targetPath:
+                                            role === 'manager'
+                                                ? '/admin/accounts'
+                                                : '/assignment',
+                                    })
+                                }
+                            >
+                                <Icon name="shield" />
+                                Thử màn hình ngoài quyền
+                            </button>
+                        </div>
+                    ) : null}
+                </div>
+                <div className="modal-footer">
                     <button
-                        className="btn danger"
+                        className="btn"
                         type="button"
-                        onClick={() => {
-                            setModal(null);
-                            notify({
-                                title: 'Đã đóng thông tin tài khoản mẫu',
-                                description:
-                                    'Chưa có phiên đăng nhập cần kết thúc.',
-                            });
-                        }}
+                        onClick={() => setModal(null)}
                     >
-                        Đăng xuất
+                        Đóng
+                    </button>
+                    {isMockMode ? (
+                        <button
+                            className="btn danger"
+                            type="button"
+                            onClick={() => void logout('logout')}
+                        >
+                            Đăng xuất
+                        </button>
+                    ) : null}
+                </div>
+            </ShellModal>
+            <ShellModal
+                open={modal === 'permissions'}
+                onClose={() => setModal(null)}
+                title="Quyền trong không gian hiện tại"
+                subtitle={roleDef.name}
+            >
+                <div className="modal-body">
+                    <div className="scope-account">
+                        <PortraitAvatar
+                            portraitKey={portraitSpec.portraitKey}
+                            colorIndex={portraitSpec.colorIndex}
+                        />
+                        <div>
+                            <strong>
+                                {account?.name ?? 'Nguyễn Minh Khoa'}
+                            </strong>
+                            <p>
+                                {hasSchoolScope
+                                    ? 'THPT An Hòa'
+                                    : 'Chưa được cấp đơn vị'}
+                            </p>
+                        </div>
+                    </div>
+                    <div className="permission-list">
+                        {roleDef.nav.map((item) => (
+                            <div key={item.path}>
+                                <Icon name={item.icon} />
+                                <span>{item.label}</span>
+                                <PillBadge
+                                    label={
+                                        hasSchoolScope
+                                            ? 'Được truy cập'
+                                            : 'Chưa có phạm vi'
+                                    }
+                                    tone={hasSchoolScope ? '' : 'amber'}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                    <p className="modal-note">
+                        Chế độ HTML đang mô phỏng quyền giao diện. Xác thực và
+                        bảo vệ dữ liệu thực sẽ được thực hiện tại máy chủ khi
+                        tích hợp.
+                    </p>
+                </div>
+                <div className="modal-footer">
+                    <button
+                        className="btn primary"
+                        type="button"
+                        onClick={() => setModal(null)}
+                    >
+                        Đã hiểu
+                    </button>
+                </div>
+            </ShellModal>
+            <ShellModal
+                open={modal === 'switcher'}
+                onClose={() => setModal(null)}
+                title="Chọn không gian làm việc"
+                subtitle={`Các vai trò được cấp cho ${account?.name ?? ''}`}
+            >
+                <div className="modal-body">
+                    <div className="auth-role-choices">
+                        {(account?.roles ?? []).map((roleKey: AuthRole) => {
+                            const r = roleDefinitions[roleKey];
+                            return (
+                                <button
+                                    key={roleKey}
+                                    type="button"
+                                    onClick={() => void switchRole(roleKey)}
+                                >
+                                    <span className="auth-role-symbol">
+                                        <Icon name={r.icon} />
+                                    </span>
+                                    <span className="grow">
+                                        <strong>{r.label}</strong>
+                                        <p>{r.description}</p>
+                                    </span>
+                                    {role === roleKey ? (
+                                        <PillBadge
+                                            label="Đang dùng"
+                                            tone="gray"
+                                        />
+                                    ) : (
+                                        <Icon name="arrow" />
+                                    )}
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+                <div className="modal-footer">
+                    <button
+                        className="btn"
+                        type="button"
+                        onClick={() => setModal(null)}
+                    >
+                        Đóng
                     </button>
                 </div>
             </ShellModal>

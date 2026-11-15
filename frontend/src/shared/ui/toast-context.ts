@@ -4,6 +4,7 @@ export type ToastMessage = {
     title: string;
     description?: string;
     tone?: 'success' | 'error' | 'info';
+    durationMs?: number | null;
 };
 export const ToastContext = createContext<
     ((message: ToastMessage) => void) | null

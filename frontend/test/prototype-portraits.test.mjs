@@ -50,6 +50,26 @@ test('extracted teacher portraits match prototype/index.html byte-for-byte', () 
     );
 });
 
+test('extracted auth illustration matches prototype/index.html byte-for-byte', () => {
+    const html = readFileSync(prototypePath, 'utf8');
+    const match = html.match(
+        /^const loginIllustration="data:image\/png;base64,([A-Za-z0-9+/=]+)";$/m,
+    );
+    assert.ok(
+        match?.[1],
+        'Expected loginIllustration PNG inside frontend/prototype/index.html',
+    );
+    const expectedPng = Buffer.from(match[1], 'base64');
+    const filePath = resolve(assetsDir, 'auth-illustration.png');
+    assert.ok(existsSync(filePath), `Missing ${filePath}`);
+    const actualPng = readFileSync(filePath);
+    assert.equal(
+        createHash('sha256').update(actualPng).digest('hex'),
+        createHash('sha256').update(expectedPng).digest('hex'),
+        'auth-illustration.png SHA-256 mismatch',
+    );
+});
+
 test('overview UI components never import src/mocks or lucide-react', () => {
     const files = [
         'src/pages/overview/overview-page.tsx',

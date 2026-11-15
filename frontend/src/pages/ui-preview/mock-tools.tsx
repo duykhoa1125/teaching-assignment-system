@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { RotateCcw } from 'lucide-react';
+import { resetMockClientSession } from '@/features/session/storage';
 import { mockStore } from '@/mocks/store';
 import { isMockScenario, scenarios } from '@/mocks/scenarios';
 import { teachersApi } from '@/features/teachers/api';
@@ -26,8 +27,10 @@ export function MockTools() {
         setBusy(true);
         try {
             await client.cancelQueries();
-            if (reset) mockStore.reset();
-            else mockStore.setScenario(value);
+            if (reset) {
+                mockStore.reset();
+                resetMockClientSession();
+            } else mockStore.setScenario(value);
             setScenario(mockStore.scenario);
             await client.resetQueries();
             if (reset)

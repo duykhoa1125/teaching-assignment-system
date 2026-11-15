@@ -80,7 +80,7 @@ export function OverviewPage() {
     const outletContext = useOutletContext<OutletWorkspaceContext>();
     const contextId = outletContext?.id ?? 'hk1';
     const roundLabel = outletContext?.round ?? 'PC-01';
-    const contextTitle = outletContext?.label ?? 'Học kỳ I';
+    const contextTitle = outletContext?.label?.split(' · ')[0] ?? 'Học kỳ I';
     const isMockMode = import.meta.env.VITE_DATA_SOURCE === 'mock';
 
     const navigate = useNavigate();

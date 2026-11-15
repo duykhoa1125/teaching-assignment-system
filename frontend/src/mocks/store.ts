@@ -1,4 +1,9 @@
 import { teachers as fixtureTeachers, schools } from './fixtures/index.ts';
+import {
+    DEMO_LOGIN_PASSWORD,
+    demoAccounts as fixtureAccounts,
+    type MockAuthRole,
+} from './fixtures/accounts.ts';
 import { isMockScenario, type MockScenario } from './scenarios/index.ts';
 import type { Teacher, TeacherRequest } from '../features/teachers/types.ts';
 
@@ -83,5 +88,54 @@ export const mockStore = {
                 'Kịch bản mẫu: giáo viên đang được tham chiếu.',
             );
         data = data.filter((teacher) => teacher.id !== id);
+    },
+    listAccounts() {
+        return structuredClone(fixtureAccounts);
+    },
+    findAccount(idOrLogin: string) {
+        const key = idOrLogin.trim().toLowerCase();
+        const found = fixtureAccounts.find(
+            (account) => account.id === key || account.login === key,
+        );
+        return found ? structuredClone(found) : null;
+    },
+    authenticate(login: string, password: string) {
+        const normalized = login.trim().toLowerCase();
+        if (!normalized || !password) {
+            throw new MockError(
+                400,
+                'INVALID_REQUEST',
+                'Nhập tài khoản và mật khẩu demo để tiếp tục.',
+            );
+        }
+        const account = fixtureAccounts.find(
+            (item) => item.login === normalized,
+        );
+        if (!account || password !== DEMO_LOGIN_PASSWORD) {
+            throw new MockError(
+                401,
+                'INVALID_CREDENTIALS',
+                'Thông tin đăng nhập không hợp lệ.',
+            );
+        }
+        return structuredClone(account);
+    },
+    authorizeRole(accountId: string, role: MockAuthRole) {
+        const account = fixtureAccounts.find((item) => item.id === accountId);
+        if (!account || account.status !== 'active') {
+            throw new MockError(
+                401,
+                'AUTHENTICATION_REQUIRED',
+                'Phiên đăng nhập không hợp lệ hoặc tài khoản đang tạm khóa.',
+            );
+        }
+        if (!account.roles.includes(role)) {
+            throw new MockError(
+                403,
+                'ROLE_FORBIDDEN',
+                'Vai trò được yêu cầu chưa được cấp cho tài khoản này.',
+            );
+        }
+        return structuredClone(account);
     },
 };

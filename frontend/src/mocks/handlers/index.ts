@@ -1,8 +1,12 @@
 import { delay } from 'msw';
 import { http, HttpResponse, type HttpResponseResolver } from 'msw/http';
 import { schools } from '../fixtures/index.ts';
+import { type MockAuthRole } from '../fixtures/accounts.ts';
 import { layoutPreview } from '../fixtures/layout.ts';
-import { readOverviewFixture } from '../fixtures/overview.ts';
+import {
+    overviewByContext,
+    readOverviewFixture,
+} from '../fixtures/overview.ts';
 import { scenarios } from '../scenarios/index.ts';
 import { mockStore, MockError } from '../store.ts';
 import type { TeacherRequest } from '../../features/teachers/types.ts';
@@ -70,16 +74,20 @@ function paginate<Row>(rows: Row[], url: URL) {
         ? []
         : rows.slice(offset, offset + limit);
 }
-async function teacherBody(request: Request): Promise<TeacherRequest> {
+async function jsonObjectBody(request: Request) {
     let body: unknown;
     try {
         body = await request.json();
     } catch {
         throw new MockError(400, 'INVALID_REQUEST', 'JSON không hợp lệ.');
     }
-    if (!body || typeof body !== 'object' || Array.isArray(body))
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
         throw new MockError(400, 'INVALID_REQUEST', 'Body phải là một object.');
-    const value = body as Record<string, unknown>;
+    }
+    return body as Record<string, unknown>;
+}
+async function teacherBody(request: Request): Promise<TeacherRequest> {
+    const value = await jsonObjectBody(request);
     if (
         Object.keys(value).some(
             (key) => !['school_id', 'teacher_code', 'full_name'].includes(key),
@@ -103,6 +111,51 @@ async function teacherBody(request: Request): Promise<TeacherRequest> {
         school_id: Number(value.school_id),
         teacher_code: value.teacher_code,
         full_name: value.full_name,
+    };
+}
+function isRole(value: unknown): value is MockAuthRole {
+    return value === 'admin' || value === 'manager' || value === 'teacher';
+}
+function buildAdminOverview(contextId: string) {
+    const overview = overviewByContext[contextId];
+    if (!overview) {
+        throw new MockError(
+            400,
+            'INVALID_QUERY',
+            'Không tìm thấy không gian học kỳ được yêu cầu.',
+        );
+    }
+    const accounts = mockStore.listAccounts();
+    const lockedCount = accounts.filter((a) => a.status === 'locked').length;
+    const roleCounts: Record<MockAuthRole, number> = {
+        admin: accounts.filter((a) => a.roles.includes('admin')).length,
+        manager: accounts.filter((a) => a.roles.includes('manager')).length,
+        teacher: accounts.filter((a) => a.roles.includes('teacher')).length,
+    };
+    const isThcs = contextId === 'thcs-demo';
+    return {
+        context_id: overview.context_id,
+        context_title: overview.context_title,
+        round: overview.round,
+        academic_year: overview.academic_year,
+        phase: overview.phase,
+        plan_version: overview.plan_version,
+        accounts,
+        stats: {
+            accounts_total: accounts.length,
+            accounts_active: accounts.length - lockedCount,
+            accounts_locked: lockedCount,
+            teachers_count:
+                mockStore.scenario === 'empty'
+                    ? 0
+                    : overview.summary.teachers_count,
+            subjects_count: isThcs ? 3 : 9,
+            departments_count: isThcs ? 3 : 5,
+            classes_count: isThcs ? 2 : 7,
+            periods_count: layoutPreview.contexts.length,
+        },
+        role_counts: roleCounts,
+        recent_audit: [],
     };
 }
 
@@ -138,6 +191,136 @@ export const handlers = [
     http.get(
         '*/api/mock/layout',
         guarded(() => HttpResponse.json(structuredClone(layoutPreview))),
+    ),
+    http.post(
+        '*/api/mock/auth/login',
+        guarded(async ({ request }) => {
+            const body = await jsonObjectBody(request);
+            const login = typeof body.login === 'string' ? body.login : '';
+            const password =
+                typeof body.password === 'string' ? body.password : '';
+            const account = mockStore.authenticate(login, password);
+            if (account.status === 'locked') {
+                return HttpResponse.json({ status: 'locked', account });
+            }
+            if (account.roles.length > 1) {
+                return HttpResponse.json({ status: 'choose_role', account });
+            }
+            return HttpResponse.json({
+                status: 'authenticated',
+                account,
+                session: {
+                    accountId: account.id,
+                    role: account.roles[0],
+                    lastActivity: Date.now(),
+                },
+            });
+        }),
+    ),
+    http.post(
+        '*/api/mock/auth/select-role',
+        guarded(async ({ request }) => {
+            const body = await jsonObjectBody(request);
+            const accountId =
+                typeof body.accountId === 'string' ? body.accountId : '';
+            const role = body.role;
+            if (!accountId || !isRole(role)) {
+                throw new MockError(
+                    400,
+                    'INVALID_REQUEST',
+                    'Cần accountId và role hợp lệ.',
+                );
+            }
+            const account = mockStore.authorizeRole(accountId, role);
+            return HttpResponse.json({
+                status: 'authenticated',
+                account,
+                session: {
+                    accountId: account.id,
+                    role,
+                    lastActivity: Date.now(),
+                },
+            });
+        }),
+    ),
+    http.post(
+        '*/api/mock/auth/logout',
+        guarded(() => new HttpResponse(null, { status: 204 })),
+    ),
+    http.get(
+        '*/api/mock/session',
+        guarded(({ request }) => {
+            const url = new URL(request.url);
+            const accountId = url.searchParams.get('account_id') ?? '';
+            const role = url.searchParams.get('role');
+            const contextId = url.searchParams.get('context_id') ?? 'hk1';
+            if (!accountId || !isRole(role)) {
+                throw new MockError(
+                    401,
+                    'AUTHENTICATION_REQUIRED',
+                    'Phiên đăng nhập không hợp lệ.',
+                );
+            }
+            const account = mockStore.authorizeRole(accountId, role);
+            const contextExists = layoutPreview.contexts.some(
+                (item) => item.id === contextId,
+            );
+            if (!contextExists) {
+                throw new MockError(
+                    400,
+                    'INVALID_QUERY',
+                    'Không tìm thấy không gian học kỳ được yêu cầu.',
+                );
+            }
+            return HttpResponse.json({
+                account,
+                role,
+                contexts: structuredClone(layoutPreview.contexts),
+            });
+        }),
+    ),
+    http.get(
+        '*/api/mock/admin/overview',
+        guarded(({ request }) => {
+            const url = new URL(request.url);
+            const contextId = url.searchParams.get('context_id') || 'hk1';
+            return HttpResponse.json(buildAdminOverview(contextId));
+        }),
+    ),
+    http.get(
+        '*/api/mock/teacher/overview',
+        guarded(({ request }) => {
+            const url = new URL(request.url);
+            const contextId = url.searchParams.get('context_id') || 'hk1';
+            const teacherId = positive(
+                url.searchParams.get('teacher_id') ?? undefined,
+                'teacher_id',
+            );
+            const overview = readOverviewFixture(
+                contextId,
+                mockStore.scenario === 'empty',
+            );
+            if (!overview) {
+                throw new MockError(
+                    400,
+                    'INVALID_QUERY',
+                    'Không tìm thấy không gian học kỳ được yêu cầu.',
+                );
+            }
+            const teacherLoad =
+                overview.teachers.find((item) => item.id === teacherId) ?? null;
+            return HttpResponse.json({
+                context_id: overview.context_id,
+                context_title: overview.context_title,
+                round: overview.round,
+                academic_year: overview.academic_year,
+                phase: overview.phase,
+                feedback_due_at: overview.feedback_due_at,
+                teacher: teacherLoad,
+                feedback_items: [],
+                resolved_feedback_count: 0,
+            });
+        }),
     ),
     http.get(
         '*/api/mock/overview',

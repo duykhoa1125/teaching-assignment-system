@@ -2,15 +2,17 @@ import { useId, useState } from 'react';
 import { Icon } from '@/shared/ui/icon';
 import { navigation, type NavigationItem } from './navigation';
 
-const destinations: NavigationItem[] = [
+const defaultDestinations: NavigationItem[] = [
     ...navigation,
     { path: '/settings', label: 'Cài đặt cá nhân', icon: 'settings' },
 ];
 
 export function ShellSearch({
     onNavigate,
+    destinations = defaultDestinations,
 }: {
     onNavigate: (path: string) => void;
+    destinations?: NavigationItem[];
 }) {
     const [query, setQuery] = useState('');
     const [active, setActive] = useState(0);
