@@ -13,5 +13,5 @@ export const teachersApi = {
     remove: (id: number) =>
         apiRequest<void>(`/teachers/${id}`, { method: 'DELETE' }),
     schools: (signal?: AbortSignal) =>
-        apiRequest<School[]>('/schools', { signal }),
+        apiRequest<School[]>('/schools', { query: { limit: 100 }, signal }),
 };
