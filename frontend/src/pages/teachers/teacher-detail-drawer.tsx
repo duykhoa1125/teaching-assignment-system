@@ -126,7 +126,9 @@ export function TeacherDetailDrawer({
                             className={`${styles.stateCard} ${styles.stateLoading}`}
                             role="status"
                         >
-                            <span className={styles.stateSymbol}>
+                            <span
+                                className={`${styles.stateSymbol} icon-surface`}
+                            >
                                 <Icon name="teachers" />
                             </span>
                             <h3>Đang tải chi tiết giáo viên</h3>

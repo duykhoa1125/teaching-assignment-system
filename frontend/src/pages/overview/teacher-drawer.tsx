@@ -204,7 +204,9 @@ export function TeacherDrawer({
                                 key={item.id}
                                 className={styles.drawerAssignment}
                             >
-                                <span className={styles.schoolSymbol}>
+                                <span
+                                    className={`${styles.schoolSymbol} icon-surface`}
+                                >
                                     {item.class_name}
                                 </span>
                                 <div className={styles.grow}>
@@ -228,7 +230,9 @@ export function TeacherDrawer({
                         ))
                     ) : (
                         <div className={styles.stateCard}>
-                            <span className={styles.stateSymbol}>
+                            <span
+                                className={`${styles.stateSymbol} icon-surface`}
+                            >
                                 <Icon name="assignment" />
                             </span>
                             <h3>Một khoảng trống để bắt đầu</h3>

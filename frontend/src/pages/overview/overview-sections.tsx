@@ -66,7 +66,7 @@ export function CompletionBanner({
     const done = phase === 'EXPORTED';
     return (
         <section className={`${styles.completionCard} completion-card`}>
-            <span className={styles.completionSymbol}>
+            <span className={`${styles.completionSymbol} icon-surface`}>
                 <Icon name={done ? 'check' : 'file'} />
             </span>
             <div className={styles.grow}>
@@ -287,7 +287,7 @@ export function PhaseStrip({
                                 .join(' ')}
                             aria-current={isCurrent ? 'step' : undefined}
                         >
-                            <i>
+                            <i className={isDone ? 'icon-surface' : undefined}>
                                 {isDone ? (
                                     <Icon name="check" />
                                 ) : (
@@ -649,7 +649,9 @@ export function ActionIssuesPanel({
             <div className={styles.panelBody}>
                 {issues.map((item) => (
                     <div key={item.to} className={`${styles.issue} issue`}>
-                        <span className={`${styles.issueSymbol} issue-symbol`}>
+                        <span
+                            className={`${styles.issueSymbol} issue-symbol icon-surface`}
+                        >
                             <Icon name={item.icon} />
                         </span>
                         <div className={styles.grow}>

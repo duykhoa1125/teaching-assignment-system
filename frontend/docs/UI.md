@@ -132,3 +132,9 @@ Kiểm tra tự động dự án bằng typecheck/lint/format/test/build. Kiểm
 ## Sửa lỗi review 16/11/2026
 
 Giữ nguyên bố cục, màu, font, glyph và hiệu ứng. Sửa hành vi: giữ đợt qua URL và liên kết sửa lỗi nguồn; đồng bộ cache sau thay đổi; cổng giáo viên hiển thị đúng dữ liệu đóng băng của bản đang chọn. Tên/mã giáo viên theo danh bạ thay persona portal cũ để thống nhất ID với phân công và phản hồi; giữ nguyên ảnh đại diện. Luồng phát hành nay từ chối đầu vào thiếu, nguồn cũ hoặc PDF sai; không thay thiết kế prototype.
+
+## Quy tắc icon — yêu cầu người dùng 17/11/2026
+
+Icon nghiệp vụ dùng nét và phần tô bên trong SVG như sidebar, không đặt trong ô nền/viền/bóng màu riêng. Đây là ngoại lệ có chủ đích so với demo: trước đây bộ chọn học kỳ, KPI, môn học, thẻ quản trị, lịch sử/tài liệu và trạng thái trống/lỗi có tile bao quanh; nay tile trong suốt, giữ màu và SVG gốc, kích thước, khoảng cách, vùng bấm và chuyển động. Nền của cả dòng được chọn, nút có nhãn, trạng thái, ảnh đại diện và logo giữ nguyên; nút chỉ có icon vẫn có chỉ báo focus bàn phím.
+
+`src/styles/icon-treatment.css` áp dụng chung sau CSS demo; wrapper dùng CSS module thêm lớp `icon-surface`. Icon mới cũng theo quy tắc này. Không sửa prototype hoặc CSS sinh bởi công cụ trích demo.

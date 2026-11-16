@@ -259,7 +259,7 @@ export function TeachersPage() {
                         className={`${styles.stateCard} ${styles.stateLoading}`}
                         role="status"
                     >
-                        <span className={styles.stateSymbol}>
+                        <span className={`${styles.stateSymbol} icon-surface`}>
                             <Icon name="teachers" />
                         </span>
                         <h3>Đang tải danh sách giáo viên</h3>
@@ -275,7 +275,7 @@ export function TeachersPage() {
                         className={`${styles.stateCard} ${styles.stateError}`}
                         role="alert"
                     >
-                        <span className={styles.stateSymbol}>
+                        <span className={`${styles.stateSymbol} icon-surface`}>
                             <Icon name="warning" />
                         </span>
                         <h3>Không thể tải danh sách giáo viên</h3>

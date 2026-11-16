@@ -173,7 +173,7 @@ export function OverviewPage() {
                         className={`${styles.stateCard} ${styles.stateLoading}`}
                         role="status"
                     >
-                        <span className={styles.stateSymbol}>
+                        <span className={`${styles.stateSymbol} icon-surface`}>
                             <Icon name="spark" />
                         </span>
                         <h3>Đang tải dữ liệu tổng quan</h3>
@@ -196,7 +196,7 @@ export function OverviewPage() {
                         className={`${styles.stateCard} ${styles.stateError}`}
                         role="alert"
                     >
-                        <span className={styles.stateSymbol}>
+                        <span className={`${styles.stateSymbol} icon-surface`}>
                             <Icon name="warning" />
                         </span>
                         <h3>Không thể tải dữ liệu tổng quan</h3>
@@ -230,7 +230,7 @@ export function OverviewPage() {
                 {renderPageHeader(false)}
                 <section className={styles.panel}>
                     <div className={styles.stateCard}>
-                        <span className={styles.stateSymbol}>
+                        <span className={`${styles.stateSymbol} icon-surface`}>
                             <Icon name="book" />
                         </span>
                         <h3>Một khoảng trống để bắt đầu</h3>

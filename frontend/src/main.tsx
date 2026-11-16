@@ -4,6 +4,7 @@ import { AppProviders } from '@/app/providers';
 import { AppRouter } from '@/app/router';
 import '@/styles/global.css';
 import '@/app/layouts/prototype-shell.css';
+import '@/styles/icon-treatment.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Không tìm thấy phần tử gốc của ứng dụng.');

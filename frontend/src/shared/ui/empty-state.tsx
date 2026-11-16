@@ -11,7 +11,7 @@ type EmptyStateProps = {
 export function EmptyState({ title, children, action }: EmptyStateProps) {
     return (
         <section className={styles.panel}>
-            <div className={styles.symbol} aria-hidden="true">
+            <div className={`${styles.symbol} icon-surface`} aria-hidden="true">
                 <Icon glyph={Inbox} size={24} />
             </div>
             <h2>{title}</h2>
