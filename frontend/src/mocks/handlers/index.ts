@@ -2,6 +2,7 @@ import { delay } from 'msw';
 import { http, HttpResponse, type HttpResponseResolver } from 'msw/http';
 import { schools } from '../fixtures/index.ts';
 import { type MockAuthRole } from '../fixtures/accounts.ts';
+import { readPlanLayout, readPlanOverview } from '../assignment-preview.ts';
 import { layoutPreview } from '../fixtures/layout.ts';
 import {
     overviewByContext,
@@ -190,7 +191,7 @@ const guarded =
 export const handlers = [
     http.get(
         '*/api/mock/layout',
-        guarded(() => HttpResponse.json(structuredClone(layoutPreview))),
+        guarded(() => HttpResponse.json(readPlanLayout())),
     ),
     http.post(
         '*/api/mock/auth/login',
@@ -275,7 +276,7 @@ export const handlers = [
             return HttpResponse.json({
                 account,
                 role,
-                contexts: structuredClone(layoutPreview.contexts),
+                contexts: readPlanLayout().contexts,
             });
         }),
     ),
@@ -327,9 +328,8 @@ export const handlers = [
         guarded(({ request }) => {
             const url = new URL(request.url);
             const contextId = url.searchParams.get('context_id') || 'hk1';
-            const payload = readOverviewFixture(
-                contextId,
-                mockStore.scenario === 'empty',
+            const payload = readPlanOverview(
+                readOverviewFixture(contextId, mockStore.scenario === 'empty'),
             );
             if (!payload) {
                 return errorResponse(

@@ -224,6 +224,22 @@ function paginate<Row extends { id: number }>(
 }
 
 export const preparationStore = {
+    touchRoundSource(id: number) {
+        this.detailRound(id);
+        bumpRoundRevision(id);
+    },
+    touchSchoolSource(schoolId?: number) {
+        for (const round of state.rounds) {
+            const semester = state.semesters.find(
+                (item) => item.id === round.semester_id,
+            );
+            const year = state.academicYears.find(
+                (item) => item.id === semester?.academic_year_id,
+            );
+            if (schoolId === undefined || year?.school_id === schoolId)
+                bumpRoundRevision(round.id);
+        }
+    },
     reset() {
         state = createInitialState();
     },
@@ -305,6 +321,7 @@ export const preparationStore = {
             state.academicYears = state.academicYears.map((y) =>
                 y.id === id ? record : y,
             );
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeAcademicYear(id: number, scenario: MockScenario) {
@@ -410,6 +427,7 @@ export const preparationStore = {
             state.semesters = state.semesters.map((s) =>
                 s.id === id ? record : s,
             );
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeSemester(id: number, scenario: MockScenario) {
@@ -467,6 +485,7 @@ export const preparationStore = {
             state.educationLevels = state.educationLevels.map((l) =>
                 l.id === id ? record : l,
             );
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeEducationLevel(id: number, scenario: MockScenario) {
@@ -535,6 +554,7 @@ export const preparationStore = {
         const record: Grade = { id: id ?? state.nextIds.grade++, ...input };
         if (id === undefined) state.grades.push(record);
         else state.grades = state.grades.map((g) => (g.id === id ? record : g));
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeGrade(id: number, scenario: MockScenario) {
@@ -617,6 +637,7 @@ export const preparationStore = {
             state.classes = state.classes.map((c) =>
                 c.id === id ? record : c,
             );
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeClass(id: number, scenario: MockScenario) {
@@ -687,6 +708,7 @@ export const preparationStore = {
             state.subjects = state.subjects.map((s) =>
                 s.id === id ? record : s,
             );
+        this.touchSchoolSource();
         return structuredClone(record);
     },
     removeSubject(id: number, scenario: MockScenario) {

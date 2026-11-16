@@ -25,7 +25,11 @@ import {
     AdminAccountsPage,
     AdminHomePage,
 } from '@/pages/admin/admin-pages';
-import { AssignmentWorkspacePage } from '@/pages/assignment-workspace/assignment-workspace-page';
+const AssignmentWorkspacePage = lazy(() =>
+    import('@/pages/assignment-workspace/assignment-workspace-page').then(
+        (module) => ({ default: module.AssignmentWorkspacePage }),
+    ),
+);
 import { LayoutPlaceholder } from '@/pages/layout-placeholder';
 import { NotFoundPage } from '@/pages/not-found/not-found-page';
 import { OverviewPage } from '@/pages/overview/overview-page';
@@ -36,11 +40,31 @@ import {
     TeacherLoadPage,
 } from '@/pages/teacher/teacher-pages';
 import { TeachersPage } from '@/pages/teachers/teachers-page';
-import { AdminCatalogsPage } from '@/pages/admin/admin-catalogs-page';
-import { AdminPeriodsPage } from '@/pages/admin/admin-periods-page';
-import { ChecksPage } from '@/pages/checks/checks-page';
-import { DemandsPage } from '@/pages/demands/demands-page';
-import { PreparationPage } from '@/pages/preparation/preparation-page';
+const AdminCatalogsPage = lazy(() =>
+    import('@/pages/admin/admin-catalogs-page').then((module) => ({
+        default: module.AdminCatalogsPage,
+    })),
+);
+const AdminPeriodsPage = lazy(() =>
+    import('@/pages/admin/admin-periods-page').then((module) => ({
+        default: module.AdminPeriodsPage,
+    })),
+);
+const ChecksPage = lazy(() =>
+    import('@/pages/checks/checks-page').then((module) => ({
+        default: module.ChecksPage,
+    })),
+);
+const DemandsPage = lazy(() =>
+    import('@/pages/demands/demands-page').then((module) => ({
+        default: module.DemandsPage,
+    })),
+);
+const PreparationPage = lazy(() =>
+    import('@/pages/preparation/preparation-page').then((module) => ({
+        default: module.PreparationPage,
+    })),
+);
 import { LoadingState } from '@/shared/ui/data-state';
 
 const UiPreviewPage =
@@ -136,7 +160,11 @@ function RoleGuardOutlet() {
             />
         );
     }
-    return <Outlet context={context} />;
+    return (
+        <Suspense fallback={<LoadingState />}>
+            <Outlet context={context} />
+        </Suspense>
+    );
 }
 
 function LoginRoute() {

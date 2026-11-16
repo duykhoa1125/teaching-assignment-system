@@ -7,6 +7,7 @@ export function Drawer({
     onOpenChange,
     title,
     subtitle,
+    eyebrow,
     children,
     footer,
 }: {
@@ -14,6 +15,7 @@ export function Drawer({
     onOpenChange: (open: boolean) => void;
     title: string;
     subtitle?: string;
+    eyebrow?: string;
     children: ReactNode;
     footer?: ReactNode;
 }) {
@@ -94,6 +96,9 @@ export function Drawer({
             >
                 <div className="modal-header">
                     <div>
+                        {eyebrow ? (
+                            <div className="eyebrow">{eyebrow}</div>
+                        ) : null}
                         <h2 id={titleId}>{title}</h2>
                         {subtitle ? <p>{subtitle}</p> : null}
                     </div>

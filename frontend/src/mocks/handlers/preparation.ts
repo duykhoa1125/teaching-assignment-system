@@ -21,6 +21,7 @@ import type {
 } from '../../features/preparation/types.ts';
 import { MockError } from '../mock-error.ts';
 import { preparationStore } from '../preparation-store.ts';
+import { assignmentStore } from '../assignment-store.ts';
 import { scenarios, type MockScenario } from '../scenarios/index.ts';
 import { mockStore } from '../store.ts';
 
@@ -939,10 +940,12 @@ export const preparationHandlers = [
                 );
             }
             return HttpResponse.json(
-                preparationStore.evaluateReadiness(
-                    id,
-                    { optimization_config_id, rule_set_version_id },
-                    scenario,
+                assignmentStore.decorateReadiness(
+                    preparationStore.evaluateReadiness(
+                        id,
+                        { optimization_config_id, rule_set_version_id },
+                        scenario,
+                    ),
                 ),
             );
         }),

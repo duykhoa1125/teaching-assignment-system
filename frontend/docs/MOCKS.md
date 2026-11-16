@@ -1,5 +1,17 @@
 # Hạ tầng mock — FE-02B
 
+## Bổ sung FE-06
+
+`assignment-store.ts`, `handlers/assignment.ts`, `fixtures/assignment.ts` mô phỏng hợp đồng trong `backend/docs/{PLAN_API,ASSIGNMENT_MUTATION_API,PLAN_RESULTS_API}.md`: GET/POST plan theo đợt, GET phiên bản/assignments/workloads, POST refresh-snapshot, PATCH assignment, khóa/mở khóa dòng hoặc nhóm. ID assignment là ID plan-demand, khác demand nguồn. Bộ lọc và phân trang giữ total/thứ tự; ma trận đọc hết các trang và từ chối kết quả trộn revision/snapshot.
+
+Snapshot giữ tên lớp/môn/giáo viên, chuyên môn và chính sách tải tại thời điểm chụp. Thay đổi nguồn chuẩn bị/danh mục/giáo viên làm token cũ; refresh kiểm tra mọi dòng khóa trước khi áp dụng, hòa giải dòng thêm/bỏ và trả revision từ server mock. Sửa chỉ áp dụng cho DRAFT hiện hành có nguồn mới; mở khóa vẫn được phép khi nguồn cũ. No-op không tăng revision/ghi audit/đổi metadata khóa. Nhóm thành công tăng revision theo số dòng đổi; lỗi một dòng hủy cả nhóm. Kiểm tra chuyên môn, ngày và trần tải thực hiện trước khi ghi.
+
+`/api/mock/plan-versions/{id}/workspace` bổ sung **chỉ cho mock** danh sách phiên bản/ứng viên/chính sách snapshot, chưa phải endpoint backend. Chính sách trần/định mức là fixture theo bộ quy tắc, không viết cứng trong UI. Tải `T=A+F+C+R`, `W=T-R`; dữ liệu năm chưa có trả INSUFFICIENT_DATA với giá trị thiếu/null, không giả làm kết quả validation thật.
+
+Kịch bản tại `/dev/ui`: `planEmpty`, `planStale`, `planLockConflict`, `planRevisionConflict`, `planReadOnly`. Chọn scenario rồi điều hướng bằng menu để giữ store; reload khôi phục fixture. Revision conflict được tiêm một lần khi ghi để thử tải lại/retry thủ công. Reset và AbortSignal chặn mutation đang chờ. Các tab có store riêng.
+
+Sau khi plan được tải, layout/session và phần độ phủ/tải của tổng quan phản ánh cùng plan qua `assignment-preview.ts`; trước đó vẫn dùng fixture tổng quan cũ. Solver, validation, feedback và auth thật chưa được mô phỏng trong FE-06. Kiểm thử mới ở `test/assignment-feature.test.mjs` dùng cùng MSW handlers, không cần DB.
+
 ## Bổ sung FE-05
 
 `handlers/preparation.ts`, `preparation-store.ts` và `fixtures/preparation.ts` bổ sung CRUD cho danh mục/năm học/học kỳ/đợt, phạm vi khối–môn, áp dụng lớp–môn, thành phần bắt buộc và nhu cầu giảng dạy. Endpoint và kiểu dữ liệu nằm trong `features/catalogs/api.ts`, `features/preparation/api.ts`; UI gọi qua HTTP client/TanStack Query. Các handler hiện được mô phỏng tại trình duyệt, chưa nối backend thật.

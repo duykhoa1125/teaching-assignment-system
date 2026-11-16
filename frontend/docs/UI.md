@@ -1,5 +1,19 @@
 # Nền tảng UI — FE-02A
 
+## FE-06 — Workspace phân công
+
+`/assignment` dùng ma trận, bảng chi tiết, gán nhanh bằng native popover, drawer, tab, thanh chọn nhiều dòng và CSS/SVG/font/animation được trích từ demo. Phím mũi tên/Home/End di chuyển giữa các ô; Enter mở gán nhanh; Escape đóng và trả focus. Có lọc môn, tìm lớp/môn/giáo viên, theo dõi tải giáo viên và chuyển phiên bản. Route lớn được tải riêng để giảm bundle khởi động.
+
+Khác biệt cần thiết theo hợp đồng backend:
+
+- Thêm bộ chọn đợt/phiên bản và nút làm mới snapshot; URL lưu `round_id`, `version_id`, `context_id`. Bản lưu trữ và phiên bản ngoài DRAFT chỉ đọc; nguồn thay đổi chặn sửa/khóa nhưng cho mở khóa DRAFT hiện hành.
+- Lý do bắt buộc cho mọi thay đổi, khóa/mở khóa; bỏ gán gửi `teacher_id: null` cùng mã và diễn giải. Khóa nhóm lớp–môn là một thao tác nguyên tử, giữ giáo viên riêng từng thành phần, gồm cả dòng bị bộ lọc che.
+- Số liệu và số cột theo snapshot từ dữ liệu chuẩn bị (fixture mặc định 9 thành phần/6 giáo viên), không giữ các con số minh họa 36/12 của HTML. Sau khi đọc plan, sidebar và tổng quan lấy độ phủ/tải từ cùng store. Danh sách ứng viên và chính sách hiện là hợp đồng **mock-only**; chưa đại diện API chọn ứng viên thật.
+- Preview tải dùng dữ liệu snapshot; thiếu tải hiển thị chưa đủ dữ liệu. Lưu dùng revision lúc mở form; 409 giữ lỗi và cho tải lại, không tự replay. Xuất PDF/mở lấy ý kiến chưa bật, solver chỉ dẫn tới route chờ của mốc sau.
+- Sửa lỗi thiết kế có sẵn: icon tìm kiếm đè placeholder do cascade input; giới hạn sửa padding trong workspace. Khi lọc còn 1–2 môn, min-width cố định làm cột lớp phình ra và che toàn bộ ô trên mobile; giới hạn cột lớp và tính độ rộng tối thiểu theo số môn trong trường hợp này. Giữ nguyên font, màu và bố cục ma trận đầy đủ.
+
+Đã đối chiếu trình duyệt ở 1280×900 và 390×844: ma trận/bảng, gán nhanh/drawer, impact preview hai giáo viên, lọc, focus/Escape, khóa nhóm, tạo/refresh và xung đột revision. Không tràn ngang trang; bảng rộng cuộn riêng. Phiên QA cuối không có console error/warning; prototype giữ nguyên byte. Cần lặp lại các trạng thái liên quan khi sửa feature.
+
 ## FE-05 — Danh mục, đợt và chuẩn bị dữ liệu
 
 Các trang `/admin/catalogs`, `/admin/periods`, `/preparation`, `/demands`, `/checks` đã có UI và mock. Bảng và hộp thoại dùng `variant="prototype"` để tái sử dụng lớp CSS, font, SVG, kích thước và animation gốc; biến thể mặc định vẫn phục vụ component gallery. Đã bỏ KPI tự thêm ở danh mục/đợt/nhu cầu, khôi phục tiêu đề, bộ lọc loại nhu cầu và số bước trong vòng tròn. Đã gỡ CSS tiêu đề cũ ghi đè font/weight/responsive của demo.

@@ -31,10 +31,14 @@ export function RolePageHeader({
     title,
     description,
     actions,
+    roundLabel,
+    contextLabel,
 }: {
     title: string;
     description: string;
     actions?: ReactNode;
+    roundLabel?: string;
+    contextLabel?: string;
 }) {
     const { isMockMode, account, activeContext } = useSession();
     const round = activeContext?.round ?? 'PC-01';
@@ -45,9 +49,9 @@ export function RolePageHeader({
         <div className="page-heading">
             <div>
                 <div className="eyebrow">
-                    <span className="section-index">{round}</span>
+                    <span className="section-index">{roundLabel ?? round}</span>
                     <span>/</span>
-                    <span>{scopeLabel}</span>
+                    <span>{contextLabel ?? scopeLabel}</span>
                 </div>
                 <h1>{title}</h1>
                 <p className="subtitle">{description}</p>

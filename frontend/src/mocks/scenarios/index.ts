@@ -42,6 +42,11 @@ export const scenarios = {
     readinessReady: { label: 'Readiness · Đủ dữ liệu sẵn sàng' },
     readinessMissing: { label: 'Readiness · Thiếu dữ liệu nhu cầu' },
     readinessBlocked: { label: 'Readiness · Có issue chặn' },
+    planEmpty: { label: 'Plan · Chưa có phương án' },
+    planStale: { label: 'Plan · Snapshot đã cũ' },
+    planLockConflict: { label: 'Plan · Nguồn xung đột khóa' },
+    planRevisionConflict: { label: 'Plan · Phiên khác vừa thay đổi' },
+    planReadOnly: { label: 'Plan · Phiên bản chỉ đọc' },
 } as const;
 export type MockScenario = keyof typeof scenarios;
 export function isMockScenario(value: string): value is MockScenario {

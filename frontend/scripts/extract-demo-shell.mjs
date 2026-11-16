@@ -31,6 +31,14 @@ for (const name of [
     'popover-fallback',
 ])
     names.add(name);
+for (const name of 'toolbar tabs view-switch matrix-table matrix-cell matrix-assignment matrix-name matrix-meta matrix-viewport matrix-controls matrix-focus-label matrix-focus-person matrix-instruction matrix-hint table-bottom row-checkbox assign-cell unassigned locked-icon bulk-bar bulk-count bulk-divider quick-foot quick-preview form-error teacher-highlight teacher-dim impact-preview'.split(
+    ' ',
+))
+    names.add(name);
+for (const name of 'impact-heading impact-person impact-delta positive impact-values impact-remaining impact-track impact-limit impact-warning impact-unchanged choice-blocked blocked-reason'.split(
+    ' ',
+))
+    names.add(name);
 let fontIndex = 0;
 function copyNode(node) {
     if (node.type === 'atrule') {

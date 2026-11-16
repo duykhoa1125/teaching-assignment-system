@@ -1,0 +1,79 @@
+.assignment-context {
+    margin-bottom: 18px;
+}
+.assignment-context label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+}
+.assignment-footer {
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.assignment-footer > span {
+    font-size: 11px;
+}
+.assignment-workspace .page-heading > .mvp-actions {
+    flex-wrap: wrap;
+}
+.assignment-workspace .matrix-focus-summary {
+    min-width: 0;
+    flex: 1;
+}
+.assignment-workspace .field textarea {
+    display: block;
+}
+.tass-shell .assignment-workspace .input-wrap > input {
+    padding-left: 36px;
+}
+.assignment-workspace .matrix-table[data-compact-columns] thead th {
+    width: auto;
+}
+.assignment-workspace .assignment-class-column {
+    width: 112px;
+}
+.assignment-workspace .form-error .btn {
+    margin: 8px 0 0;
+}
+.assignment-workspace .bulk-bar {
+    z-index: 45;
+}
+@media (max-width: 700px) {
+    .assignment-workspace .assignment-class-column {
+        width: 95px;
+    }
+    .assignment-context {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .assignment-context label {
+        display: grid;
+        gap: 5px;
+        min-width: 0;
+    }
+    .assignment-context select {
+        width: 100%;
+        min-width: 0;
+    }
+    .assignment-workspace .banner > .grow {
+        min-width: 0;
+    }
+    .assignment-workspace .toolbar > .flex {
+        width: 100%;
+    }
+    .assignment-workspace .toolbar .input-wrap {
+        flex: 1;
+        min-width: 0;
+    }
+    .assignment-workspace .toolbar input {
+        max-width: 100%;
+    }
+    .assignment-workspace .bulk-bar {
+        max-width: calc(100vw - 24px);
+        flex-wrap: wrap;
+        justify-content: center;
+        bottom: 12px;
+    }
+}

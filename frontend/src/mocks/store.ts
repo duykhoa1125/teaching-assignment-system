@@ -8,6 +8,7 @@ import { isMockScenario, type MockScenario } from './scenarios/index.ts';
 import type { Teacher, TeacherRequest } from '../features/teachers/types.ts';
 import { MockError } from './mock-error.ts';
 import { preparationStore } from './preparation-store.ts';
+import { assignmentStore } from './assignment-store.ts';
 
 export { MockError };
 let data = structuredClone(fixtureTeachers);
@@ -26,12 +27,14 @@ export const mockStore = {
         if (!isMockScenario(value))
             throw new Error(`Scenario không hợp lệ: ${value}`);
         scenario = value;
+        assignmentStore.configureScenario(value);
         generation++;
     },
     reset() {
         data = structuredClone(fixtureTeachers);
         nextId = Math.max(...data.map((teacher) => teacher.id)) + 1;
         preparationStore.reset();
+        assignmentStore.reset();
         scenario = 'normal';
         generation++;
     },
@@ -49,7 +52,7 @@ export const mockStore = {
         return structuredClone(teacher);
     },
     save(input: TeacherRequest, id?: number) {
-        if (id !== undefined) this.detail(id);
+        const previous = id === undefined ? undefined : this.detail(id);
         if (!schools.some((school) => school.id === input.school_id))
             throw new MockError(
                 409,
@@ -72,6 +75,9 @@ export const mockStore = {
         const teacher: Teacher = { id: id ?? nextId++, ...input };
         if (id === undefined) data.push(teacher);
         else data = data.map((item) => (item.id === id ? teacher : item));
+        preparationStore.touchSchoolSource(input.school_id);
+        if (previous && previous.school_id !== input.school_id)
+            preparationStore.touchSchoolSource(previous.school_id);
         return structuredClone(teacher);
     },
     remove(id: number) {
@@ -83,6 +89,7 @@ export const mockStore = {
                 'Kịch bản mẫu: giáo viên đang được tham chiếu.',
             );
         data = data.filter((teacher) => teacher.id !== id);
+        preparationStore.touchSchoolSource();
     },
     listAccounts() {
         return structuredClone(fixtureAccounts);
