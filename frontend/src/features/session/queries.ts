@@ -7,8 +7,11 @@ export const sessionQueryKeys = {
         ['mock-session', accountId, role, contextId] as const,
     adminOverview: (contextId: string) =>
         ['admin-overview', contextId] as const,
-    teacherOverview: (contextId: string, teacherId: number) =>
-        ['teacher-overview', contextId, teacherId] as const,
+    teacherOverview: (
+        contextId: string,
+        teacherId: number,
+        releaseId?: string | null,
+    ) => ['teacher-overview', contextId, teacherId, releaseId ?? null] as const,
 };
 
 export function useMockSessionQuery(
@@ -50,12 +53,21 @@ export function useTeacherPersonalQuery(
     contextId: string,
     teacherId: number | undefined,
     enabled = true,
+    releaseId?: string | null,
 ) {
     return useQuery({
-        queryKey: sessionQueryKeys.teacherOverview(contextId, teacherId ?? 0),
+        queryKey: sessionQueryKeys.teacherOverview(
+            contextId,
+            teacherId ?? 0,
+            releaseId,
+        ),
         queryFn: ({ signal }) =>
             sessionApi.readTeacherOverview(
-                { context_id: contextId, teacher_id: teacherId ?? 0 },
+                {
+                    context_id: contextId,
+                    teacher_id: teacherId ?? 0,
+                    release_id: releaseId || undefined,
+                },
                 signal,
             ),
         enabled: enabled && teacherId !== undefined,

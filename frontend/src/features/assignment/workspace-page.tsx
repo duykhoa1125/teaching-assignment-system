@@ -911,20 +911,41 @@ function Workspace({
                                 <Icon name="check" />
                                 Kiểm tra phương án
                             </Link>
-                            <button
-                                className="btn primary"
-                                disabled
-                                title={
-                                    validationQuery.data?.fresh &&
-                                    validationQuery.data.overall_status !==
-                                        'VIOLATION'
-                                        ? 'Chuyển giai đoạn được nối ở FE-08'
-                                        : 'Hoàn thiện và chạy kiểm tra phương án trước khi mở lấy ý kiến'
-                                }
-                            >
-                                <Icon name="send" />
-                                Mở lấy ý kiến
-                            </button>
+                            {plan?.is_current &&
+                            plan.status === 'DRAFT' &&
+                            validationQuery.data?.fresh &&
+                            validationQuery.data.overall_status !==
+                                'VIOLATION' ? (
+                                <Link to="/feedback" className="btn primary">
+                                    <Icon name="send" />
+                                    Mở lấy ý kiến
+                                </Link>
+                            ) : plan && plan.status !== 'DRAFT' ? (
+                                <Link
+                                    to={
+                                        plan.status === 'READY_TO_EXPORT' ||
+                                        plan.status === 'EXPORTED'
+                                            ? '/documents'
+                                            : '/feedback'
+                                    }
+                                    className="btn"
+                                >
+                                    <Icon name="feedback" />
+                                    {plan.status === 'READY_TO_EXPORT' ||
+                                    plan.status === 'EXPORTED'
+                                        ? 'Mở Tài liệu phát hành'
+                                        : 'Xem phản hồi & giai đoạn'}
+                                </Link>
+                            ) : (
+                                <button
+                                    className="btn primary"
+                                    disabled
+                                    title="Hoàn thiện và chạy kiểm tra phương án trước khi mở lấy ý kiến"
+                                >
+                                    <Icon name="send" />
+                                    Mở lấy ý kiến
+                                </button>
+                            )}
                         </div>
                     </div>
                 </>

@@ -1988,4 +1988,78 @@ export const assignmentStore = {
             .sort((a, b) => b.dto.id - a.dto.id)[0];
         return latest ? clone(latest.dto) : null;
     },
+    setRoundStatus(roundId: number, nextStatus: string): PlanVersion | null {
+        const versionId = current.get(roundId);
+        if (!versionId) return null;
+        const version = requireVersion(versionId);
+        version.meta.status = nextStatus;
+        log(
+            version,
+            'lifecycle',
+            `Chuyển trạng thái phương án sang ${nextStatus}`,
+            [],
+        );
+        saveStorage();
+        return clone(metadata(version));
+    },
+    createNextDraftFromRound(
+        roundId: number,
+        rowsOverride?: Array<{
+            demand_id: number;
+            teacher_id: number | null;
+            teacher_name: string | null;
+            locked: boolean;
+        }>,
+    ): { previous_version_no: number; version: PlanVersion } | null {
+        const prevId = current.get(roundId);
+        if (!prevId) return null;
+        const prev = requireVersion(prevId);
+        const nextMeta: PlanVersion = {
+            ...clone(prev.meta),
+            version_id: nextVersion++,
+            version_no: prev.meta.version_no + 1,
+            source_version_id: prev.meta.version_id,
+            status: 'DRAFT',
+            revision_no: prev.meta.revision_no + 1,
+            is_current: true,
+            created_at: now(),
+        };
+        const nextRows = clone(prev.rows);
+        if (rowsOverride) {
+            const overrideByDemand = new Map(
+                rowsOverride.map((item) => [item.demand_id, item]),
+            );
+            for (const row of nextRows) {
+                const match = overrideByDemand.get(row.demand_id);
+                if (!match) continue;
+                row.teacher_id = match.teacher_id;
+                row.teacher_name = match.teacher_name;
+                row.locked = match.locked;
+                row.unassigned_reason_code =
+                    match.teacher_id === null ? 'NOT_ASSIGNED' : null;
+                row.unassigned_reason_text =
+                    match.teacher_id === null
+                        ? 'Chưa phân công giáo viên'
+                        : null;
+            }
+        }
+        const next: SavedVersion = {
+            ...clone(prev),
+            meta: nextMeta,
+            rows: nextRows,
+        };
+        versions.set(nextMeta.version_id, next);
+        current.set(roundId, nextMeta.version_id);
+        log(
+            next,
+            'new_version',
+            `Tạo bản nháp V${String(nextMeta.version_no).padStart(2, '0')} kế thừa từ V${String(prev.meta.version_no).padStart(2, '0')}`,
+            [],
+        );
+        saveStorage();
+        return {
+            previous_version_no: prev.meta.version_no,
+            version: clone(metadata(next)),
+        };
+    },
 };

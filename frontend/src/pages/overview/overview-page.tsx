@@ -37,8 +37,8 @@ const MODAL_CONTENT: Record<
     export: {
         title: 'Báo cáo phân công hiện hành',
         description:
-            'Chức năng xem trước và xuất tài liệu đang được tách riêng sang màn hình Tài liệu.',
-        body: 'Trong bản dựng hiện tại của Tổng quan, bạn có thể chuyển sang mục Tài liệu để kiểm tra trạng thái các bản đề xuất.',
+            'Xem trước bản chụp và phát hành PDF đề xuất tại màn hình Tài liệu.',
+        body: 'Chuyển tới màn hình Tài liệu đã phát hành để xem trước phương án hoặc tải PDF có mã kiểm tra SHA-256.',
         ctaLabel: 'Mở Tài liệu',
         ctaTo: '/documents',
     },
@@ -53,10 +53,10 @@ const MODAL_CONTENT: Record<
     'open-feedback': {
         title: 'Mở đợt lấy ý kiến đội ngũ',
         description:
-            'Thao tác chuyển trạng thái được thực hiện sau khi hoàn tất rà soát phân công.',
-        body: 'Vui lòng mở màn hình Phân công giảng dạy để kiểm tra phương án trước khi chuyển giai đoạn.',
-        ctaLabel: 'Mở Phân công',
-        ctaTo: '/assignment',
+            'Thiết lập thời hạn và đóng băng bản nguồn cho giáo viên phản hồi.',
+        body: 'Thao tác mở lấy ý kiến thực hiện tại màn hình Phản hồi sau khi phương án đạt kiểm tra hiện hành.',
+        ctaLabel: 'Mở Phản hồi',
+        ctaTo: '/feedback',
     },
     'close-feedback': {
         title: 'Đóng nhận phản hồi',
@@ -69,10 +69,10 @@ const MODAL_CONTENT: Record<
     ready: {
         title: 'Hoàn tất phương án',
         description:
-            'Rà soát lần cuối trước khi chuyển sang giai đoạn Sẵn sàng xuất.',
-        body: 'Hãy kiểm tra lại phân công chi tiết hoặc rà soát tải giáo viên trước khi chốt phương án.',
-        ctaLabel: 'Mở Phân công',
-        ctaTo: '/assignment',
+            'Xác nhận kết thúc rà soát trước khi phát hành PDF đề xuất.',
+        body: 'Mở màn hình Phản hồi để kiểm tra các ý kiến còn chờ và chốt chuyển sang Sẵn sàng phát hành.',
+        ctaLabel: 'Mở Phản hồi',
+        ctaTo: '/feedback',
     },
 };
 

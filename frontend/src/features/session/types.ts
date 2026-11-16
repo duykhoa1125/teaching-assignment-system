@@ -89,6 +89,26 @@ export type TeacherFeedbackSummary = {
     detail: string;
     status: 'PENDING' | 'RESOLVED';
     updated_at: string;
+    feedback_type?: 'GENERAL' | 'ASSIGNMENT' | 'REQUEST_SUBJECT_TOTAL';
+    version_no?: number;
+    subject?: string | null;
+    desired_total?: number | null;
+    demand_id?: number | null;
+    source_id?: string | null;
+    decision?: 'ACCEPTED' | 'DECLINED' | null;
+    result?: string | null;
+    resolved_by?: string | null;
+    resolved_at?: string | null;
+    result_version?: number | null;
+};
+
+export type TeacherReleasedVersionOption = {
+    id: string;
+    version_no: number;
+    revision_no: number;
+    at: string;
+    phase: string;
+    annual_warning: string | null;
 };
 
 export type TeacherPersonalOverviewResponse = {
@@ -103,6 +123,11 @@ export type TeacherPersonalOverviewResponse = {
         | 'READY_TO_EXPORT'
         | 'EXPORTED';
     feedback_due_at: string | null;
+    version_no?: number;
+    revision_no?: number;
+    released_versions?: TeacherReleasedVersionOption[];
+    selected_release_id?: string | null;
+    annual_warning?: string | null;
     teacher: OverviewTeacherLoad | null;
     feedback_items: TeacherFeedbackSummary[];
     resolved_feedback_count: number;

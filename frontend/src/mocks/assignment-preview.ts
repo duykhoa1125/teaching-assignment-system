@@ -5,6 +5,7 @@ import type {
 import type { Teacher } from '../features/teachers/types.ts';
 import { assignmentStore } from './assignment-store.ts';
 import { layoutPreview } from './fixtures/layout.ts';
+import { governanceStore } from './governance-store.ts';
 import { preparationStore } from './preparation-store.ts';
 
 function isValidationReportReleasable(
@@ -47,6 +48,7 @@ export function readPlanLayout(teachers: Teacher[] = [], empty = false) {
     }
     const rounds = preparationStore.listRounds({ limit: 100 });
     for (const context of preview.contexts) {
+        context.feedback = governanceStore.pendingCount(context.id);
         const plan = assignmentStore.preview(context.round);
         if (plan) {
             context.total = plan.rows.length;
@@ -163,7 +165,8 @@ export function readPlanOverview(
         plan_version: plan.meta.version_no,
         plan_version_id: plan.meta.version_id,
         plan_revision: plan.meta.revision_no,
-        phase: plan.meta.status === 'DRAFT' ? 'DRAFT' : base.phase,
+        phase: governanceStore.phase(base.context_id),
+        feedback_due_at: governanceStore.feedbackDueAt(base.context_id),
         validation_status: validation?.overall_status ?? null,
         latest_solver_status: latestRun?.status ?? null,
         latest_apply_outcome: latestRun?.summary?.apply_outcome ?? null,
@@ -183,6 +186,9 @@ export function readPlanOverview(
         },
         summary: {
             ...base.summary,
+            pending_feedback_count: governanceStore.pendingCount(
+                base.context_id,
+            ),
             teachers_count: teacherLoads.length,
             balanced_teachers_count: teacherLoads.filter(
                 (item) => item.delta === 0,

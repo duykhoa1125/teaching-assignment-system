@@ -36,18 +36,20 @@ type PortalDemand = OverviewAssignmentItem & {
     teacher_id: number | null;
 };
 
-const roundContextMap: Record<
+export const CONTEXT_OVERVIEW_CONFIG: Record<
     string,
-    { roundId: number; ruleSetId: number; label: string }
+    { roundId: number; roundCode: string; ruleSetId: number; label: string }
 > = {
-    hk1: { roundId: 1, ruleSetId: 1, label: 'Học kỳ I' },
-    hk2: { roundId: 2, ruleSetId: 1, label: 'Học kỳ II' },
+    hk1: { roundId: 1, roundCode: 'PC-01', ruleSetId: 1, label: 'Học kỳ I' },
+    hk2: { roundId: 2, roundCode: 'PC-02', ruleSetId: 1, label: 'Học kỳ II' },
     'thcs-demo': {
         roundId: 3,
+        roundCode: 'PC-THCS',
         ruleSetId: 2,
         label: 'THCS · Trải nghiệm',
     },
 };
+const roundContextMap = CONTEXT_OVERVIEW_CONFIG;
 
 function round2(value: number): number {
     return Math.round(value * 100) / 100;

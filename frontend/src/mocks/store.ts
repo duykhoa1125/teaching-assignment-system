@@ -9,6 +9,7 @@ import type { Teacher, TeacherRequest } from '../features/teachers/types.ts';
 import { MockError } from './mock-error.ts';
 import { preparationStore } from './preparation-store.ts';
 import { assignmentStore } from './assignment-store.ts';
+import { governanceStore } from './governance-store.ts';
 
 export { MockError };
 let data = structuredClone(fixtureTeachers);
@@ -28,6 +29,7 @@ export const mockStore = {
             throw new Error(`Scenario không hợp lệ: ${value}`);
         scenario = value;
         assignmentStore.configureScenario(value);
+        governanceStore.reset();
         generation++;
     },
     reset() {
@@ -35,6 +37,7 @@ export const mockStore = {
         nextId = Math.max(...data.map((teacher) => teacher.id)) + 1;
         preparationStore.reset();
         assignmentStore.reset();
+        governanceStore.reset();
         scenario = 'normal';
         generation++;
     },

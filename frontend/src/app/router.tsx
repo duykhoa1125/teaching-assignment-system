@@ -9,7 +9,7 @@ import {
     useOutletContext,
 } from 'react-router';
 import { AppLayout } from '@/app/layouts/app-layout';
-import { navigation, pageTitle } from '@/app/layouts/navigation';
+import { pageTitle } from '@/app/layouts/navigation';
 import {
     activeHomePath,
     evaluateRouteAccess,
@@ -45,7 +45,36 @@ const StatisticsPage = lazy(() =>
         default: module.StatisticsPage,
     })),
 );
-import { LayoutPlaceholder } from '@/pages/layout-placeholder';
+const FeedbackPage = lazy(() =>
+    import('@/pages/feedback/feedback-page').then((module) => ({
+        default: module.FeedbackPage,
+    })),
+);
+const HistoryPage = lazy(() =>
+    import('@/pages/history/history-page').then((module) => ({
+        default: module.HistoryPage,
+    })),
+);
+const DocumentsPage = lazy(() =>
+    import('@/pages/documents/documents-page').then((module) => ({
+        default: module.DocumentsPage,
+    })),
+);
+const SourcesPage = lazy(() =>
+    import('@/pages/sources/sources-page').then((module) => ({
+        default: module.SourcesPage,
+    })),
+);
+const AdminRulesPage = lazy(() =>
+    import('@/pages/admin/admin-rules-page').then((module) => ({
+        default: module.AdminRulesPage,
+    })),
+);
+const AdminAuditPage = lazy(() =>
+    import('@/pages/admin/admin-audit-page').then((module) => ({
+        default: module.AdminAuditPage,
+    })),
+);
 import { NotFoundPage } from '@/pages/not-found/not-found-page';
 import { OverviewPage } from '@/pages/overview/overview-page';
 import { SettingsPage } from '@/pages/settings/settings-page';
@@ -96,13 +125,6 @@ const LoginPage =
         ? lazy(() => import('@/pages/auth/login-page'))
         : null;
 
-const adminPlaceholderPaths = [
-    'admin/teachers',
-    'admin/rules',
-    'admin/sources',
-    'admin/audit',
-] as const;
-
 const titles: Record<string, string> = {
     '/': 'Tổng quan',
     '/teachers': 'Giáo viên',
@@ -110,8 +132,22 @@ const titles: Record<string, string> = {
     '/demands': 'Nhu cầu giảng dạy',
     '/checks': 'Trung tâm kiểm tra',
     '/assignment': 'Phân công giảng dạy',
+    '/solver-runs': 'Lượt sinh đề xuất',
+    '/workload': 'Tải & định mức',
+    '/statistics': 'Thống kê',
+    '/feedback': 'Phản hồi',
+    '/history': 'Lịch sử phiên bản',
+    '/documents': 'Tài liệu đã phát hành',
+    '/sources': 'Nguồn & đối soát',
+    '/admin': 'Tổng quan quản trị',
+    '/admin/accounts': 'Tài khoản & vai trò',
+    '/admin/teachers': 'Hồ sơ giáo viên',
     '/admin/catalogs': 'Danh mục môn · lớp · khối',
     '/admin/periods': 'Năm học · học kỳ · đợt',
+    '/admin/rules': 'Bộ quy tắc',
+    '/admin/access': 'Phạm vi & quyền',
+    '/admin/sources': 'Nguồn & bí danh',
+    '/admin/audit': 'Nhật ký quản trị',
     ...(UiPreviewPage ? { '/dev/ui': 'Thư viện giao diện' } : {}),
 };
 
@@ -256,28 +292,22 @@ export function AppRouter() {
                                     path="statistics"
                                     element={<StatisticsPage />}
                                 />
-                                {navigation
-                                    .filter(
-                                        (item) =>
-                                            ![
-                                                '/',
-                                                '/teachers',
-                                                '/preparation',
-                                                '/demands',
-                                                '/checks',
-                                                '/assignment',
-                                                '/solver-runs',
-                                                '/workload',
-                                                '/statistics',
-                                            ].includes(item.path),
-                                    )
-                                    .map((item) => (
-                                        <Route
-                                            key={item.path}
-                                            path={item.path.slice(1)}
-                                            element={<LayoutPlaceholder />}
-                                        />
-                                    ))}
+                                <Route
+                                    path="feedback"
+                                    element={<FeedbackPage />}
+                                />
+                                <Route
+                                    path="history"
+                                    element={<HistoryPage />}
+                                />
+                                <Route
+                                    path="documents"
+                                    element={<DocumentsPage />}
+                                />
+                                <Route
+                                    path="sources"
+                                    element={<SourcesPage />}
+                                />
                                 <Route
                                     path="admin"
                                     element={<AdminHomePage />}
@@ -291,6 +321,10 @@ export function AppRouter() {
                                     element={<AdminAccessPage />}
                                 />
                                 <Route
+                                    path="admin/teachers"
+                                    element={<TeachersPage />}
+                                />
+                                <Route
                                     path="admin/catalogs"
                                     element={<AdminCatalogsPage />}
                                 />
@@ -298,13 +332,18 @@ export function AppRouter() {
                                     path="admin/periods"
                                     element={<AdminPeriodsPage />}
                                 />
-                                {adminPlaceholderPaths.map((path) => (
-                                    <Route
-                                        key={path}
-                                        path={path}
-                                        element={<LayoutPlaceholder />}
-                                    />
-                                ))}
+                                <Route
+                                    path="admin/rules"
+                                    element={<AdminRulesPage />}
+                                />
+                                <Route
+                                    path="admin/sources"
+                                    element={<SourcesPage />}
+                                />
+                                <Route
+                                    path="admin/audit"
+                                    element={<AdminAuditPage />}
+                                />
                                 <Route
                                     path="teacher"
                                     element={<TeacherHomePage />}

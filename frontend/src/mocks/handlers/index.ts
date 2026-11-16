@@ -3,6 +3,7 @@ import { http, HttpResponse, type HttpResponseResolver } from 'msw/http';
 import { schools } from '../fixtures/index.ts';
 import { type MockAuthRole } from '../fixtures/accounts.ts';
 import { readPlanLayout, readPlanOverview } from '../assignment-preview.ts';
+import { governanceStore } from '../governance-store.ts';
 import { layoutPreview } from '../fixtures/layout.ts';
 import {
     overviewByContext,
@@ -135,13 +136,14 @@ function buildAdminOverview(contextId: string) {
         teacher: accounts.filter((a) => a.roles.includes('teacher')).length,
     };
     const isThcs = contextId === 'thcs-demo';
+    const gov = governanceStore.overview(contextId, mockStore.list());
     return {
         context_id: overview.context_id,
         context_title: overview.context_title,
         round: overview.round,
         academic_year: overview.academic_year,
-        phase: overview.phase,
-        plan_version: overview.plan_version,
+        phase: gov.phase,
+        plan_version: gov.version_no,
         accounts,
         stats: {
             accounts_total: accounts.length,
@@ -157,7 +159,18 @@ function buildAdminOverview(contextId: string) {
             periods_count: layoutPreview.contexts.length,
         },
         role_counts: roleCounts,
-        recent_audit: [],
+        recent_audit: governanceStore
+            .listAudit()
+            .slice(0, 6)
+            .map((entry) => ({
+                id: entry.id,
+                at: entry.at,
+                actor: entry.actor,
+                role: entry.role,
+                action: entry.action,
+                object: entry.object,
+                result: entry.result,
+            })),
     };
 }
 
@@ -308,6 +321,7 @@ export const handlers = [
                 url.searchParams.get('teacher_id') ?? undefined,
                 'teacher_id',
             );
+            const releaseId = url.searchParams.get('release_id') || undefined;
             const empty = mockStore.scenario === 'empty';
             const overview = readOverviewFixture(contextId, empty);
             if (!overview) {
@@ -322,16 +336,88 @@ export const handlers = [
                 teacherId,
                 empty,
             );
+            const gov = governanceStore.overview(contextId, mockStore.list());
+            const releasedByRevision = new Map<
+                string,
+                {
+                    id: string;
+                    version_no: number;
+                    revision_no: number;
+                    at: string;
+                    phase: string;
+                    annual_warning: string | null;
+                }
+            >();
+            for (const snap of gov.snapshots) {
+                if (
+                    !snap.is_full ||
+                    ![
+                        'OPEN_FOR_FEEDBACK',
+                        'READY_TO_EXPORT',
+                        'EXPORTED',
+                    ].includes(snap.phase)
+                ) {
+                    continue;
+                }
+                releasedByRevision.set(
+                    `${snap.version_no}:${snap.revision_no}`,
+                    {
+                        id: snap.id,
+                        version_no: snap.version_no,
+                        revision_no: snap.revision_no,
+                        at: snap.at,
+                        phase: snap.phase,
+                        annual_warning: snap.annual_warning,
+                    },
+                );
+            }
+            const releasedVersions = [...releasedByRevision.values()];
+            const selectedRelease =
+                (releaseId
+                    ? releasedVersions.find((item) => item.id === releaseId)
+                    : undefined) ?? releasedVersions.at(-1);
+            const teacherFeedbacks = gov.feedback
+                .filter((item) => item.teacher_id === teacherId)
+                .map((item) => ({
+                    id: String(item.id),
+                    title: item.title,
+                    detail: item.text,
+                    status:
+                        item.status === 'pending'
+                            ? ('PENDING' as const)
+                            : ('RESOLVED' as const),
+                    updated_at: item.created_label,
+                    feedback_type: item.type,
+                    version_no: item.version_no,
+                    subject: item.subject,
+                    desired_total: item.desired_total,
+                    demand_id: item.demand_id,
+                    source_id: item.source_id,
+                    decision: item.decision,
+                    result: item.result,
+                    resolved_by: item.resolved_by,
+                    resolved_at: item.resolved_at,
+                    result_version: item.result_version,
+                }));
             return HttpResponse.json({
                 context_id: overview.context_id,
                 context_title: overview.context_title,
                 round: overview.round,
                 academic_year: overview.academic_year,
-                phase: overview.phase,
-                feedback_due_at: overview.feedback_due_at,
+                phase: gov.phase,
+                feedback_due_at: gov.feedback_due_at,
+                version_no: selectedRelease?.version_no ?? gov.version_no,
+                revision_no: selectedRelease?.revision_no ?? gov.revision_no,
+                released_versions: releasedVersions,
+                selected_release_id: selectedRelease?.id ?? null,
+                annual_warning:
+                    selectedRelease?.annual_warning ??
+                    gov.validation_annual_warning,
                 teacher: teacherLoad,
-                feedback_items: [],
-                resolved_feedback_count: 0,
+                feedback_items: teacherFeedbacks,
+                resolved_feedback_count: teacherFeedbacks.filter(
+                    (item) => item.status === 'RESOLVED',
+                ).length,
             });
         }),
     ),

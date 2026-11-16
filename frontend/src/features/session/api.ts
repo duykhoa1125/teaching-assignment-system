@@ -44,7 +44,11 @@ export const sessionApi = {
             signal,
         }),
     readTeacherOverview: (
-        query: { context_id: string; teacher_id: number },
+        query: {
+            context_id: string;
+            teacher_id: number;
+            release_id?: string;
+        },
         signal?: AbortSignal,
     ) =>
         apiRequest<TeacherPersonalOverviewResponse>('/mock/teacher/overview', {
