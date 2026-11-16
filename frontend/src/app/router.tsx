@@ -30,6 +30,21 @@ const AssignmentWorkspacePage = lazy(() =>
         (module) => ({ default: module.AssignmentWorkspacePage }),
     ),
 );
+const SolverRunsPage = lazy(() =>
+    import('@/pages/solver-runs/solver-runs-page').then((module) => ({
+        default: module.SolverRunsPage,
+    })),
+);
+const WorkloadPage = lazy(() =>
+    import('@/pages/workload/workload-page').then((module) => ({
+        default: module.WorkloadPage,
+    })),
+);
+const StatisticsPage = lazy(() =>
+    import('@/pages/statistics/statistics-page').then((module) => ({
+        default: module.StatisticsPage,
+    })),
+);
 import { LayoutPlaceholder } from '@/pages/layout-placeholder';
 import { NotFoundPage } from '@/pages/not-found/not-found-page';
 import { OverviewPage } from '@/pages/overview/overview-page';
@@ -225,6 +240,22 @@ export function AppRouter() {
                                     element={<DemandsPage />}
                                 />
                                 <Route path="checks" element={<ChecksPage />} />
+                                <Route
+                                    path="assignment"
+                                    element={<AssignmentWorkspacePage />}
+                                />
+                                <Route
+                                    path="solver-runs"
+                                    element={<SolverRunsPage />}
+                                />
+                                <Route
+                                    path="workload"
+                                    element={<WorkloadPage />}
+                                />
+                                <Route
+                                    path="statistics"
+                                    element={<StatisticsPage />}
+                                />
                                 {navigation
                                     .filter(
                                         (item) =>
@@ -235,6 +266,9 @@ export function AppRouter() {
                                                 '/demands',
                                                 '/checks',
                                                 '/assignment',
+                                                '/solver-runs',
+                                                '/workload',
+                                                '/statistics',
                                             ].includes(item.path),
                                     )
                                     .map((item) => (
@@ -244,10 +278,6 @@ export function AppRouter() {
                                             element={<LayoutPlaceholder />}
                                         />
                                     ))}
-                                <Route
-                                    path="assignment"
-                                    element={<AssignmentWorkspacePage />}
-                                />
                                 <Route
                                     path="admin"
                                     element={<AdminHomePage />}

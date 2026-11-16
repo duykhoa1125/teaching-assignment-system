@@ -100,8 +100,14 @@ export function CompletionBanner({
 
 export function ReadinessBanner({
     readiness,
+    validationStatus,
+    latestSolverStatus,
+    latestApplyOutcome,
 }: {
     readiness: OverviewDashboard['readiness'];
+    validationStatus?: string | null;
+    latestSolverStatus?: string | null;
+    latestApplyOutcome?: string | null;
 }) {
     const isReady =
         readiness.validation_fresh && readiness.validation_releasable;
@@ -110,8 +116,13 @@ export function ReadinessBanner({
             ? 'Đã xác nhận'
             : 'Cần xác nhận phạm vi/tập bắt buộc';
     const validationText = readiness.validation_fresh
-        ? 'Đã kiểm tra hiện hành'
+        ? readiness.validation_releasable
+            ? `Đã kiểm tra hiện hành (${validationStatus ?? 'Đạt tuần'})`
+            : `Đã kiểm tra (${validationStatus ?? 'Cần xử lý'})`
         : 'Chưa kiểm tra hoặc kết quả đã cũ';
+    const solverText = latestSolverStatus
+        ? ` · Solver: ${latestApplyOutcome ?? latestSolverStatus}`
+        : '';
 
     return (
         <div
@@ -134,10 +145,16 @@ export function ReadinessBanner({
                 {confirmationText}
                 {' · '}
                 {validationText}
+                {solverText}
             </span>
-            <Link to="/preparation" className="btn small">
-                Chuẩn bị dữ liệu
-            </Link>
+            <div className="mvp-actions">
+                <Link to="/checks" className="btn small">
+                    Kiểm tra phương án
+                </Link>
+                <Link to="/preparation" className="btn small">
+                    Chuẩn bị dữ liệu
+                </Link>
+            </div>
         </div>
     );
 }

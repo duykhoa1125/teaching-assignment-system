@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { assignmentApi, readAssignmentRows } from './api';
+import { assignmentApi, readAssignmentRows, readWorkloads } from './api';
 import { ApiError } from '@/shared/api/http';
 import type {
     AssignmentBatchLock,
@@ -11,6 +11,11 @@ import type {
     PlanConfiguration,
     PlanVersion,
     RefreshPlanRequest,
+    SolverRunDto,
+    SolverRunStatus,
+    StartSolverRunRequest,
+    ValidatePlanRequest,
+    WorkloadFilters,
 } from './types';
 
 export const assignmentKeys = {
@@ -22,9 +27,34 @@ export const assignmentKeys = {
         ['assignment-workspace', 'rows', version, filters] as const,
     loads: (version: number) =>
         ['assignment-workspace', 'loads', version] as const,
+    loadsFiltered: (
+        version: number,
+        filters: Omit<WorkloadFilters, 'limit' | 'offset'>,
+    ) => ['assignment-workspace', 'loads', version, 'all', filters] as const,
+    optimization: (version: number) =>
+        ['assignment-workspace', 'optimization', version] as const,
+    solverRun: (runId: number) =>
+        ['assignment-workspace', 'solver-run', runId] as const,
+    validation: (version: number, runId?: number | null) =>
+        [
+            'assignment-workspace',
+            'validation',
+            version,
+            runId ?? 'latest',
+        ] as const,
     workspace: (version: number) =>
         ['assignment-workspace', 'workspace', version] as const,
 };
+
+export function isSolverRunActiveStatus(
+    status: SolverRunStatus | null | undefined,
+): boolean {
+    return (
+        status === 'QUEUED' ||
+        status === 'RUNNING' ||
+        status === 'CANCEL_REQUESTED'
+    );
+}
 export function useCurrentPlan(round: number | null) {
     const client = useQueryClient();
     const query = useQuery({
@@ -62,8 +92,167 @@ export function useAssignmentRows(
 export function useAssignmentLoads(version: number | null) {
     return useQuery({
         queryKey: assignmentKeys.loads(version ?? 0),
-        queryFn: ({ signal }) => assignmentApi.workloads(version!, signal),
+        queryFn: ({ signal }) =>
+            assignmentApi.workloads(
+                version!,
+                { limit: 200, offset: 0 },
+                signal,
+            ),
         enabled: version !== null,
+    });
+}
+export function useWorkloads(
+    version: number | null,
+    filters: Omit<WorkloadFilters, 'limit' | 'offset'> = {},
+) {
+    return useQuery({
+        queryKey: assignmentKeys.loadsFiltered(version ?? 0, filters),
+        queryFn: ({ signal }) => readWorkloads(version!, filters, signal),
+        enabled: version !== null,
+    });
+}
+export function useOptimization(version: number | null) {
+    return useQuery({
+        queryKey: assignmentKeys.optimization(version ?? 0),
+        queryFn: ({ signal }) => assignmentApi.optimization(version!, signal),
+        enabled: version !== null,
+        retry: (count, error) =>
+            count < 1 && !(error instanceof ApiError && error.status < 500),
+    });
+}
+export function usePlanValidation(
+    version: number | null,
+    validationRunId?: number | null,
+) {
+    return useQuery({
+        queryKey: assignmentKeys.validation(version ?? 0, validationRunId),
+        queryFn: ({ signal }) =>
+            assignmentApi.validation(version!, validationRunId, signal),
+        enabled: version !== null,
+        retry: (count, error) =>
+            count < 1 && !(error instanceof ApiError && error.status < 500),
+    });
+}
+export function useSolverRun(
+    runId: number | null,
+    onTerminal?: (run: SolverRunDto) => void,
+) {
+    const client = useQueryClient();
+    const settledRef = useRef<string | null>(null);
+    const callbackRef = useRef(onTerminal);
+    useEffect(() => {
+        callbackRef.current = onTerminal;
+    }, [onTerminal]);
+
+    const query = useQuery({
+        queryKey: assignmentKeys.solverRun(runId ?? 0),
+        queryFn: ({ signal }) => assignmentApi.solverRun(runId!, signal),
+        enabled: runId !== null,
+        retry: (count, error) =>
+            count < 1 && !(error instanceof ApiError && error.status < 500),
+        refetchIntervalInBackground: false,
+        refetchInterval: (current) => {
+            if (current.state.error) return false;
+            const status = current.state.data?.status;
+            if (!status || isSolverRunActiveStatus(status)) {
+                return import.meta.env.VITE_DATA_SOURCE === 'mock' ? 500 : 1200;
+            }
+            return false;
+        },
+    });
+
+    const data = query.data;
+    useEffect(() => {
+        if (!data || isSolverRunActiveStatus(data.status)) return;
+        const signature = `${data.id}:${data.status}:${data.summary?.apply_outcome ?? ''}:${data.applied_revision_no ?? ''}`;
+        if (settledRef.current === signature) return;
+        settledRef.current = signature;
+        if (data.summary?.apply_outcome === 'APPLIED') {
+            void Promise.all([
+                client.invalidateQueries({ queryKey: assignmentKeys.all }),
+                client.invalidateQueries({ queryKey: ['preparation'] }),
+                client.invalidateQueries({ queryKey: ['mock-layout'] }),
+                client.invalidateQueries({ queryKey: ['mock-session'] }),
+                client.invalidateQueries({ queryKey: ['overview'] }),
+            ]);
+        } else {
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.optimization(data.version_id),
+            });
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.workspace(data.version_id),
+            });
+        }
+        callbackRef.current?.(data);
+    }, [client, data]);
+
+    return query;
+}
+export function useStartSolverRun() {
+    const client = useQueryClient();
+    return useMutation({
+        retry: false,
+        mutationFn: ({
+            version,
+            input,
+        }: {
+            version: number;
+            input: StartSolverRunRequest;
+        }) => assignmentApi.startSolverRun(version, input),
+        onSuccess: (accepted) => {
+            client.setQueryData(
+                assignmentKeys.solverRun(accepted.id),
+                accepted,
+            );
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.optimization(accepted.version_id),
+            });
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.workspace(accepted.version_id),
+            });
+        },
+    });
+}
+export function useCancelSolverRun() {
+    const client = useQueryClient();
+    return useMutation({
+        retry: false,
+        mutationFn: (runId: number) => assignmentApi.cancelSolverRun(runId),
+        onSuccess: (updated) => {
+            client.setQueryData(assignmentKeys.solverRun(updated.id), updated);
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.optimization(updated.version_id),
+            });
+            void client.invalidateQueries({
+                queryKey: assignmentKeys.workspace(updated.version_id),
+            });
+        },
+    });
+}
+export function useRunValidation() {
+    const client = useQueryClient();
+    return useMutation({
+        retry: false,
+        mutationFn: ({
+            version,
+            input,
+        }: {
+            version: number;
+            input: ValidatePlanRequest;
+        }) => assignmentApi.runValidation(version, input),
+        onSuccess: async (report) => {
+            client.setQueryData(
+                assignmentKeys.validation(report.version_id, null),
+                report,
+            );
+            await Promise.all([
+                client.invalidateQueries({ queryKey: assignmentKeys.all }),
+                client.invalidateQueries({ queryKey: ['preparation'] }),
+                client.invalidateQueries({ queryKey: ['mock-layout'] }),
+                client.invalidateQueries({ queryKey: ['mock-session'] }),
+                client.invalidateQueries({ queryKey: ['overview'] }),
+            ]);
+        },
     });
 }
 export function usePlanWorkspace(version: number | null) {

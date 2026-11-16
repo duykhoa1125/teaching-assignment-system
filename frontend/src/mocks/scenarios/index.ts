@@ -47,6 +47,14 @@ export const scenarios = {
     planLockConflict: { label: 'Plan · Nguồn xung đột khóa' },
     planRevisionConflict: { label: 'Plan · Phiên khác vừa thay đổi' },
     planReadOnly: { label: 'Plan · Phiên bản chỉ đọc' },
+    solverApplied: { label: 'Solver · Sinh đề xuất & áp dụng thành công' },
+    solverStale: { label: 'Solver · Bị từ chối áp dụng (STALE)' },
+    solverInfeasible: { label: 'Solver · Vô nghiệm (INFEASIBLE)' },
+    solverFailed: { label: 'Solver · Lỗi xử lý (FAILED)' },
+    solverQueueFull: { label: 'Solver · Hàng đợi đầy (503)' },
+    solverActiveRun: { label: 'Solver · Có lượt đang chạy (409 + Location)' },
+    validationPass: { label: 'Validation · Đạt kiểm tra tuần (cảnh báo năm)' },
+    validationViolation: { label: 'Validation · Phát hiện vi phạm' },
 } as const;
 export type MockScenario = keyof typeof scenarios;
 export function isMockScenario(value: string): value is MockScenario {

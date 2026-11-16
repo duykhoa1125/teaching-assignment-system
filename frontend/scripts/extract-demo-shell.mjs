@@ -39,6 +39,10 @@ for (const name of 'impact-heading impact-person impact-delta positive impact-va
     ' ',
 ))
     names.add(name);
+for (const name of 'mvp-vector mvp-reason mvp-source-cell identity-subline diff-summary diff-changed diff-arrow diff-before diff-after solver-loading solver-orbit solver-safety skeleton-grid complete running metrics metric-top metric-value metric-foot metric-micro metric-accent metric-icon stacked-scroll stacked-chart chart-y-axis stacked-plot stack-button load-stack load-value load-column load-label teacher-target chart-cap chart-legend legend-dot donut donut-layout track-ring value-ring donut-label coverage-detail mvp-release-select'.split(
+    ' ',
+))
+    names.add(name);
 let fontIndex = 0;
 function copyNode(node) {
     if (node.type === 'atrule') {

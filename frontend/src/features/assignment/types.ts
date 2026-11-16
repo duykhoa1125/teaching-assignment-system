@@ -134,6 +134,168 @@ export type AssignmentMutation = {
     items: AssignmentRow[];
 };
 
+export type WorkloadFilters = {
+    teacher_id?: number;
+    limit?: number;
+    offset?: number;
+};
+
+export type SolverRunStatus =
+    | 'QUEUED'
+    | 'RUNNING'
+    | 'CANCEL_REQUESTED'
+    | 'SUCCEEDED'
+    | 'COMPLETED'
+    | 'FAILED'
+    | 'CANCELLED'
+    | string;
+
+export type ValidationStatus =
+    'PASS' | 'VIOLATION' | 'INSUFFICIENT_DATA' | string;
+
+export type SolverStageSummary = {
+    name: 'Z' | 'L1' | 'M' | 'experience' | 'change' | string;
+    status: string;
+    elapsed_ms: number | null;
+    stop_reason: string | null;
+    exactOptimalityProven: boolean;
+    gap_tolerance: number | null;
+    objective: number | null;
+    best_bound: number | null;
+};
+
+export type SolverCoverageMetrics = {
+    totalComponents?: number;
+    assignedComponents?: number;
+    unassignedComponents?: number;
+    totalPeriods?: number;
+    assignedPeriods?: number;
+    missingPeriods?: number;
+    totalGroups?: number;
+    completeGroups?: number;
+    incompleteGroups?: number;
+    loadDeviation?: number;
+    experiencePenalty?: number;
+    changes?: number;
+    addedDemands?: number;
+    removedDemands?: number;
+    coverageObjective?: number;
+    softObjective?: number;
+    fullCoverageImpossibleProven?: boolean;
+    maxLoadDeviation?: number;
+    objectiveVector?: number[];
+};
+
+export type SolverRunSummary = {
+    contract_version: number;
+    ortools_version?: string;
+    random_seed?: number;
+    num_workers?: number;
+    total_budget_seconds?: number;
+    cp_sat_status: string | null;
+    termination_reason: string | null;
+    apply_outcome:
+        | 'APPLIED'
+        | 'STALE'
+        | 'NOT_DRAFT'
+        | 'REJECTED'
+        | 'FAILED'
+        | 'NO_CANDIDATE'
+        | 'CANCELLED'
+        | string
+        | null;
+    post_validation_status?: ValidationStatus | null;
+    applied_revision_no?: number | null;
+    apply_ms?: number | null;
+    demo_only: boolean;
+    illustrative_workload_rules: boolean;
+    config_hash: string | null;
+    stages: SolverStageSummary[];
+    coverage?: {
+        optimality_proven: boolean;
+        metrics?: SolverCoverageMetrics;
+    } | null;
+};
+
+export type SolverRunDto = {
+    id: number;
+    version_id: number;
+    base_revision: number;
+    requested_by: number;
+    status: SolverRunStatus;
+    queued_at: string;
+    execution_started_at: string | null;
+    finished_at: string | null;
+    cancellation_requested_at: string | null;
+    preparation_ms: number | null;
+    solve_ms: number | null;
+    archive_write_ms: number | null;
+    failure_code: string | null;
+    input_hash: string | null;
+    input_fresh: boolean;
+    applied_revision_no: number | null;
+    apply_ms: number | null;
+    summary: SolverRunSummary | null;
+};
+
+export type StartSolverRunRequest = {
+    expected_revision: number;
+    optimization_config_id: number;
+    rule_set_version_id: number;
+};
+
+export type SolverRunAccepted = SolverRunDto & {
+    location: string | null;
+};
+
+export type OptimizationView = {
+    version: VersionContext;
+    latest_run_id: number | null;
+    run: SolverRunDto | null;
+    matches_version: boolean;
+    configuration: Record<string, unknown> | null;
+    objective_vector: number[] | null;
+    warnings: string[];
+};
+
+export type ValidationFinding = {
+    br_code: string;
+    subject_type: string;
+    subject_ref: string;
+    calculation_period: string;
+    result_status: ValidationStatus;
+    severity: 'ERROR' | 'WARNING' | 'INFO' | string;
+    missing_data: string[];
+    message: string;
+    details: Record<string, unknown> | null;
+};
+
+export type ValidationReport = {
+    id: number;
+    version_id: number;
+    revision_no: number;
+    input_snapshot_id: number;
+    source_revision_token: string;
+    checked_at: string;
+    checked_by: number | null;
+    overall_status: ValidationStatus;
+    fresh: boolean;
+    validator_version: string;
+    results: ValidationFinding[];
+    workloads: WorkloadRow[];
+    summary: {
+        contract_version: number;
+        illustrative_rules: boolean;
+        finding_count: number;
+        coverage: { required: number; assigned: number; unassigned: number };
+        warnings: string[];
+    };
+};
+
+export type ValidatePlanRequest = {
+    expected_revision: number;
+};
+
 /** Mock-only snapshot metadata for candidates; not a backend endpoint/eligibility proof. */
 export type WorkspaceTeacher = {
     id: number;
@@ -150,6 +312,19 @@ export type WorkspaceTeacher = {
     valid_from: string;
     valid_to: string;
 };
+export type SolverRunDiffItem = {
+    row_id: number;
+    class_name: string;
+    subject_name: string;
+    demand_type: DemandType;
+    periods_per_week: number;
+    before_teacher_id: number | null;
+    before_teacher_name: string | null;
+    after_teacher_id: number | null;
+    after_teacher_name: string | null;
+    reason_code: string | null;
+    reason_text: string | null;
+};
 export type PlanWorkspace = {
     context_label: string;
     teachers: WorkspaceTeacher[];
@@ -159,4 +334,6 @@ export type PlanWorkspace = {
     locked_count: number;
     starts_on: string;
     ends_on: string;
+    solver_runs?: SolverRunDto[];
+    solver_diffs?: Record<number, SolverRunDiffItem[]>;
 };

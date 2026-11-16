@@ -68,33 +68,34 @@ test('overview fixtures obey exact teacher load and period invariants', () => {
     }
 
     const hk1 = overviewByContext.hk1;
-    assert.equal(hk1.summary.teachers_count, 12);
-    assert.equal(hk1.summary.balanced_teachers_count, 2);
-    assert.equal(hk1.summary.under_norm_teachers_count, 8);
-    assert.equal(hk1.summary.over_norm_teachers_count, 2);
-    assert.equal(hk1.summary.total_periods, 84);
-    assert.equal(hk1.summary.total_demands, 36);
-    assert.equal(hk1.summary.assigned_demands, 28);
-    assert.equal(hk1.summary.unassigned_demands, 8);
+    assert.equal(hk1.summary.teachers_count, 6);
+    assert.equal(hk1.summary.balanced_teachers_count, 0);
+    assert.equal(hk1.summary.under_norm_teachers_count, 5);
+    assert.equal(hk1.summary.over_norm_teachers_count, 1);
+    assert.equal(hk1.summary.total_periods, 26);
+    assert.equal(hk1.summary.total_demands, 9);
+    assert.equal(hk1.summary.assigned_demands, 7);
+    assert.equal(hk1.summary.unassigned_demands, 2);
     assert.equal(hk1.summary.locked_demands, 2);
     assert.equal(hk1.summary.coverage_percent, 78);
     assert.equal(hk1.summary.pending_feedback_count, 2);
     assert.deepEqual(hk1.summary.demands_by_grade, [
-        { grade: '10', periods: 40 },
-        { grade: '11', periods: 21 },
-        { grade: '12', periods: 23 },
+        { grade: '10', periods: 20 },
+        { grade: '11', periods: 6 },
     ]);
 
     const hk2 = overviewByContext.hk2;
+    assert.equal(hk2.summary.teachers_count, 6);
     assert.equal(hk2.summary.assigned_demands, 0);
     assert.equal(hk2.summary.coverage_percent, 0);
-    assert.equal(hk2.summary.total_periods, 84);
+    assert.equal(hk2.summary.total_demands, 1);
+    assert.equal(hk2.summary.total_periods, 4);
     assert.equal(hk2.summary.pending_feedback_count, 0);
 
     const thcs = overviewByContext['thcs-demo'];
-    assert.equal(thcs.summary.teachers_count, 3);
-    assert.equal(thcs.summary.total_demands, 7);
-    assert.equal(thcs.summary.total_periods, 23);
+    assert.equal(thcs.summary.teachers_count, 2);
+    assert.equal(thcs.summary.total_demands, 1);
+    assert.equal(thcs.summary.total_periods, 4);
     assert.equal(thcs.summary.assigned_demands, 0);
 });
 

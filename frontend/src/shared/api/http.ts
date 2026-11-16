@@ -30,11 +30,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null;
 }
 
+export type ApiResponseMeta<T> = {
+    data: T;
+    status: number;
+    location: string | null;
+};
+
+/** Parse `/api/solver-runs/{id}` or `/solver-runs/{id}` Location headers safely. */
+export function parseSolverRunLocation(location: string | null): number | null {
+    if (!location) return null;
+    try {
+        const parsed = new URL(location, 'http://localhost');
+        const match = parsed.pathname.match(
+            /^\/(?:api\/)?solver-runs\/(\d+)\/?$/,
+        );
+        if (!match) return null;
+        const id = Number(match[1]);
+        return Number.isSafeInteger(id) && id > 0 ? id : null;
+    } catch {
+        return null;
+    }
+}
+
 /** Network and abort errors remain native errors so callers can distinguish them. */
-export async function apiRequest<T>(
+export async function apiRequestWithMeta<T>(
     path: string,
     options: RequestOptions = {},
-): Promise<T> {
+): Promise<ApiResponseMeta<T>> {
     if (
         !path.startsWith('/') ||
         path.startsWith('//') ||
@@ -63,7 +85,10 @@ export async function apiRequest<T>(
             body: json === undefined ? undefined : JSON.stringify(json),
         },
     );
-    if (response.ok && response.status === 204) return undefined as T;
+    const location = response.headers.get('Location');
+    if (response.ok && response.status === 204) {
+        return { data: undefined as T, status: response.status, location };
+    }
     const contentType = response.headers.get('content-type') ?? '';
     const isJson =
         contentType.includes('application/json') ||
@@ -92,7 +117,7 @@ export async function apiRequest<T>(
                 ? error.message
                 : `Yêu cầu thất bại (HTTP ${response.status}).`,
             payload,
-            response.headers.get('Location'),
+            location,
         );
     }
     if (!isJson)
@@ -101,5 +126,13 @@ export async function apiRequest<T>(
             'INVALID_RESPONSE',
             'Máy chủ chưa trả về dữ liệu JSON.',
         );
-    return payload as T;
+    return { data: payload as T, status: response.status, location };
+}
+
+export async function apiRequest<T>(
+    path: string,
+    options: RequestOptions = {},
+): Promise<T> {
+    const response = await apiRequestWithMeta<T>(path, options);
+    return response.data;
 }

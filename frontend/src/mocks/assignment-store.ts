@@ -6,12 +6,22 @@ import type {
     AssignmentMutation,
     AssignmentPage,
     AssignmentRow,
+    OptimizationView,
     PlanConfiguration,
     PlanVersion,
     PlanWorkspace,
     RefreshPlanRequest,
+    SolverRunDiffItem,
+    SolverRunDto,
+    SolverRunSummary,
+    StartSolverRunRequest,
+    ValidatePlanRequest,
+    ValidationFinding,
+    ValidationReport,
+    ValidationStatus,
     VersionContext,
     WorkloadPage,
+    WorkloadRow,
     WorkspaceTeacher,
 } from '../features/assignment/types.ts';
 import type { RoundReadinessDto } from '../features/preparation/types.ts';
@@ -35,19 +45,136 @@ type Audit = {
     row_ids: number[];
     at: string;
 };
+type InternalSolverRun = {
+    dto: SolverRunDto;
+    polls: number;
+    createdAtMs: number;
+    configId: number;
+    ruleSetId: number;
+    baselineRows: AssignmentRow[];
+    diffItems: SolverRunDiffItem[];
+    scenarioOutcome: 'APPLIED' | 'STALE' | 'INFEASIBLE' | 'FAILED';
+    holdActive?: boolean;
+};
 let versions = new Map<number, SavedVersion>();
 let current = new Map<number, number>();
+let solverRuns = new Map<number, InternalSolverRun>();
+let validationReports = new Map<number, ValidationReport>();
+let latestValidationByVersion = new Map<number, number>();
 let nextRow = 50001,
     nextVersion = 1101,
-    nextSnapshot = 2101;
+    nextSnapshot = 2101,
+    nextRunId = 9001,
+    nextValidationId = 7001;
 let initialized = false;
 let setup = 'normal';
 let conflictInjected = false;
 let audit: Audit[] = [];
+const STORAGE_KEY = 'tass-mock-assignment-v1';
+
+function browserStorage(): Storage | null {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+        return null;
+    }
+    try {
+        return window.sessionStorage;
+    } catch {
+        return null;
+    }
+}
+
+function saveStorage() {
+    const store = browserStorage();
+    if (!store) return;
+    try {
+        store.setItem(
+            STORAGE_KEY,
+            JSON.stringify({
+                setup,
+                nextRow,
+                nextVersion,
+                nextSnapshot,
+                nextRunId,
+                nextValidationId,
+                conflictInjected,
+                audit,
+                versions: [...versions.entries()],
+                current: [...current.entries()],
+                solverRuns: [...solverRuns.entries()],
+                validationReports: [...validationReports.entries()],
+                latestValidationByVersion: [
+                    ...latestValidationByVersion.entries(),
+                ],
+            }),
+        );
+    } catch {
+        // Ignore quota/storage errors in mock browser helper
+    }
+}
+
+function restoreStorage(): boolean {
+    const store = browserStorage();
+    if (!store) return false;
+    try {
+        const raw = store.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw) as {
+            setup: string;
+            nextRow: number;
+            nextVersion: number;
+            nextSnapshot: number;
+            nextRunId: number;
+            nextValidationId: number;
+            conflictInjected: boolean;
+            audit: Audit[];
+            versions: [number, SavedVersion][];
+            current: [number, number][];
+            solverRuns: [number, InternalSolverRun][];
+            validationReports: [number, ValidationReport][];
+            latestValidationByVersion: [number, number][];
+        };
+        if (parsed.setup !== setup) return false;
+        nextRow = parsed.nextRow;
+        nextVersion = parsed.nextVersion;
+        nextSnapshot = parsed.nextSnapshot;
+        nextRunId = parsed.nextRunId;
+        nextValidationId = parsed.nextValidationId;
+        conflictInjected = parsed.conflictInjected;
+        audit = parsed.audit;
+        versions = new Map(parsed.versions);
+        current = new Map(parsed.current);
+        solverRuns = new Map(parsed.solverRuns);
+        validationReports = new Map(parsed.validationReports);
+        latestValidationByVersion = new Map(parsed.latestValidationByVersion);
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+function clearStorage() {
+    const store = browserStorage();
+    if (!store) return;
+    try {
+        store.removeItem(STORAGE_KEY);
+    } catch {
+        // Ignore storage errors
+    }
+}
+
 const clone = <T>(value: T): T => structuredClone(value);
 const now = () => new Date().toISOString();
-function fail(status: number, code: string, message: string): never {
-    throw new MockError(status, code, message);
+const round2 = (value: number) => Math.round(value * 100) / 100;
+function fail(
+    status: number,
+    code: string,
+    message: string,
+    options?: {
+        location?: string | null;
+        details?: Record<string, unknown>;
+    },
+): never {
+    throw new MockError(status, code, message, options);
 }
 function requireVersion(id: number) {
     const version = versions.get(id);
@@ -210,7 +337,11 @@ function assigned(row: AssignmentRow, teacher: WorkspaceTeacher | undefined) {
 function initialize(teachers: Teacher[]) {
     if (initialized) return;
     initialized = true;
-    if (setup === 'planEmpty') return;
+    if (restoreStorage()) return;
+    if (setup === 'planEmpty') {
+        saveStorage();
+        return;
+    }
     const old = makeVersion(
         1,
         { optimization_config_id: 1, rule_set_version_id: 1 },
@@ -253,6 +384,73 @@ function initialize(teachers: Teacher[]) {
             );
         } else preparationStore.touchRoundSource(1);
     }
+    if (setup === 'solverActiveRun') {
+        const runId = nextRunId++;
+        const config = configProfile(draft.meta.optimization_config_id);
+        solverRuns.set(runId, {
+            dto: {
+                id: runId,
+                version_id: draft.meta.version_id,
+                base_revision: draft.meta.revision_no,
+                requested_by: 1,
+                status: 'RUNNING',
+                queued_at: now(),
+                execution_started_at: now(),
+                finished_at: null,
+                cancellation_requested_at: null,
+                preparation_ms: 85,
+                solve_ms: null,
+                archive_write_ms: null,
+                failure_code: null,
+                input_hash: draft.meta.snapshot_content_hash,
+                input_fresh: true,
+                applied_revision_no: null,
+                apply_ms: null,
+                summary: {
+                    contract_version: 1,
+                    ortools_version: 'mock-heuristic/9.11',
+                    random_seed: Number(config.seed),
+                    num_workers: Number(config.workers),
+                    total_budget_seconds: Number(config.total_seconds),
+                    cp_sat_status: null,
+                    termination_reason: null,
+                    apply_outcome: null,
+                    demo_only: true,
+                    illustrative_workload_rules: true,
+                    config_hash: `cfg-${draft.meta.optimization_config_id}`,
+                    stages: [],
+                    coverage: null,
+                },
+            },
+            polls: 0,
+            createdAtMs: Date.now(),
+            configId: draft.meta.optimization_config_id,
+            ruleSetId: draft.meta.rule_set_version_id,
+            baselineRows: clone(draft.rows),
+            diffItems: [],
+            scenarioOutcome: 'APPLIED',
+            holdActive: true,
+        });
+    }
+    if (setup === 'validationPass') {
+        const solved = runMockHeuristicSolver(
+            draft,
+            clone(draft.rows),
+            draft.meta.optimization_config_id,
+        );
+        if (solved.candidateRows) {
+            draft.rows = solved.candidateRows;
+        }
+        const report = createValidationReport(draft, 1);
+        validationReports.set(report.id, report);
+        latestValidationByVersion.set(draft.meta.version_id, report.id);
+    }
+    if (setup === 'validationViolation') {
+        const report = createValidationReport(draft, 1);
+        validationReports.set(report.id, report);
+        latestValidationByVersion.set(draft.meta.version_id, report.id);
+    }
+    saveStorage();
 }
 function assertDraft(version: SavedVersion, revision: number, fresh = true) {
     if (
@@ -318,7 +516,782 @@ function log(
         row_ids: rows.map((row) => row.id),
         at: now(),
     });
+    saveStorage();
 }
+function configProfile(configId: number): Record<string, unknown> {
+    if (configId === 2) {
+        return {
+            coverage_mode: 'MAX_COVERAGE',
+            deviation_basis: 'BASE_NORM',
+            preserve_policy: 'REOPTIMIZE',
+            load_weight: 120,
+            experience_weight: 15,
+            change_weight: 0,
+            total_seconds: 45,
+            stage_seconds: { Z: 12, L1: 12, M: 9, experience: 6, change: 6 },
+            grade_weights: { '9': 3, '12': 4, other: 1 },
+            workers: 4,
+            seed: 202609,
+        };
+    }
+    return {
+        coverage_mode: 'MAX_COVERAGE',
+        deviation_basis: 'BASE_NORM',
+        preserve_policy: 'PENALIZE_CHANGES',
+        load_weight: 100,
+        experience_weight: 20,
+        change_weight: 10,
+        total_seconds: 30,
+        stage_seconds: { Z: 8, L1: 8, M: 6, experience: 4, change: 4 },
+        grade_weights: { '9': 3, '12': 4, other: 1 },
+        workers: 4,
+        seed: 202608,
+    };
+}
+
+function computeWorkloadRows(
+    version: SavedVersion,
+    rows: AssignmentRow[] = version.rows,
+): WorkloadRow[] {
+    return version.teachers.map((teacher) => {
+        const a = round2(
+            rows
+                .filter((row) => row.teacher_id === teacher.id)
+                .reduce((sum, row) => sum + row.periods_per_week, 0),
+        );
+        const w = round2(a + teacher.fixed + teacher.converted);
+        const t = round2(w + teacher.reduced);
+        const q = Math.max(0, round2(teacher.base_norm - teacher.reduced));
+        const deltaT = round2(t - teacher.base_norm);
+        const exceedsWeekly =
+            Math.round(t * 100) > Math.round(teacher.weekly_limit * 100);
+        return {
+            teacher_id: teacher.id,
+            teacher_name: teacher.full_name,
+            b: teacher.base_norm,
+            f: teacher.fixed,
+            a,
+            c: teacher.converted,
+            r: teacher.reduced,
+            q,
+            w,
+            t,
+            delta_t: deltaT,
+            under: Math.max(0, round2(teacher.base_norm - t)),
+            over: Math.max(0, round2(t - teacher.base_norm)),
+            target_applicable: true,
+            checks: [
+                {
+                    br_code: 'WEEKLY_WORKLOAD_CAP',
+                    subject_type: 'TEACHER',
+                    subject_ref: String(teacher.id),
+                    calculation_period: 'WEEKLY',
+                    result_status: exceedsWeekly ? 'VIOLATION' : 'PASS',
+                    severity: exceedsWeekly ? 'ERROR' : 'INFO',
+                    missing_data: [],
+                    details: {
+                        value: t,
+                        limit: teacher.weekly_limit,
+                        basis: 'T',
+                        unit: 'PERIOD_PER_WEEK',
+                        source: `Quy tắc v${version.meta.rule_set_version_id}`,
+                    },
+                    message: exceedsWeekly
+                        ? `${teacher.full_name} vượt giới hạn tuần (${t} > ${teacher.weekly_limit} tiết).`
+                        : `${teacher.full_name} đạt giới hạn tuần (${t} ≤ ${teacher.weekly_limit} tiết).`,
+                },
+                {
+                    br_code: 'ANNUAL_WORKLOAD',
+                    subject_type: 'TEACHER',
+                    subject_ref: String(teacher.id),
+                    calculation_period: 'ANNUAL',
+                    result_status: 'INSUFFICIENT_DATA',
+                    severity: 'WARNING',
+                    missing_data: ['annual_workload', 'annual_limit'],
+                    details: {
+                        annual_workload: null,
+                        annual_limit: null,
+                    },
+                    message:
+                        'Mock chưa có nguồn tải năm; không suy diễn giá trị bằng 0.',
+                },
+            ],
+        };
+    });
+}
+
+function evaluateValidationFindings(
+    version: SavedVersion,
+    rows: AssignmentRow[],
+    workloads: WorkloadRow[],
+): ValidationFinding[] {
+    const meta = metadata(version);
+    const findings: ValidationFinding[] = [];
+    findings.push({
+        br_code: 'SNAPSHOT_FRESHNESS',
+        subject_type: 'VERSION',
+        subject_ref: String(meta.version_id),
+        calculation_period: 'WEEKLY',
+        result_status: meta.snapshot_fresh ? 'PASS' : 'VIOLATION',
+        severity: meta.snapshot_fresh ? 'INFO' : 'ERROR',
+        missing_data: [],
+        message: meta.snapshot_fresh
+            ? 'Snapshot đầu vào khớp nguồn dữ liệu chuẩn bị hiện hành.'
+            : 'Snapshot phương án đã cũ so với nguồn chuẩn bị hiện tại; cần làm mới trước khi chốt.',
+        details: {
+            source_revision_token: meta.source_revision_token,
+            live_source_revision_token: meta.live_source_revision_token,
+        },
+    });
+    const unassignedRows = rows.filter((row) => row.teacher_id === null);
+    findings.push({
+        br_code: 'REQUIRED_COVERAGE',
+        subject_type: 'VERSION',
+        subject_ref: String(meta.version_id),
+        calculation_period: 'WEEKLY',
+        result_status: unassignedRows.length === 0 ? 'PASS' : 'VIOLATION',
+        severity: unassignedRows.length === 0 ? 'INFO' : 'ERROR',
+        missing_data: [],
+        message:
+            unassignedRows.length === 0
+                ? `Đã phân công đủ ${rows.length}/${rows.length} thành phần nhu cầu.`
+                : `Còn ${unassignedRows.length}/${rows.length} thành phần chưa có giáo viên phụ trách.`,
+        details: {
+            required: rows.length,
+            assigned: rows.length - unassignedRows.length,
+            unassigned: unassignedRows.length,
+        },
+    });
+    const ineligibleRows = rows.filter((row) => {
+        if (row.teacher_id === null) return false;
+        const teacher = version.teachers.find((t) => t.id === row.teacher_id);
+        return !eligible(teacher, row);
+    });
+    findings.push({
+        br_code: 'ELIGIBILITY_AND_PERIODS',
+        subject_type: 'VERSION',
+        subject_ref: String(meta.version_id),
+        calculation_period: 'WEEKLY',
+        result_status: ineligibleRows.length === 0 ? 'PASS' : 'VIOLATION',
+        severity: ineligibleRows.length === 0 ? 'INFO' : 'ERROR',
+        missing_data: [],
+        message:
+            ineligibleRows.length === 0
+                ? 'Toàn bộ phân công phù hợp chuyên môn và giai đoạn công tác.'
+                : `Có ${ineligibleRows.length} dòng phân công không còn khớp điều kiện giảng dạy hoặc hiệu lực.`,
+        details: {
+            invalid_row_ids: ineligibleRows.map((row) => row.id),
+        },
+    });
+    const capViolations = workloads.filter((row) =>
+        row.checks.some(
+            (check) =>
+                check.calculation_period === 'WEEKLY' &&
+                check.result_status === 'VIOLATION',
+        ),
+    );
+    if (capViolations.length > 0) {
+        for (const row of capViolations) {
+            const check = row.checks.find(
+                (item) => item.calculation_period === 'WEEKLY',
+            )!;
+            findings.push({
+                br_code: 'WEEKLY_WORKLOAD_CAP',
+                subject_type: 'TEACHER',
+                subject_ref: row.teacher_name,
+                calculation_period: 'WEEKLY',
+                result_status: 'VIOLATION',
+                severity: 'ERROR',
+                missing_data: [],
+                message: check.message,
+                details: check.details,
+            });
+        }
+    } else {
+        findings.push({
+            br_code: 'WEEKLY_WORKLOAD_CAP',
+            subject_type: 'VERSION',
+            subject_ref: String(meta.version_id),
+            calculation_period: 'WEEKLY',
+            result_status: 'PASS',
+            severity: 'INFO',
+            missing_data: [],
+            message: `Tất cả ${workloads.length} giáo viên đều nằm trong giới hạn tiết/tuần của bộ quy tắc.`,
+            details: {
+                checked_teachers: workloads.length,
+            },
+        });
+    }
+    findings.push({
+        br_code: 'ANNUAL_WORKLOAD',
+        subject_type: 'VERSION',
+        subject_ref: String(meta.version_id),
+        calculation_period: 'ANNUAL',
+        result_status: 'INSUFFICIENT_DATA',
+        severity: 'WARNING',
+        missing_data: ['annual_workload', 'annual_limit'],
+        message:
+            'Chưa đủ dữ liệu định mức và tải cả năm; không chặn mở đợt nếu kiểm tra tuần đạt.',
+        details: {
+            annual_workload: null,
+            annual_limit: null,
+        },
+    });
+    return findings;
+}
+
+function summarizeReportStatus(
+    findings: ValidationFinding[],
+): ValidationStatus {
+    if (findings.some((item) => item.result_status === 'VIOLATION'))
+        return 'VIOLATION';
+    if (findings.some((item) => item.result_status === 'INSUFFICIENT_DATA'))
+        return 'INSUFFICIENT_DATA';
+    return 'PASS';
+}
+
+function createValidationReport(
+    version: SavedVersion,
+    actorId: number | null,
+): ValidationReport {
+    const meta = metadata(version);
+    const workloads = computeWorkloadRows(version);
+    const results = evaluateValidationFindings(
+        version,
+        version.rows,
+        workloads,
+    );
+    const overallStatus = summarizeReportStatus(results);
+    const assignedCount = version.rows.filter(
+        (row) => row.teacher_id !== null,
+    ).length;
+    return {
+        id: nextValidationId++,
+        version_id: meta.version_id,
+        revision_no: meta.revision_no,
+        input_snapshot_id: meta.input_snapshot_id,
+        source_revision_token: meta.source_revision_token,
+        checked_at: now(),
+        checked_by: actorId,
+        overall_status: overallStatus,
+        fresh: isValidationFresh(version, {
+            version_id: meta.version_id,
+            revision_no: meta.revision_no,
+            input_snapshot_id: meta.input_snapshot_id,
+        }),
+        validator_version: 'tass-val-mock/1',
+        results,
+        workloads,
+        summary: {
+            contract_version: 1,
+            illustrative_rules: true,
+            finding_count: results.length,
+            coverage: {
+                required: version.rows.length,
+                assigned: assignedCount,
+                unassigned: version.rows.length - assignedCount,
+            },
+            warnings: results
+                .filter((item) => item.result_status === 'INSUFFICIENT_DATA')
+                .map((item) => item.br_code),
+        },
+    };
+}
+
+function isValidationFresh(
+    version: SavedVersion,
+    report: Pick<
+        ValidationReport,
+        'version_id' | 'revision_no' | 'input_snapshot_id'
+    >,
+): boolean {
+    const meta = metadata(version);
+    return (
+        report.version_id === meta.version_id &&
+        report.revision_no === meta.revision_no &&
+        report.input_snapshot_id === meta.input_snapshot_id &&
+        meta.snapshot_fresh
+    );
+}
+
+function runMockHeuristicSolver(
+    version: SavedVersion,
+    baselineRows: AssignmentRow[],
+    configId: number,
+): {
+    feasible: boolean;
+    candidateRows: AssignmentRow[] | null;
+    summary: SolverRunSummary;
+    diffItems: SolverRunDiffItem[];
+} {
+    const cfg = configProfile(configId);
+    const reoptimize = cfg.preserve_policy === 'REOPTIMIZE';
+    const stageSeconds = (cfg.stage_seconds ?? {
+        Z: 8,
+        L1: 8,
+        M: 6,
+        experience: 4,
+        change: 4,
+    }) as Record<string, number>;
+    const gradeWeights = (cfg.grade_weights ?? {
+        '9': 3,
+        '12': 4,
+        other: 1,
+    }) as Record<string, number>;
+    const candidateRows = clone(baselineRows);
+
+    // Check fixed locks feasibility first
+    const teacherTotals = new Map<number, number>();
+    for (const teacher of version.teachers) {
+        teacherTotals.set(
+            teacher.id,
+            teacher.fixed + teacher.converted + teacher.reduced,
+        );
+    }
+    for (const row of candidateRows) {
+        if (!row.locked || row.teacher_id === null) continue;
+        const teacher = version.teachers.find((t) => t.id === row.teacher_id);
+        if (!eligible(teacher, row)) {
+            return {
+                feasible: false,
+                candidateRows: null,
+                diffItems: [],
+                summary: buildInfeasibleSummary(cfg, stageSeconds),
+            };
+        }
+        const nextTotal =
+            (teacherTotals.get(teacher.id) ?? 0) + row.periods_per_week;
+        if (
+            Math.round(nextTotal * 100) > Math.round(teacher.weekly_limit * 100)
+        ) {
+            return {
+                feasible: false,
+                candidateRows: null,
+                diffItems: [],
+                summary: buildInfeasibleSummary(cfg, stageSeconds),
+            };
+        }
+        teacherTotals.set(teacher.id, nextTotal);
+    }
+
+    // Clear unlocked assignments before reconstructing (or only unassigned if PENALIZE_CHANGES preserves compatible)
+    for (const row of candidateRows) {
+        if (!row.locked) {
+            if (reoptimize) {
+                row.teacher_id = null;
+                row.teacher_name = null;
+            } else if (row.teacher_id !== null) {
+                const teacher = version.teachers.find(
+                    (t) => t.id === row.teacher_id,
+                );
+                const nextTotal =
+                    (teacherTotals.get(row.teacher_id) ?? 0) +
+                    row.periods_per_week;
+                if (
+                    !eligible(teacher, row) ||
+                    Math.round(nextTotal * 100) >
+                        Math.round(teacher.weekly_limit * 100)
+                ) {
+                    row.teacher_id = null;
+                    row.teacher_name = null;
+                } else {
+                    teacherTotals.set(row.teacher_id, nextTotal);
+                }
+            }
+        }
+    }
+
+    const targets = candidateRows
+        .filter((row) => !row.locked && row.teacher_id === null)
+        .sort((a, b) => {
+            const cA = version.teachers.filter((t) => eligible(t, a)).length;
+            const cB = version.teachers.filter((t) => eligible(t, b)).length;
+            if (cA !== cB) return cA - cB;
+            return b.periods_per_week - a.periods_per_week;
+        });
+
+    for (const row of targets) {
+        const baselineRow = baselineRows.find((b) => b.id === row.id);
+        const candidates = version.teachers
+            .filter((teacher) => {
+                if (!eligible(teacher, row)) return false;
+                const total =
+                    (teacherTotals.get(teacher.id) ?? 0) + row.periods_per_week;
+                return (
+                    Math.round(total * 100) <=
+                    Math.round(teacher.weekly_limit * 100)
+                );
+            })
+            .sort((a, b) => {
+                const loadA =
+                    (teacherTotals.get(a.id) ?? 0) +
+                    row.periods_per_week -
+                    a.base_norm;
+                const loadB =
+                    (teacherTotals.get(b.id) ?? 0) +
+                    row.periods_per_week -
+                    b.base_norm;
+                const absDiff = Math.abs(loadA) - Math.abs(loadB);
+                if (Math.abs(absDiff) > 0.01) return absDiff;
+                if (baselineRow?.teacher_id === a.id) return -1;
+                if (baselineRow?.teacher_id === b.id) return 1;
+                return a.id - b.id;
+            });
+        const picked = candidates[0];
+        if (picked) {
+            assigned(row, picked);
+            teacherTotals.set(
+                picked.id,
+                (teacherTotals.get(picked.id) ?? 0) + row.periods_per_week,
+            );
+        } else {
+            row.unassigned_reason_code = 'NO_ELIGIBLE_TEACHER_WITH_CAP';
+            row.unassigned_reason_text =
+                'Không còn giáo viên đủ điều kiện trong trần tải tuần.';
+        }
+    }
+
+    const workloads = computeWorkloadRows(version, candidateRows);
+    const z = candidateRows.filter((row) => row.teacher_id === null).length;
+    const l1 = round2(
+        workloads.reduce((sum, item) => sum + Math.abs(item.delta_t ?? 0), 0),
+    );
+    const m = round2(
+        Math.max(0, ...workloads.map((item) => Math.abs(item.delta_t ?? 0))),
+    );
+    const expPenalty = candidateRows.reduce((sum, row) => {
+        if (row.teacher_id === null) return sum;
+        const grade = row.class_name.match(/^\d+/)?.[0] ?? 'other';
+        const gw = gradeWeights[grade] ?? gradeWeights.other ?? 1;
+        return sum + (row.teacher_id % 2 === 0 ? gw : 0);
+    }, 0);
+    const changes = candidateRows.filter((row) => {
+        const before = baselineRows.find((b) => b.id === row.id);
+        return before && before.teacher_id !== row.teacher_id;
+    }).length;
+    const vector = [
+        z,
+        Math.round(l1 * 100),
+        Math.round(m * 100),
+        expPenalty,
+        changes,
+    ];
+    const assignedRows = candidateRows.filter((r) => r.teacher_id !== null);
+    const totalPeriods = candidateRows.reduce(
+        (sum, row) => sum + row.periods_per_week,
+        0,
+    );
+    const assignedPeriods = assignedRows.reduce(
+        (sum, row) => sum + row.periods_per_week,
+        0,
+    );
+    const diffItems: SolverRunDiffItem[] = candidateRows
+        .map((row) => {
+            const before = baselineRows.find((b) => b.id === row.id)!;
+            return {
+                row_id: row.id,
+                class_name: row.class_name,
+                subject_name: row.subject_name,
+                demand_type: row.demand_type,
+                periods_per_week: row.periods_per_week,
+                before_teacher_id: before.teacher_id,
+                before_teacher_name: before.teacher_name,
+                after_teacher_id: row.teacher_id,
+                after_teacher_name: row.teacher_name,
+                reason_code: row.unassigned_reason_code,
+                reason_text: row.unassigned_reason_text,
+            };
+        })
+        .filter(
+            (item) =>
+                item.before_teacher_id !== item.after_teacher_id ||
+                item.after_teacher_id === null,
+        );
+
+    return {
+        feasible: true,
+        candidateRows,
+        diffItems,
+        summary: {
+            contract_version: 1,
+            ortools_version: 'mock-heuristic/9.11',
+            random_seed: Number(cfg.seed),
+            num_workers: Number(cfg.workers),
+            total_budget_seconds: Number(cfg.total_seconds),
+            cp_sat_status: 'FEASIBLE',
+            termination_reason: 'MOCK_HEURISTIC_COMPLETE',
+            apply_outcome: null,
+            demo_only: true,
+            illustrative_workload_rules: true,
+            config_hash: `cfg-${configId}`,
+            stages: (['Z', 'L1', 'M', 'experience', 'change'] as const).map(
+                (stage, index) => ({
+                    name: stage,
+                    status: 'HEURISTIC',
+                    elapsed_ms: 45 + index * 18,
+                    stop_reason: 'VECTOR_ONLY_NO_STAGE_PROOF',
+                    exactOptimalityProven: false,
+                    gap_tolerance: stageSeconds[stage] ?? 0,
+                    objective: vector[index] ?? 0,
+                    best_bound: null,
+                }),
+            ),
+            coverage: {
+                optimality_proven: false,
+                metrics: {
+                    totalComponents: candidateRows.length,
+                    assignedComponents: assignedRows.length,
+                    unassignedComponents: z,
+                    totalPeriods,
+                    assignedPeriods,
+                    missingPeriods: round2(totalPeriods - assignedPeriods),
+                    totalGroups: new Set(
+                        candidateRows.map(
+                            (r) => `${r.class_id}:${r.subject_id}`,
+                        ),
+                    ).size,
+                    completeGroups: new Set(
+                        candidateRows
+                            .filter((r) => r.teacher_id !== null)
+                            .map((r) => `${r.class_id}:${r.subject_id}`),
+                    ).size,
+                    incompleteGroups: new Set(
+                        candidateRows
+                            .filter((r) => r.teacher_id === null)
+                            .map((r) => `${r.class_id}:${r.subject_id}`),
+                    ).size,
+                    loadDeviation: l1,
+                    maxLoadDeviation: m,
+                    experiencePenalty: expPenalty,
+                    changes,
+                    addedDemands: 0,
+                    removedDemands: 0,
+                    coverageObjective: z,
+                    softObjective: expPenalty + changes,
+                    fullCoverageImpossibleProven: false,
+                    objectiveVector: vector,
+                },
+            },
+        },
+    };
+}
+
+function buildInfeasibleSummary(
+    cfg: Record<string, unknown>,
+    stageSeconds: Record<string, number>,
+): SolverRunSummary {
+    return {
+        contract_version: 1,
+        ortools_version: 'mock-heuristic/9.11',
+        random_seed: Number(cfg.seed),
+        num_workers: Number(cfg.workers),
+        total_budget_seconds: Number(cfg.total_seconds),
+        cp_sat_status: 'INFEASIBLE',
+        termination_reason: 'INFEASIBLE_HARD_CONSTRAINTS',
+        apply_outcome: 'NO_CANDIDATE',
+        demo_only: true,
+        illustrative_workload_rules: true,
+        config_hash: null,
+        stages: (['Z', 'L1', 'M', 'experience', 'change'] as const).map(
+            (stage) => ({
+                name: stage,
+                status: 'INFEASIBLE',
+                elapsed_ms: 60,
+                stop_reason: 'MODEL_INFEASIBLE',
+                exactOptimalityProven: false,
+                gap_tolerance: stageSeconds[stage] ?? 0,
+                objective: null,
+                best_bound: null,
+            }),
+        ),
+        coverage: {
+            optimality_proven: false,
+        },
+    };
+}
+
+function advanceSolverRun(internal: InternalSolverRun): SolverRunDto {
+    const status = internal.dto.status;
+    if (
+        status === 'SUCCEEDED' ||
+        status === 'COMPLETED' ||
+        status === 'FAILED' ||
+        status === 'CANCELLED'
+    ) {
+        return internal.dto;
+    }
+    internal.polls += 1;
+    const elapsedMs = Date.now() - internal.createdAtMs;
+    if (status === 'CANCEL_REQUESTED') {
+        internal.holdActive = false;
+        internal.dto = {
+            ...internal.dto,
+            status: 'CANCELLED',
+            finished_at: now(),
+            solve_ms: Math.max(80, elapsedMs),
+            summary: {
+                ...(internal.dto.summary ??
+                    buildInfeasibleSummary(
+                        configProfile(internal.configId),
+                        {},
+                    )),
+                cp_sat_status: 'ABORTED',
+                termination_reason: 'CANCELLED_BY_USER',
+                apply_outcome: 'CANCELLED',
+                stages: internal.dto.summary?.stages ?? [],
+            },
+        };
+        return internal.dto;
+    }
+    if (internal.holdActive && status === 'RUNNING') {
+        return internal.dto;
+    }
+    if (status === 'QUEUED') {
+        internal.dto = {
+            ...internal.dto,
+            status: 'RUNNING',
+            execution_started_at: now(),
+            preparation_ms: 85,
+        };
+        if (internal.polls < 2 && elapsedMs < 250) {
+            return internal.dto;
+        }
+    }
+    const version = versions.get(internal.dto.version_id);
+    if (!version) {
+        internal.dto = {
+            ...internal.dto,
+            status: 'FAILED',
+            finished_at: now(),
+            failure_code: 'VERSION_MISSING',
+        };
+        return internal.dto;
+    }
+
+    if (internal.scenarioOutcome === 'FAILED') {
+        internal.dto = {
+            ...internal.dto,
+            status: 'FAILED',
+            finished_at: now(),
+            solve_ms: 320,
+            failure_code: 'SOLVER_INTERNAL_ERROR',
+            summary: {
+                ...(internal.dto.summary ??
+                    buildInfeasibleSummary(
+                        configProfile(internal.configId),
+                        {},
+                    )),
+                cp_sat_status: 'UNKNOWN',
+                termination_reason: 'SOLVER_INTERNAL_ERROR',
+                apply_outcome: 'FAILED',
+                stages: [],
+            },
+        };
+        return internal.dto;
+    }
+
+    if (internal.scenarioOutcome === 'INFEASIBLE') {
+        const cfg = configProfile(internal.configId);
+        internal.dto = {
+            ...internal.dto,
+            status: 'COMPLETED',
+            finished_at: now(),
+            solve_ms: 290,
+            summary: buildInfeasibleSummary(
+                cfg,
+                (cfg.stage_seconds ?? {}) as Record<string, number>,
+            ),
+        };
+        return internal.dto;
+    }
+
+    const solved = runMockHeuristicSolver(
+        version,
+        internal.baselineRows,
+        internal.configId,
+    );
+    internal.diffItems = solved.diffItems;
+    if (!solved.feasible || !solved.candidateRows) {
+        internal.dto = {
+            ...internal.dto,
+            status: 'COMPLETED',
+            finished_at: now(),
+            solve_ms: 280,
+            summary: solved.summary,
+        };
+        return internal.dto;
+    }
+
+    const freshMeta = metadata(version);
+    const isStale =
+        internal.scenarioOutcome === 'STALE' ||
+        version.meta.revision_no !== internal.dto.base_revision ||
+        !freshMeta.snapshot_fresh ||
+        current.get(version.meta.round_id) !== version.meta.version_id;
+    const isNotDraft = version.meta.status !== 'DRAFT';
+
+    if (isNotDraft || isStale) {
+        internal.dto = {
+            ...internal.dto,
+            status: 'COMPLETED',
+            finished_at: now(),
+            solve_ms: 340,
+            archive_write_ms: 20,
+            input_fresh: freshMeta.snapshot_fresh,
+            summary: {
+                ...solved.summary,
+                apply_outcome: isNotDraft ? 'NOT_DRAFT' : 'STALE',
+            },
+        };
+        return internal.dto;
+    }
+
+    // Apply candidate cleanly to draft version
+    const changedRows = solved.candidateRows.filter((nextRowItem) => {
+        const currentRow = version.rows.find((r) => r.id === nextRowItem.id);
+        return (
+            currentRow &&
+            (currentRow.teacher_id !== nextRowItem.teacher_id ||
+                currentRow.unassigned_reason_code !==
+                    nextRowItem.unassigned_reason_code)
+        );
+    });
+    if (changedRows.length > 0) {
+        version.rows = clone(solved.candidateRows);
+        version.meta.revision_no += 1;
+        log(
+            version,
+            'solver_apply',
+            `Áp dụng đề xuất solver #${internal.dto.id}`,
+            changedRows,
+        );
+    }
+    const postReport = createValidationReport(
+        version,
+        internal.dto.requested_by,
+    );
+    validationReports.set(postReport.id, postReport);
+    latestValidationByVersion.set(version.meta.version_id, postReport.id);
+
+    internal.dto = {
+        ...internal.dto,
+        status: 'SUCCEEDED',
+        finished_at: now(),
+        solve_ms: 360,
+        archive_write_ms: 28,
+        applied_revision_no: version.meta.revision_no,
+        apply_ms: 22,
+        summary: {
+            ...solved.summary,
+            apply_outcome: 'APPLIED',
+            post_validation_status: postReport.overall_status,
+            applied_revision_no: version.meta.revision_no,
+            apply_ms: 22,
+        },
+    };
+    return internal.dto;
+}
+
 function configuration(round: number, input: PlanConfiguration) {
     const result = preparationStore.evaluateReadiness(round, input, 'normal');
     // Plan source capture requires a supported, confirmed config/rule pair; coverage may still be incomplete.
@@ -342,16 +1315,26 @@ export const assignmentStore = {
     reset() {
         versions = new Map();
         current = new Map();
+        solverRuns = new Map();
+        validationReports = new Map();
+        latestValidationByVersion = new Map();
         nextRow = 50001;
         nextVersion = 1101;
         nextSnapshot = 2101;
+        nextRunId = 9001;
+        nextValidationId = 7001;
         initialized = false;
         setup = 'normal';
         conflictInjected = false;
         audit = [];
+        clearStorage();
     },
     configureScenario(scenario: string) {
-        if (!scenario.startsWith('plan')) {
+        if (
+            !scenario.startsWith('plan') &&
+            !scenario.startsWith('solver') &&
+            !scenario.startsWith('validation')
+        ) {
             if (scenario === 'normal' && setup !== 'normal') this.reset();
             return;
         }
@@ -361,8 +1344,12 @@ export const assignmentStore = {
     ensure(teachers: Teacher[]) {
         initialize(teachers);
     },
-    audit() {
-        return clone(audit);
+    audit(versionId?: number) {
+        const list =
+            versionId === undefined
+                ? audit
+                : audit.filter((entry) => entry.version_id === versionId);
+        return clone(list);
     },
     preview(roundCode: string) {
         const version = [...versions.values()].find(
@@ -399,6 +1386,7 @@ export const assignmentStore = {
         const version = makeVersion(round, input, teachers);
         versions.set(version.meta.version_id, version);
         current.set(round, version.meta.version_id);
+        saveStorage();
         return clone(metadata(version));
     },
     rows(id: number, filters: AssignmentFilters = {}): AssignmentPage {
@@ -431,6 +1419,13 @@ export const assignmentStore = {
     },
     workspace(id: number): PlanWorkspace {
         const version = requireVersion(id);
+        const runs = [...solverRuns.values()]
+            .filter((item) => item.dto.version_id === id)
+            .sort((a, b) => b.dto.id - a.dto.id);
+        const diffs: Record<number, SolverRunDiffItem[]> = {};
+        for (const item of runs) {
+            if (item.diffItems.length) diffs[item.dto.id] = item.diffItems;
+        }
         return clone({
             context_label: version.context_label,
             teachers: version.teachers,
@@ -445,6 +1440,8 @@ export const assignmentStore = {
             locked_count: version.rows.filter((row) => row.locked).length,
             starts_on: version.starts_on,
             ends_on: version.ends_on,
+            solver_runs: runs.map((item) => item.dto),
+            solver_diffs: diffs,
         });
     },
     workloads(
@@ -454,82 +1451,34 @@ export const assignmentStore = {
         offset = 0,
     ): WorkloadPage {
         const version = requireVersion(id);
-        const items = version.teachers
-            .map((teacher) => {
-                const a =
-                    Math.round(
-                        version.rows
-                            .filter((row) => row.teacher_id === teacher.id)
-                            .reduce(
-                                (sum, row) => sum + row.periods_per_week,
-                                0,
-                            ) * 100,
-                    ) / 100;
-                const t =
-                    Math.round(
-                        (a +
-                            teacher.fixed +
-                            teacher.converted +
-                            teacher.reduced) *
-                            100,
-                    ) / 100;
-                return {
-                    teacher_id: teacher.id,
-                    teacher_name: teacher.full_name,
-                    b: teacher.base_norm,
-                    f: teacher.fixed,
-                    a,
-                    c: teacher.converted,
-                    r: teacher.reduced,
-                    q:
-                        teacher.base_norm -
-                        teacher.fixed -
-                        teacher.converted -
-                        teacher.reduced,
-                    w: t - teacher.reduced,
-                    t,
-                    delta_t: t - teacher.base_norm,
-                    under: Math.max(0, teacher.base_norm - t),
-                    over: Math.max(0, t - teacher.base_norm),
-                    target_applicable: true,
-                    checks: [
-                        {
-                            br_code: 'ANNUAL_WORKLOAD',
-                            subject_type: 'TEACHER',
-                            subject_ref: String(teacher.id),
-                            calculation_period: 'ANNUAL',
-                            result_status: 'INSUFFICIENT_DATA',
-                            severity: 'WARNING',
-                            missing_data: ['annual_workload', 'annual_limit'],
-                            details: {
-                                annual_workload: null,
-                                annual_limit: null,
-                            },
-                            message:
-                                'Mock chưa có nguồn tải năm; không suy diễn giá trị bằng 0.',
-                        },
-                    ],
-                };
-            })
-            .filter(
-                (item) =>
-                    teacherId === undefined || item.teacher_id === teacherId,
-            );
+        const allItems = computeWorkloadRows(version);
+        const filtered = allItems.filter(
+            (item) => teacherId === undefined || item.teacher_id === teacherId,
+        );
+        const hasWeeklyViolation = allItems.some((row) =>
+            row.checks.some(
+                (check) =>
+                    check.calculation_period === 'WEEKLY' &&
+                    check.result_status === 'VIOLATION',
+            ),
+        );
+        const assignedCount = version.rows.filter(
+            (row) => row.teacher_id !== null,
+        ).length;
         return clone({
             version: context(version),
-            total: items.length,
+            total: filtered.length,
             limit,
             offset,
-            items: items.slice(offset, offset + limit),
+            items: filtered.slice(offset, offset + limit),
             coverage: {
                 required: version.rows.length,
-                assigned: version.rows.filter((row) => row.teacher_id !== null)
-                    .length,
-                unassigned: version.rows.filter(
-                    (row) => row.teacher_id === null,
-                ).length,
+                assigned: assignedCount,
+                unassigned: version.rows.length - assignedCount,
             },
-            overall_status: 'INSUFFICIENT_DATA',
+            overall_status: hasWeeklyViolation
+                ? 'VIOLATION'
+                : 'INSUFFICIENT_DATA',
             warnings: [
                 ...(!metadata(version).snapshot_fresh ? ['STALE_INPUT'] : []),
                 'ANNUAL_WORKLOAD_MISSING',
@@ -794,5 +1743,249 @@ export const assignmentStore = {
                     : []),
             ],
         };
+    },
+    startSolverRun(id: number, input: StartSolverRunRequest): SolverRunDto {
+        const version = requireVersion(id);
+        if (setup === 'solverQueueFull') {
+            fail(
+                503,
+                'SOLVER_QUEUE_FULL',
+                'Hàng đợi solver đang đầy; thử lại sau ít phút.',
+            );
+        }
+        const existingActive = [...solverRuns.values()].find(
+            (item) =>
+                item.dto.version_id === id &&
+                (item.dto.status === 'QUEUED' ||
+                    item.dto.status === 'RUNNING' ||
+                    item.dto.status === 'CANCEL_REQUESTED'),
+        );
+        if (existingActive) {
+            fail(
+                409,
+                'SOLVER_RUN_ACTIVE',
+                'Phiên bản đang có lượt sinh đề xuất hoạt động.',
+                {
+                    location: `/api/solver-runs/${existingActive.dto.id}`,
+                    details: { solver_run_id: existingActive.dto.id },
+                },
+            );
+        }
+        assertDraft(version, input.expected_revision, true);
+        configuration(version.meta.round_id, {
+            optimization_config_id: input.optimization_config_id,
+            rule_set_version_id: input.rule_set_version_id,
+        });
+        const runId = nextRunId++;
+        const cfg = configProfile(input.optimization_config_id);
+        const outcome: InternalSolverRun['scenarioOutcome'] =
+            setup === 'solverStale'
+                ? 'STALE'
+                : setup === 'solverInfeasible'
+                  ? 'INFEASIBLE'
+                  : setup === 'solverFailed'
+                    ? 'FAILED'
+                    : 'APPLIED';
+        const dto: SolverRunDto = {
+            id: runId,
+            version_id: id,
+            base_revision: version.meta.revision_no,
+            requested_by: 1,
+            status: 'QUEUED',
+            queued_at: now(),
+            execution_started_at: null,
+            finished_at: null,
+            cancellation_requested_at: null,
+            preparation_ms: null,
+            solve_ms: null,
+            archive_write_ms: null,
+            failure_code: null,
+            input_hash: metadata(version).snapshot_content_hash,
+            input_fresh: true,
+            applied_revision_no: null,
+            apply_ms: null,
+            summary: {
+                contract_version: 1,
+                ortools_version: 'mock-heuristic/9.11',
+                random_seed: Number(cfg.seed),
+                num_workers: Number(cfg.workers),
+                total_budget_seconds: Number(cfg.total_seconds),
+                cp_sat_status: null,
+                termination_reason: null,
+                apply_outcome: null,
+                demo_only: true,
+                illustrative_workload_rules: true,
+                config_hash: `cfg-${input.optimization_config_id}`,
+                stages: [],
+                coverage: null,
+            },
+        };
+        solverRuns.set(runId, {
+            dto,
+            polls: 0,
+            createdAtMs: Date.now(),
+            configId: input.optimization_config_id,
+            ruleSetId: input.rule_set_version_id,
+            baselineRows: clone(version.rows),
+            diffItems: [],
+            scenarioOutcome: outcome,
+        });
+        log(
+            version,
+            'solver_submit',
+            `Gửi lượt sinh đề xuất #${runId} (cấu hình #${input.optimization_config_id})`,
+            [],
+        );
+        return clone(dto);
+    },
+    solverRun(runId: number): SolverRunDto {
+        const internal = solverRuns.get(runId);
+        if (!internal) {
+            fail(
+                404,
+                'RESOURCE_NOT_FOUND',
+                'Không tìm thấy lượt sinh đề xuất.',
+            );
+        }
+        const next = advanceSolverRun(internal);
+        saveStorage();
+        return clone(next);
+    },
+    cancelSolverRun(runId: number): SolverRunDto {
+        const internal = solverRuns.get(runId);
+        if (!internal) {
+            fail(
+                404,
+                'RESOURCE_NOT_FOUND',
+                'Không tìm thấy lượt sinh đề xuất.',
+            );
+        }
+        const status = internal.dto.status;
+        if (
+            status === 'SUCCEEDED' ||
+            status === 'COMPLETED' ||
+            status === 'FAILED' ||
+            status === 'CANCELLED'
+        ) {
+            return clone(internal.dto);
+        }
+        if (status === 'QUEUED') {
+            internal.dto = {
+                ...internal.dto,
+                status: 'CANCELLED',
+                cancellation_requested_at: now(),
+                finished_at: now(),
+                summary: {
+                    ...(internal.dto.summary ??
+                        buildInfeasibleSummary(
+                            configProfile(internal.configId),
+                            {},
+                        )),
+                    cp_sat_status: 'ABORTED',
+                    termination_reason: 'CANCELLED_BEFORE_EXECUTION',
+                    apply_outcome: 'CANCELLED',
+                },
+            };
+        } else {
+            internal.dto = {
+                ...internal.dto,
+                status: 'CANCEL_REQUESTED',
+                cancellation_requested_at:
+                    internal.dto.cancellation_requested_at ?? now(),
+            };
+        }
+        saveStorage();
+        return clone(internal.dto);
+    },
+    optimization(id: number): OptimizationView {
+        const version = requireVersion(id);
+        const runsForVersion = [...solverRuns.values()]
+            .filter((item) => item.dto.version_id === id)
+            .sort((a, b) => b.dto.id - a.dto.id);
+        const appliedRun = runsForVersion.find(
+            (item) => item.dto.summary?.apply_outcome === 'APPLIED',
+        );
+        const picked = appliedRun ?? runsForVersion[0] ?? null;
+        const runDto = picked ? clone(picked.dto) : null;
+        const appliedAndCurrent = Boolean(
+            runDto &&
+            runDto.summary?.apply_outcome === 'APPLIED' &&
+            runDto.applied_revision_no === version.meta.revision_no &&
+            metadata(version).snapshot_fresh,
+        );
+        const objectiveVector =
+            runDto?.summary?.coverage?.metrics?.objectiveVector ?? null;
+        const warnings: string[] = [];
+        if (!runDto) warnings.push('NO_SOLVER_RUN');
+        else if (!appliedAndCurrent)
+            warnings.push('OPTIMIZATION_STALE_OR_NOT_APPLIED');
+        return clone({
+            version: context(version),
+            latest_run_id: runDto?.id ?? null,
+            run: runDto,
+            matches_version: appliedAndCurrent,
+            configuration: configProfile(
+                picked?.configId ?? version.meta.optimization_config_id,
+            ),
+            objective_vector: objectiveVector,
+            warnings,
+        });
+    },
+    runValidation(id: number, input: ValidatePlanRequest): ValidationReport {
+        const version = requireVersion(id);
+        if (version.meta.revision_no !== input.expected_revision) {
+            fail(409, 'REVISION_CONFLICT', 'Revision phương án đã thay đổi.');
+        }
+        const report = createValidationReport(version, 1);
+        validationReports.set(report.id, report);
+        latestValidationByVersion.set(id, report.id);
+        log(
+            version,
+            'validate',
+            `Kiểm tra phương án (${report.overall_status})`,
+            [],
+        );
+        return clone(report);
+    },
+    validation(id: number, validationRunId?: number | null): ValidationReport {
+        const version = requireVersion(id);
+        const targetId =
+            validationRunId ?? latestValidationByVersion.get(id) ?? null;
+        if (!targetId) {
+            fail(
+                404,
+                'VALIDATION_REPORT_NOT_FOUND',
+                'Phiên bản chưa có báo cáo kiểm tra phương án.',
+            );
+        }
+        const report = validationReports.get(targetId);
+        if (!report || report.version_id !== id) {
+            fail(
+                404,
+                'VALIDATION_REPORT_NOT_FOUND',
+                'Không tìm thấy báo cáo kiểm tra phương án cho phiên bản này.',
+            );
+        }
+        return clone({
+            ...report,
+            fresh: isValidationFresh(version, report),
+        });
+    },
+    latestValidation(id: number): ValidationReport | null {
+        const version = versions.get(id);
+        const reportId = latestValidationByVersion.get(id);
+        if (!version || !reportId) return null;
+        const report = validationReports.get(reportId);
+        if (!report) return null;
+        return clone({
+            ...report,
+            fresh: isValidationFresh(version, report),
+        });
+    },
+    latestSolverRun(id: number): SolverRunDto | null {
+        const latest = [...solverRuns.values()]
+            .filter((item) => item.dto.version_id === id)
+            .sort((a, b) => b.dto.id - a.dto.id)[0];
+        return latest ? clone(latest.dto) : null;
     },
 };

@@ -98,4 +98,19 @@ npm exec -- msw init public --save
 
 Build API loại worker khỏi output và không nạp module mock; build mock giữ worker. Docker hiện build bản API như trước; Compose vẫn có các phụ thuộc toàn stack. Dùng Vite/preview mock để phát triển độc lập; chưa thêm image Docker demo mock riêng.
 
+## FE-07: Mock Solver, Validation, Workloads & Unified Overview
+
+- **Solver & Optimization (`mocks/assignment-store.ts`, `mocks/handlers/assignment.ts`)**:
+    - `POST /api/plan-versions/:id/solver-runs` trả `202` + `Location: /api/solver-runs/:id`; kiểm tra DRAFT, revision, snapshot fresh, cấu hình/quy tắc; trả `409 SOLVER_RUN_ACTIVE` kèm `Location` khi đã có lượt chạy hoạt động, `503 SOLVER_QUEUE_FULL` trong scenario tương ứng.
+    - `GET /api/solver-runs/:id` chuyển dần `QUEUED -> RUNNING -> SUCCEEDED/COMPLETED/FAILED/CANCELLED`; heuristic cục bộ tôn trọng khóa, chuyên môn và trần tải tuần, sinh vector `[Z, L1, M, experience, change]` và `cp_sat_status: 'FEASIBLE'` (`demo_only: true`, `exactOptimalityProven: false`). Khi `APPLIED` và có thay đổi, tăng `revision_no`, lưu hậu kiểm tự động và ghi audit; no-op giữ nguyên `applied_revision_no === base_revision`.
+    - `POST /api/solver-runs/:id/cancel` chuyển `QUEUED -> CANCELLED`, `RUNNING -> CANCEL_REQUESTED -> CANCELLED`, idempotent ở trạng thái cuối.
+    - `GET /api/plan-versions/:id/optimization` trả `latest_run_id`, `run`, `matches_version`, `configuration` (snake_case) và `objective_vector`.
+- **Validation & Workloads**:
+    - `Workloads` sửa công thức `q = Math.max(0, base_norm - reduced)`, phát `WEEKLY_WORKLOAD_CAP` (có `details.limit` 24/25 và `source` quy tắc) và `ANNUAL_WORKLOAD` (`INSUFFICIENT_DATA`, `null`), phân trang sau khi lọc `teacher_id`.
+    - `POST /api/plan-versions/:id/validation` trả `201` + `Location` kể cả khi `VIOLATION`; `GET` trả `404` khi chưa có báo cáo và tính `fresh` theo version, revision, snapshot và live token.
+- **Scenario mới (`/dev/ui`)**: `solverApplied`, `solverStale`, `solverInfeasible`, `solverFailed`, `solverQueueFull`, `solverActiveRun`, `validationPass`, `validationViolation`.
+- **Thống nhất Dashboard/Layout & reload recovery (mock-only)**:
+    - `fixtures/overview.ts`, `fixtures/layout.ts` và `assignment-preview.ts` dùng chung nguồn từ `fixtures/index.ts`, `fixtures/preparation.ts` và gọi `assignmentStore.ensure(mockStore.list())` từ đầu (`6` giáo viên, `9` nhu cầu ở `hk1`, `2` giáo viên ở `thcs-demo`). Riêng `teacher/overview` tạm giữ `readTeacherPortalOverview` cho tài khoản demo giáo viên FE-04 cho tới FE-09.
+    - Trên trình duyệt (`document` + `window.sessionStorage`), `assignmentStore` lưu snapshot dưới khóa `tass-mock-assignment-v1` (theo `setup`) để giữ lượt chạy `?run_id=` và bản nháp qua thao tác reload `F5`; `mockStore.reset()` / đổi scenario xóa sạch khóa này. Lịch sử/diff chi tiết của lượt chạy trên UI mock dùng trường `solver_runs` / `solver_diffs` trong `/api/mock/plan-versions/:id/workspace` (mock-only, không tạo endpoint API giả).
+
 Tham chiếu: [MSW browser](https://mswjs.io/guides/integrations/browser), [MSW API](https://mswjs.io/api/setup-worker/), [backend API](../../backend/docs/API.md).

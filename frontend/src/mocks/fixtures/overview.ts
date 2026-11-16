@@ -5,8 +5,20 @@ import type {
     OverviewDashboard,
     OverviewTeacherLoad,
 } from '../../features/overview/types.ts';
+import { assignmentPolicies, captureWorkspaceTeachers } from './assignment.ts';
+import { schools, teachers as baseTeachers } from './index.ts';
+import {
+    preparationAcademicYears,
+    preparationApplicabilities,
+    preparationClasses,
+    preparationDemands,
+    preparationRounds,
+    preparationScopes,
+    preparationSemesters,
+    preparationSubjects,
+} from './preparation.ts';
 
-type SeedTeacher = {
+type TeacherPortalSeed = {
     id: number;
     code: string;
     name: string;
@@ -20,273 +32,196 @@ type SeedTeacher = {
     color: number;
 };
 
-type SeedDemand = OverviewAssignmentItem & {
+type PortalDemand = OverviewAssignmentItem & {
     teacher_id: number | null;
 };
 
-const thptSubjects = [
-    'Toán',
-    'Ngữ văn',
-    'Tiếng Anh',
-    'Vật lý',
-    'Hóa học',
-    'Sinh học',
-    'Tin học',
-    'Lịch sử',
-] as const;
-const thptPeriods = [4, 3, 3, 2, 2, 2, 2, 2] as const;
-
-const thptTeachers: SeedTeacher[] = [
-    ['Nguyễn Minh Anh', 'Toán', 9, 0, 'Tổ Toán – Tin'],
-    ['Trần Hoàng Nam', 'Toán', 8, 2, 'Tổ Toán – Tin'],
-    ['Lê Thảo Nguyên', 'Ngữ văn', 10, 0, 'Tổ Ngữ văn'],
-    ['Phạm Quỳnh Chi', 'Ngữ văn', 9, 0, 'Tổ Ngữ văn'],
-    ['Võ Ngọc Hà', 'Tiếng Anh', 10, 0, 'Tổ Ngoại ngữ'],
-    ['Đặng Quốc Bảo', 'Tiếng Anh', 9, 0, 'Tổ Ngoại ngữ'],
-    ['Nguyễn Đức Huy', 'Vật lý', 9, 0, 'Tổ Khoa học tự nhiên'],
-    ['Bùi Thanh Trúc', 'Vật lý', 10, 0, 'Tổ Khoa học tự nhiên'],
-    ['Đỗ Minh Châu', 'Hóa học', 9, 0, 'Tổ Khoa học tự nhiên'],
-    ['Hoàng Thu Uyên', 'Sinh học', 9, 0, 'Tổ Khoa học tự nhiên'],
-    ['Trịnh Gia Khánh', 'Tin học', 9, 0, 'Tổ Toán – Tin'],
-    ['Phan Bảo Ngọc', 'Lịch sử', 9, 0, 'Tổ Khoa học xã hội'],
-].map((row, index) => ({
-    id: index + 1,
-    code: `GV${String(index + 1).padStart(3, '0')}`,
-    name: row[0] as string,
-    subjects: [row[1] as string],
-    fixed: row[2] as number,
-    reduction: row[3] as number,
-    converted: 0,
-    base: 17,
-    max: 24,
-    department: row[4] as string,
-    color: index % 6,
-}));
-
-const thcsTeachers: SeedTeacher[] = [
-    {
-        id: 13,
-        code: 'GV013',
-        name: 'Phạm Khánh Linh',
-        department: 'Tổ Khoa học tự nhiên',
-        subjects: ['KHTN'],
-        fixed: 8,
-        converted: 0,
-        reduction: 4,
-        base: 19,
-        max: 24,
-        color: 1,
+const roundContextMap: Record<
+    string,
+    { roundId: number; ruleSetId: number; label: string }
+> = {
+    hk1: { roundId: 1, ruleSetId: 1, label: 'Học kỳ I' },
+    hk2: { roundId: 2, ruleSetId: 1, label: 'Học kỳ II' },
+    'thcs-demo': {
+        roundId: 3,
+        ruleSetId: 2,
+        label: 'THCS · Trải nghiệm',
     },
-    {
-        id: 14,
-        code: 'GV014',
-        name: 'Vũ Anh Tuấn',
-        department: 'Tổ Toán – Tin',
-        subjects: ['Toán'],
-        fixed: 9,
-        converted: 0,
-        reduction: 0,
-        base: 19,
-        max: 24,
-        color: 2,
-    },
-    {
-        id: 15,
-        code: 'GV015',
-        name: 'Lê Thanh Hương',
-        department: 'Tổ Ngữ văn',
-        subjects: ['Ngữ văn'],
-        fixed: 9,
-        converted: 0,
-        reduction: 0,
-        base: 19,
-        max: 24,
-        color: 3,
-    },
-];
+};
 
-function createThptDemands(assigned: boolean): SeedDemand[] {
-    const demands: SeedDemand[] = [];
-    const missingIndices = new Set([2, 9, 15, 22, 27, 30]);
-    for (const [classIndex, className] of [
-        '10A1',
-        '10A2',
-        '11A1',
-        '12A1',
-    ].entries()) {
-        for (const [subjectIndex, subjectName] of thptSubjects.entries()) {
-            const candidates = thptTeachers.filter((teacher) =>
-                teacher.subjects.includes(subjectName),
+function round2(value: number): number {
+    return Math.round(value * 100) / 100;
+}
+
+function buildUnifiedContextOverview(
+    contextId: string,
+    seedActivity: OverviewActivityItem[],
+): OverviewDashboard {
+    const cfg = roundContextMap[contextId] ?? {
+        roundId: 1,
+        ruleSetId: 1,
+        label: 'Học kỳ I',
+    };
+    const round = preparationRounds.find((item) => item.id === cfg.roundId)!;
+    const semester = preparationSemesters.find(
+        (item) => item.id === round.semester_id,
+    )!;
+    const year = preparationAcademicYears.find(
+        (item) => item.id === semester.academic_year_id,
+    )!;
+    const school = schools.find((item) => item.id === year.school_id)!;
+    const scopes = preparationScopes.filter((s) => s.round_id === round.id);
+    const applicablePairs = new Set(
+        preparationApplicabilities
+            .filter(
+                (app) =>
+                    app.status === 'APPLICABLE' &&
+                    scopes.some((s) => s.id === app.scope_id),
+            )
+            .map((app) => {
+                const scope = scopes.find((s) => s.id === app.scope_id)!;
+                return `${app.class_id}:${scope.subject_id}`;
+            }),
+    );
+    const activeDemands = preparationDemands
+        .filter(
+            (d) =>
+                d.semester_id === semester.id &&
+                d.status === 'ACTIVE' &&
+                d.valid_from <= semester.ends_on &&
+                d.valid_to >= semester.starts_on &&
+                applicablePairs.has(`${d.class_id}:${d.subject_id}`),
+        )
+        .sort((a, b) => a.id - b.id);
+
+    const workspaceTeachers = captureWorkspaceTeachers(
+        baseTeachers,
+        school.id,
+        preparationSubjects,
+        semester.starts_on,
+        semester.ends_on,
+        cfg.ruleSetId,
+    );
+
+    const rows: PortalDemand[] = activeDemands.map((demand, index) => {
+        const cls = preparationClasses.find((c) => c.id === demand.class_id);
+        const sub = preparationSubjects.find((s) => s.id === demand.subject_id);
+        let teacherId: number | null = null;
+        let locked = false;
+        if (contextId === 'hk1' && index % 4 !== 3) {
+            const candidates = workspaceTeachers.filter((teacher) =>
+                teacher.subjects.some((s) => s.id === demand.subject_id),
             );
-            const idx = demands.length;
-            const teacher =
-                assigned && !missingIndices.has(idx)
-                    ? candidates[
-                          (classIndex === 3 ? 0 : classIndex) %
-                              candidates.length
-                      ]
-                    : undefined;
-            demands.push({
-                id: idx + 1,
-                class_name: className,
-                subject_name: subjectName,
-                component_type: 'STANDARD',
-                periods: thptPeriods[subjectIndex] ?? 1,
-                locked: assigned && (idx === 0 || idx === 19),
-                teacher_id: teacher?.id ?? null,
-            });
+            const picked =
+                candidates[index % Math.max(1, candidates.length)] ?? null;
+            if (picked) {
+                teacherId = picked.id;
+                locked = index < 2;
+            }
         }
-    }
-    const topics: readonly [string, string][] = [
-        ['12A1', 'Toán'],
-        ['12A1', 'Ngữ văn'],
-        ['11A1', 'Toán'],
-        ['12A1', 'Tiếng Anh'],
-    ];
-    for (const [index, [className, subjectName]] of topics.entries()) {
-        const teacher =
-            assigned && index < 2
-                ? thptTeachers.find((item) =>
-                      item.subjects.includes(subjectName),
-                  )
-                : undefined;
-        demands.push({
-            id: demands.length + 1,
-            class_name: className,
-            subject_name: subjectName,
-            component_type: 'SPECIALIZED_TOPIC',
-            periods: 1,
-            locked: false,
-            teacher_id: teacher?.id ?? null,
-        });
-    }
-    return demands;
-}
-
-function createThcsDemands(): SeedDemand[] {
-    const demands: SeedDemand[] = [];
-    const subjects: readonly [string, number][] = [
-        ['KHTN', 4],
-        ['Toán', 4],
-        ['Ngữ văn', 3],
-    ];
-    for (const className of ['9A1', '9A2']) {
-        for (const [subjectName, periods] of subjects) {
-            demands.push({
-                id: demands.length + 1,
-                class_name: className,
-                subject_name: subjectName,
-                component_type: 'STANDARD',
-                periods,
-                locked: false,
-                teacher_id: null,
-            });
-        }
-    }
-    demands.push({
-        id: demands.length + 1,
-        class_name: '9A1',
-        subject_name: 'Toán',
-        component_type: 'ENRICHMENT' satisfies OverviewComponentType,
-        periods: 1,
-        locked: false,
-        teacher_id: null,
-    });
-    return demands;
-}
-
-function summarizeTeachers(
-    teachers: SeedTeacher[],
-    demands: SeedDemand[],
-): OverviewTeacherLoad[] {
-    return teachers.map((teacher) => {
-        const assignments = demands
-            .filter((item) => item.teacher_id === teacher.id)
-            .map(({ teacher_id: _unused, ...rest }) => ({ ...rest }));
-        const assignedPeriods = assignments.reduce(
-            (sum, item) => sum + item.periods,
-            0,
-        );
-        const workingPeriods =
-            teacher.fixed + assignedPeriods + teacher.converted;
-        const totalPeriods = workingPeriods + teacher.reduction;
         return {
-            id: teacher.id,
-            teacher_code: teacher.code,
-            full_name: teacher.name,
-            department_name: teacher.department,
-            subjects: [...teacher.subjects],
-            color_index: teacher.color,
-            portrait_key: ((Math.abs(teacher.id) - 1) % 12) + 1,
-            fixed_periods: teacher.fixed,
-            assigned_periods: assignedPeriods,
-            converted_periods: teacher.converted,
-            reduction_periods: teacher.reduction,
-            working_periods: workingPeriods,
-            quota_remaining: Math.max(0, teacher.base - teacher.reduction),
-            total_periods: totalPeriods,
-            base_norm: teacher.base,
-            weekly_limit: teacher.max,
-            delta: totalPeriods - teacher.base,
-            assignments,
+            id: 50000 + demand.id,
+            class_name: cls?.class_code ?? `#${demand.class_id}`,
+            subject_name: sub?.name ?? `#${demand.subject_id}`,
+            component_type: demand.demand_type as OverviewComponentType,
+            periods: demand.periods_per_week,
+            locked,
+            teacher_id: teacherId,
         };
     });
-}
 
-function buildOverviewContext(config: {
-    contextId: string;
-    round: string;
-    contextTitle: string;
-    planVersion: number;
-    planRevision: number;
-    feedbackDueAt: string | null;
-    pendingFeedbackCount: number;
-    teachers: SeedTeacher[];
-    demands: SeedDemand[];
-    recentActivity: OverviewActivityItem[];
-}): OverviewDashboard {
-    const teacherLoads = summarizeTeachers(config.teachers, config.demands);
-    const assignedDemands = config.demands.filter(
-        (item) => item.teacher_id !== null,
-    ).length;
-    const totalDemands = config.demands.length;
-    const unassignedDemands = totalDemands - assignedDemands;
-    const lockedDemands = config.demands.filter((item) => item.locked).length;
-    const totalPeriods = config.demands.reduce(
-        (sum, item) => sum + item.periods,
-        0,
+    const teacherLoads: OverviewTeacherLoad[] = workspaceTeachers.map(
+        (teacher) => {
+            const assignments = rows
+                .filter((r) => r.teacher_id === teacher.id)
+                .map(({ teacher_id: _unused, ...rest }) => ({ ...rest }));
+            const assignedPeriods = round2(
+                assignments.reduce((sum, item) => sum + item.periods, 0),
+            );
+            const workingPeriods = round2(
+                teacher.fixed + assignedPeriods + teacher.converted,
+            );
+            const totalPeriods = round2(workingPeriods + teacher.reduced);
+            const policy =
+                assignmentPolicies[
+                    cfg.ruleSetId as keyof typeof assignmentPolicies
+                ] ?? assignmentPolicies[1];
+            return {
+                id: teacher.id,
+                teacher_code: teacher.teacher_code,
+                full_name: teacher.full_name,
+                department_name:
+                    teacher.subjects.map((s) => s.name).join(' · ') ||
+                    school.name,
+                subjects: teacher.subjects.map((s) => s.name),
+                color_index: teacher.color_index,
+                portrait_key: teacher.portrait_key,
+                fixed_periods: teacher.fixed,
+                assigned_periods: assignedPeriods,
+                converted_periods: teacher.converted,
+                reduction_periods: teacher.reduced,
+                working_periods: workingPeriods,
+                quota_remaining: Math.max(
+                    0,
+                    round2(policy.base - teacher.reduced),
+                ),
+                total_periods: totalPeriods,
+                base_norm: teacher.base_norm,
+                weekly_limit: teacher.weekly_limit,
+                delta: round2(totalPeriods - teacher.base_norm),
+                assignments,
+            };
+        },
     );
-    const over = teacherLoads.filter((item) => item.delta > 0).length;
-    const under = teacherLoads.filter((item) => item.delta < 0).length;
-    const balanced = teacherLoads.length - over - under;
 
+    const assignedCount = rows.filter((r) => r.teacher_id !== null).length;
+    const totalCount = rows.length;
     const gradeTotals = new Map<string, number>();
-    const classes = new Set<string>();
-    for (const demand of config.demands) {
-        classes.add(demand.class_name);
-        const grade = demand.class_name.match(/^\d+/)?.[0] ?? '';
+    const classSet = new Set<string>();
+    for (const row of rows) {
+        classSet.add(row.class_name);
+        const grade = row.class_name.match(/^\d+/)?.[0] ?? '';
         if (grade) {
             gradeTotals.set(
                 grade,
-                (gradeTotals.get(grade) ?? 0) + demand.periods,
+                round2((gradeTotals.get(grade) ?? 0) + row.periods),
             );
         }
     }
+    const balanced = teacherLoads.filter((t) => t.delta === 0).length;
+    const under = teacherLoads.filter((t) => t.delta < 0).length;
+    const over = teacherLoads.filter((t) => t.delta > 0).length;
+    const roundApps = preparationApplicabilities.filter((app) =>
+        scopes.some((s) => s.id === app.scope_id),
+    );
+    const applicableCount = roundApps.filter(
+        (a) => a.status === 'APPLICABLE',
+    ).length;
+    const requiredConfirmed =
+        applicableCount > 0 &&
+        roundApps
+            .filter((a) => a.status === 'APPLICABLE')
+            .every((a) => Boolean(a.components_confirmed_at));
 
     return {
-        context_id: config.contextId,
-        round: config.round,
-        context_title: config.contextTitle,
-        academic_year: '2026–2027',
-        school_name: 'THPT An Hòa',
+        context_id: contextId,
+        round: round.round_code,
+        round_id: round.id,
+        context_title: cfg.label,
+        academic_year: year.year_code.replace('-', '–'),
+        school_name: school.name.replace(' (mẫu)', ''),
         phase: 'DRAFT',
-        plan_version: config.planVersion,
-        plan_revision: config.planRevision,
-        feedback_due_at: config.feedbackDueAt,
+        plan_version: contextId === 'hk1' ? 2 : 1,
+        plan_version_id: null,
+        plan_revision: contextId === 'hk1' ? rows.length : 0,
+        feedback_due_at: contextId === 'hk1' ? '2026-11-15T17:00' : null,
+        validation_status: null,
+        latest_solver_status: null,
+        latest_apply_outcome: null,
         readiness: {
-            required_inputs_count: totalDemands,
-            scope_confirmed: false,
-            required_confirmed: false,
+            required_inputs_count: totalCount,
+            scope_confirmed: Boolean(round.scope_confirmed_at),
+            required_confirmed: requiredConfirmed,
             validation_fresh: false,
             validation_releasable: false,
         },
@@ -295,40 +230,33 @@ function buildOverviewContext(config: {
             balanced_teachers_count: balanced,
             under_norm_teachers_count: under,
             over_norm_teachers_count: over,
-            total_periods: totalPeriods,
-            total_demands: totalDemands,
-            assigned_demands: assignedDemands,
-            unassigned_demands: unassignedDemands,
-            locked_demands: lockedDemands,
-            class_count: classes.size,
-            coverage_percent: totalDemands
-                ? Math.round((assignedDemands / totalDemands) * 100)
+            total_periods: round2(
+                rows.reduce((sum, item) => sum + item.periods, 0),
+            ),
+            total_demands: totalCount,
+            assigned_demands: assignedCount,
+            unassigned_demands: totalCount - assignedCount,
+            locked_demands: rows.filter((item) => item.locked).length,
+            class_count: classSet.size,
+            coverage_percent: totalCount
+                ? Math.round((assignedCount / totalCount) * 100)
                 : 0,
-            pending_feedback_count: config.pendingFeedbackCount,
+            pending_feedback_count: contextId === 'hk1' ? 2 : 0,
             demands_by_grade: [...gradeTotals.entries()].map(
                 ([grade, periods]) => ({ grade, periods }),
             ),
         },
         teachers: teacherLoads,
-        recent_activity: config.recentActivity,
+        recent_activity: seedActivity,
     };
 }
 
-const hk1Overview = buildOverviewContext({
-    contextId: 'hk1',
-    round: 'PC-01',
-    contextTitle: 'Học kỳ I',
-    planVersion: 2,
-    planRevision: 4,
-    feedbackDueAt: '2026-11-15T17:00',
-    pendingFeedbackCount: 2,
-    teachers: thptTeachers,
-    demands: createThptDemands(true),
-    recentActivity: [
+export const overviewByContext: Record<string, OverviewDashboard> = {
+    hk1: buildUnifiedContextOverview('hk1', [
         {
             id: 'act-hk1-1',
-            title: 'Đã tạo phiên bản V02',
-            detail: ' · Tiếp nhận phản hồi từ V01',
+            title: 'Khởi tạo bản nháp V02 · PC-01',
+            detail: 'Đồng bộ từ bộ dữ liệu trường THPT An Hòa (mẫu)',
             actor_name: 'Nguyễn Minh Khoa',
             actor_portrait_key: 'manager',
             actor_color_index: 0,
@@ -336,65 +264,26 @@ const hk1Overview = buildOverviewContext({
         },
         {
             id: 'act-hk1-2',
-            title: 'Cập nhật nhu cầu học kỳ I',
-            detail: '36 thành phần nhu cầu · 4 lớp học',
+            title: 'Xác nhận phạm vi học kỳ I',
+            detail: 'Dữ liệu chuẩn bị chia sẻ với Chuẩn bị, Nhu cầu & Phân công',
             actor_name: null,
             actor_portrait_key: null,
             actor_color_index: 0,
             time_label: 'Hôm qua, 15:30',
         },
-        {
-            id: 'act-hk1-3',
-            title: 'Đã xác nhận hồ sơ chuyên môn',
-            detail: '12 giáo viên · 8 môn học',
-            actor_name: null,
-            actor_portrait_key: null,
-            actor_color_index: 0,
-            time_label: 'Hôm qua, 09:15',
-        },
-    ],
-});
-
-const hk2Overview = buildOverviewContext({
-    contextId: 'hk2',
-    round: 'PC-02',
-    contextTitle: 'Học kỳ II',
-    planVersion: 1,
-    planRevision: 0,
-    feedbackDueAt: null,
-    pendingFeedbackCount: 0,
-    teachers: thptTeachers,
-    demands: createThptDemands(false),
-    recentActivity: [
+    ]),
+    hk2: buildUnifiedContextOverview('hk2', [
         {
             id: 'act-hk2-1',
-            title: 'Khởi tạo không gian học kỳ II',
-            detail: 'Bộ dữ liệu minh họa độc lập · 36 nhu cầu',
+            title: 'Khởi tạo không gian học kỳ II · PC-02',
+            detail: 'Chia sẻ danh mục và giáo viên từ cùng nguồn chuẩn bị',
             actor_name: null,
             actor_portrait_key: null,
             actor_color_index: 0,
             time_label: 'Vừa xong',
         },
-    ],
-});
-
-const thcsOverview = buildOverviewContext({
-    contextId: 'thcs-demo',
-    round: 'PC-THCS',
-    contextTitle: 'THCS · Trải nghiệm',
-    planVersion: 1,
-    planRevision: 0,
-    feedbackDueAt: null,
-    pendingFeedbackCount: 0,
-    teachers: thcsTeachers,
-    demands: createThcsDemands(),
-    recentActivity: [],
-});
-
-export const overviewByContext: Record<string, OverviewDashboard> = {
-    hk1: hk1Overview,
-    hk2: hk2Overview,
-    'thcs-demo': thcsOverview,
+    ]),
+    'thcs-demo': buildUnifiedContextOverview('thcs-demo', []),
 };
 
 export function readOverviewFixture(
@@ -430,5 +319,123 @@ export function readOverviewFixture(
         },
         teachers: [],
         recent_activity: [],
+    };
+}
+
+// Teacher-portal persona fixture (accounts id=1,2,13) preserved until FE-09 Teacher Portal replaces it.
+const teacherPortalSeeds: Record<string, TeacherPortalSeed[]> = {
+    hk1: [
+        {
+            id: 1,
+            code: 'GV001',
+            name: 'Nguyễn Minh Anh',
+            department: 'Tổ Toán – Tin',
+            subjects: ['Toán'],
+            fixed: 9,
+            converted: 0,
+            reduction: 0,
+            base: 17,
+            max: 24,
+            color: 0,
+        },
+        {
+            id: 2,
+            code: 'GV002',
+            name: 'Trần Hoàng Nam',
+            department: 'Tổ Toán – Tin',
+            subjects: ['Toán'],
+            fixed: 8,
+            converted: 0,
+            reduction: 2,
+            base: 17,
+            max: 24,
+            color: 1,
+        },
+    ],
+    hk2: [
+        {
+            id: 1,
+            code: 'GV001',
+            name: 'Nguyễn Minh Anh',
+            department: 'Tổ Toán – Tin',
+            subjects: ['Toán'],
+            fixed: 9,
+            converted: 0,
+            reduction: 0,
+            base: 17,
+            max: 24,
+            color: 0,
+        },
+    ],
+    'thcs-demo': [
+        {
+            id: 13,
+            code: 'GV013',
+            name: 'Phạm Khánh Linh',
+            department: 'Tổ Khoa học tự nhiên',
+            subjects: ['KHTN'],
+            fixed: 8,
+            converted: 0,
+            reduction: 4,
+            base: 19,
+            max: 24,
+            color: 1,
+        },
+    ],
+};
+
+export function readTeacherPortalOverview(
+    contextId: string,
+    teacherId: number,
+    empty: boolean,
+): OverviewTeacherLoad | null {
+    if (empty) return null;
+    const list = teacherPortalSeeds[contextId];
+    if (!list) return null;
+    const seed = list.find((item) => item.id === teacherId);
+    if (!seed) return null;
+    const assignments: OverviewAssignmentItem[] =
+        contextId === 'hk1' && seed.id === 1
+            ? [
+                  {
+                      id: 1,
+                      class_name: '10A1',
+                      subject_name: 'Toán',
+                      component_type: 'STANDARD',
+                      periods: 4,
+                      locked: true,
+                  },
+                  {
+                      id: 2,
+                      class_name: '11A1',
+                      subject_name: 'Toán',
+                      component_type: 'STANDARD',
+                      periods: 4,
+                      locked: false,
+                  },
+              ]
+            : [];
+    const assigned = assignments.reduce((s, item) => s + item.periods, 0);
+    const working = seed.fixed + assigned + seed.converted;
+    const total = working + seed.reduction;
+    return {
+        id: seed.id,
+        teacher_code: seed.code,
+        full_name: seed.name,
+        department_name: seed.department,
+        subjects: seed.subjects,
+        color_index: seed.color,
+        portrait_key: ((Math.abs(seed.id) - 1) % 12) + 1,
+        fixed_periods: seed.fixed,
+        assigned_periods: assigned,
+        converted_periods: seed.converted,
+        reduction_periods: seed.reduction,
+        working_periods: working,
+        quota_remaining: Math.max(0, seed.base - seed.reduction),
+        total_periods: total,
+        base_norm: seed.base,
+        weekly_limit: seed.max,
+        delta: total - seed.base,
+        assignments,
     };
 }

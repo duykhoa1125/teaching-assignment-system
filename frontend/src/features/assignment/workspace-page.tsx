@@ -35,6 +35,7 @@ import {
     useAssignmentRows,
     useCurrentPlan,
     usePlanOperation,
+    usePlanValidation,
     usePlanVersion,
     usePlanWorkspace,
     type PlanOperation,
@@ -163,6 +164,7 @@ function Workspace({
 }) {
     const client = useQueryClient(),
         toast = useToast();
+    const [params, setParams] = useSearchParams();
     const currentQuery = useCurrentPlan(round.id),
         historyQuery = usePlanVersion(versionId);
     const planQuery = versionId === null ? currentQuery : historyQuery,
@@ -171,11 +173,15 @@ function Workspace({
         id = correctRound ? plan.version_id : null;
     const rowsQuery = useAssignmentRows(id, {}),
         loadsQuery = useAssignmentLoads(id),
+        validationQuery = usePlanValidation(id),
         workspaceQuery = usePlanWorkspace(id);
     const operation = usePlanOperation();
     const [view, setView] = useState<'matrix' | 'table'>('matrix');
+    const urlFilter = params.get('filter');
     const [filter, setFilter] = useState<'all' | 'unassigned' | 'locked'>(
-        'all',
+        urlFilter === 'unassigned' || urlFilter === 'locked'
+            ? urlFilter
+            : 'all',
     );
     const [search, setSearch] = useState(''),
         [subject, setSubject] = useState('');
@@ -202,6 +208,27 @@ function Workspace({
         missingPlan || configuration !== null,
     );
     const rows = useMemo(() => rowsQuery.data?.items ?? [], [rowsQuery.data]);
+    const demandTarget = paramId(params.get('demand'));
+    const demandMatch = useMemo(
+        () =>
+            demandTarget
+                ? (rows.find(
+                      (r) =>
+                          r.id === demandTarget || r.demand_id === demandTarget,
+                  ) ?? null)
+                : null,
+        [demandTarget, rows],
+    );
+    const activeEditor =
+        editor ??
+        (demandMatch && plan
+            ? {
+                  row: demandMatch,
+                  revision: plan.revision_no,
+                  anchor: document.body,
+                  mode: 'drawer' as const,
+              }
+            : null);
     const teachers = workspaceQuery.data?.teachers ?? [],
         loads = loadsQuery.data?.items ?? [];
     const filtered = useMemo(
@@ -241,6 +268,11 @@ function Workspace({
     function closeEditor() {
         const anchor = editor?.anchor;
         setEditor(null);
+        if (params.has('demand')) {
+            const next = new URLSearchParams(params);
+            next.delete('demand');
+            setParams(next, { replace: true });
+        }
         requestAnimationFrame(() => {
             if (anchor?.isConnected) anchor.focus();
         });
@@ -305,7 +337,9 @@ function Workspace({
             group,
             reason: '',
             revision:
-                editor?.row.id === row.id ? editor.revision : plan!.revision_no,
+                activeEditor?.row.id === row.id
+                    ? activeEditor.revision
+                    : plan!.revision_no,
         });
     }
     function submitLock() {
@@ -856,17 +890,37 @@ function Workspace({
                     <div className="between section-gap assignment-footer">
                         <span className="flex muted">
                             <Icon name="shield" />
-                            Phân công đã khóa luôn được giữ nguyên.
+                            <span>
+                                Phân công đã khóa luôn được giữ nguyên ·{' '}
+                                {validationQuery.data
+                                    ? validationQuery.data.fresh
+                                        ? validationQuery.data
+                                              .overall_status === 'VIOLATION'
+                                            ? 'Kiểm tra có vi phạm'
+                                            : 'Kiểm tra hiện hành'
+                                        : 'Kết quả kiểm tra đã cũ'
+                                    : 'Chưa có báo cáo kiểm tra phương án'}
+                            </span>
                         </span>
                         <div className="mvp-actions">
+                            <Link to="/workload" className="btn">
+                                <Icon name="balance" />
+                                Xem tải
+                            </Link>
                             <Link to="/checks" className="btn">
                                 <Icon name="check" />
-                                Kiểm tra dữ liệu
+                                Kiểm tra phương án
                             </Link>
                             <button
                                 className="btn primary"
                                 disabled
-                                title="Hoàn thiện và kiểm tra phương án trước khi mở lấy ý kiến"
+                                title={
+                                    validationQuery.data?.fresh &&
+                                    validationQuery.data.overall_status !==
+                                        'VIOLATION'
+                                        ? 'Chuyển giai đoạn được nối ở FE-08'
+                                        : 'Hoàn thiện và chạy kiểm tra phương án trước khi mở lấy ý kiến'
+                                }
                             >
                                 <Icon name="send" />
                                 Mở lấy ý kiến
@@ -875,7 +929,7 @@ function Workspace({
                     </div>
                 </>
             ) : null}
-            {failure && !editor && !lockAction && !configuration && (
+            {failure && !activeEditor && !lockAction && !configuration && (
                 <div className="banner red" role="alert">
                     <Icon name="warning" />
                     <span className="grow">{failure}</span>
@@ -936,13 +990,13 @@ function Workspace({
                     </button>
                 </div>
             )}
-            {editor && (
+            {activeEditor && (
                 <AssignmentEditor
-                    key={`${editor.row.id}:${editor.mode}`}
-                    editor={editor}
+                    key={`${activeEditor.row.id}:${activeEditor.mode}`}
+                    editor={activeEditor}
                     teachers={teachers}
                     loads={loads}
-                    editable={writable && !editor.row.locked}
+                    editable={writable && !activeEditor.row.locked}
                     coverage={{ assigned, total: rows.length }}
                     canUnlock={editable}
                     canLock={writable}
@@ -950,7 +1004,8 @@ function Workspace({
                     busy={busy}
                     error={failure}
                     onClose={() => {
-                        if (editor.mode === 'quick' || !busy) closeEditor();
+                        if (activeEditor.mode === 'quick' || !busy)
+                            closeEditor();
                     }}
                     onDetail={() =>
                         setEditor((previous) =>
@@ -962,9 +1017,9 @@ function Workspace({
                             void run({
                                 kind: 'change',
                                 version: id!,
-                                row: editor.row.id,
+                                row: activeEditor.row.id,
                                 input: assignmentChange(
-                                    editor.revision,
+                                    activeEditor.revision,
                                     teacher,
                                     reason,
                                     reason,
@@ -975,7 +1030,7 @@ function Workspace({
                         }
                     }}
                     onLock={(locked, group) =>
-                        lockRow(editor.row, locked, group)
+                        lockRow(activeEditor.row, locked, group)
                     }
                 />
             )}

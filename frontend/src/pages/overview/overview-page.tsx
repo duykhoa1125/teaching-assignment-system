@@ -125,16 +125,16 @@ export function OverviewPage() {
                     <button
                         type="button"
                         className="btn"
-                        onClick={() => setModalKind('export')}
+                        onClick={() => void navigate('/statistics')}
                     >
-                        <Icon name="download" />
-                        Xuất báo cáo
+                        <Icon name="chart" />
+                        Thống kê
                     </button>
                     <button
                         type="button"
                         className="btn primary"
                         disabled={!canRunSolver}
-                        onClick={() => setModalKind('solver')}
+                        onClick={() => void navigate('/solver-runs')}
                     >
                         <Icon name="spark" />
                         Sinh đề xuất
@@ -260,11 +260,16 @@ export function OverviewPage() {
 
             {renderPageHeader(true)}
 
-            <ReadinessBanner readiness={dashboard.readiness} />
+            <ReadinessBanner
+                readiness={dashboard.readiness}
+                validationStatus={dashboard.validation_status}
+                latestSolverStatus={dashboard.latest_solver_status}
+                latestApplyOutcome={dashboard.latest_apply_outcome}
+            />
 
             <PhaseStrip
                 dashboard={dashboard}
-                onOpenSolver={() => setModalKind('solver')}
+                onOpenSolver={() => void navigate('/solver-runs')}
                 onOpenExport={() => setModalKind('export')}
                 onOpenWorkflowAction={(action) => setModalKind(action)}
             />

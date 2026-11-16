@@ -7,6 +7,7 @@ import { layoutPreview } from '../fixtures/layout.ts';
 import {
     overviewByContext,
     readOverviewFixture,
+    readTeacherPortalOverview,
 } from '../fixtures/overview.ts';
 import { scenarios } from '../scenarios/index.ts';
 import { mockStore, MockError } from '../store.ts';
@@ -191,7 +192,14 @@ const guarded =
 export const handlers = [
     http.get(
         '*/api/mock/layout',
-        guarded(() => HttpResponse.json(readPlanLayout())),
+        guarded(() =>
+            HttpResponse.json(
+                readPlanLayout(
+                    mockStore.list(),
+                    mockStore.scenario === 'empty',
+                ),
+            ),
+        ),
     ),
     http.post(
         '*/api/mock/auth/login',
@@ -276,7 +284,10 @@ export const handlers = [
             return HttpResponse.json({
                 account,
                 role,
-                contexts: readPlanLayout().contexts,
+                contexts: readPlanLayout(
+                    mockStore.list(),
+                    mockStore.scenario === 'empty',
+                ).contexts,
             });
         }),
     ),
@@ -297,10 +308,8 @@ export const handlers = [
                 url.searchParams.get('teacher_id') ?? undefined,
                 'teacher_id',
             );
-            const overview = readOverviewFixture(
-                contextId,
-                mockStore.scenario === 'empty',
-            );
+            const empty = mockStore.scenario === 'empty';
+            const overview = readOverviewFixture(contextId, empty);
             if (!overview) {
                 throw new MockError(
                     400,
@@ -308,8 +317,11 @@ export const handlers = [
                     'Không tìm thấy không gian học kỳ được yêu cầu.',
                 );
             }
-            const teacherLoad =
-                overview.teachers.find((item) => item.id === teacherId) ?? null;
+            const teacherLoad = readTeacherPortalOverview(
+                contextId,
+                teacherId,
+                empty,
+            );
             return HttpResponse.json({
                 context_id: overview.context_id,
                 context_title: overview.context_title,
@@ -328,8 +340,11 @@ export const handlers = [
         guarded(({ request }) => {
             const url = new URL(request.url);
             const contextId = url.searchParams.get('context_id') || 'hk1';
+            const empty = mockStore.scenario === 'empty';
             const payload = readPlanOverview(
-                readOverviewFixture(contextId, mockStore.scenario === 'empty'),
+                readOverviewFixture(contextId, empty),
+                mockStore.list(),
+                empty,
             );
             if (!payload) {
                 return errorResponse(

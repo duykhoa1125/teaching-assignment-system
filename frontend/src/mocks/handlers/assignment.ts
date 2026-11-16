@@ -11,8 +11,24 @@ import { mockStore } from '../store.ts';
 import { MockError } from '../mock-error.ts';
 import { scenarios } from '../scenarios/index.ts';
 
-const errorResponse = (status: number, code: string, message: string) =>
-    HttpResponse.json({ error: code, code, message }, { status });
+const errorResponse = (
+    status: number,
+    code: string,
+    message: string,
+    options?: {
+        location?: string | null;
+        details?: Record<string, unknown>;
+    },
+) =>
+    HttpResponse.json(
+        { error: code, code, message, ...(options?.details ?? {}) },
+        {
+            status,
+            headers: options?.location
+                ? { Location: options.location }
+                : undefined,
+        },
+    );
 async function guarded(
     run: () => Response | Promise<Response>,
     request?: Request,
@@ -36,7 +52,10 @@ async function guarded(
         return await run();
     } catch (error) {
         if (error instanceof MockError)
-            return errorResponse(error.status, error.code, error.message);
+            return errorResponse(error.status, error.code, error.message, {
+                location: error.location,
+                details: error.details,
+            });
         throw error;
     }
 }
@@ -215,6 +234,82 @@ export const assignmentHandlers = [
                     filter.limit,
                     filter.offset,
                 ),
+            );
+        }, request),
+    ),
+    http.get('*/api/plan-versions/:id/optimization', ({ params, request }) =>
+        guarded(
+            () =>
+                HttpResponse.json(
+                    assignmentStore.optimization(versionId(params)),
+                ),
+            request,
+        ),
+    ),
+    http.post('*/api/plan-versions/:id/solver-runs', ({ params, request }) =>
+        guarded(async () => {
+            const data = await body(request, [
+                'expected_revision',
+                'optimization_config_id',
+                'rule_set_version_id',
+            ]);
+            const run = assignmentStore.startSolverRun(versionId(params), {
+                expected_revision: revision(data),
+                ...config(data),
+            });
+            return HttpResponse.json(run, {
+                status: 202,
+                headers: { Location: `/api/solver-runs/${run.id}` },
+            });
+        }, request),
+    ),
+    http.get('*/api/solver-runs/:id', ({ params, request }) =>
+        guarded(
+            () =>
+                HttpResponse.json(
+                    assignmentStore.solverRun(
+                        integer(params.id, 'solver_run_id'),
+                    ),
+                ),
+            request,
+        ),
+    ),
+    http.post('*/api/solver-runs/:id/cancel', ({ params, request }) =>
+        guarded(
+            () =>
+                HttpResponse.json(
+                    assignmentStore.cancelSolverRun(
+                        integer(params.id, 'solver_run_id'),
+                    ),
+                ),
+            request,
+        ),
+    ),
+    http.post('*/api/plan-versions/:id/validation', ({ params, request }) =>
+        guarded(async () => {
+            const id = versionId(params);
+            const data = await body(request, ['expected_revision']);
+            const report = assignmentStore.runValidation(id, {
+                expected_revision: revision(data),
+            });
+            return HttpResponse.json(report, {
+                status: 201,
+                headers: {
+                    Location: `/api/plan-versions/${id}/validation?validation_run_id=${report.id}`,
+                },
+            });
+        }, request),
+    ),
+    http.get('*/api/plan-versions/:id/validation', ({ params, request }) =>
+        guarded(() => {
+            const rawRunId = new URL(request.url).searchParams.get(
+                'validation_run_id',
+            );
+            const runId = rawRunId
+                ? integer(rawRunId, 'validation_run_id')
+                : undefined;
+            return HttpResponse.json(
+                assignmentStore.validation(versionId(params), runId),
             );
         }, request),
     ),

@@ -61,9 +61,14 @@ export type OverviewDashboard = {
     academic_year: string;
     school_name: string;
     phase: OverviewPlanPhase;
+    round_id?: number;
     plan_version: number;
+    plan_version_id?: number | null;
     plan_revision: number;
     feedback_due_at: string | null;
+    validation_status?: string | null;
+    latest_solver_status?: string | null;
+    latest_apply_outcome?: string | null;
     readiness: {
         required_inputs_count: number;
         scope_confirmed: boolean;
