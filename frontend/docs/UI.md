@@ -1,5 +1,9 @@
 # Nền tảng UI — FE-02A
 
+## Logo và favicon TASS
+
+Theo yêu cầu riêng ngày 16/11/2026, thay dấu cuốn sách bằng monogram T tự vẽ dạng các dải hình học có khoảng âm chéo. `BrandMark` dùng chung symbol trong `public/tass-mark.svg` với favicon; áp dụng ở trang đăng nhập và sidebar. Giữ chữ `tass.`, màu thương hiệu, kích thước khung, bố cục và toàn bộ icon nghiệp vụ; prototype/glyph gốc được bảo toàn. Tham khảo hướng hình khối của [Orbita Grid](https://dribbble.com/shots/27761272-Unused-Logo-Concept-Orbita-Grid) và [Virex](https://dribbble.com/shots/26890460-Virex-Minimal-Symbol-of-Motion-Connection); SVG triển khai là bản vẽ riêng cho dự án.
+
 ## FE-06 — Workspace phân công
 
 `/assignment` dùng ma trận, bảng chi tiết, gán nhanh bằng native popover, drawer, tab, thanh chọn nhiều dòng và CSS/SVG/font/animation được trích từ demo. Phím mũi tên/Home/End di chuyển giữa các ô; Enter mở gán nhanh; Escape đóng và trả focus. Có lọc môn, tìm lớp/môn/giáo viên, theo dõi tải giáo viên và chuyển phiên bản. Route lớn được tải riêng để giảm bundle khởi động.

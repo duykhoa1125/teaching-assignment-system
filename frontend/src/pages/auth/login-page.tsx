@@ -10,6 +10,7 @@ import {
 import type { AuthRole } from '@/features/session/types';
 import { ApiError } from '@/shared/api/http';
 import { Icon } from '@/shared/ui/icon';
+import { BrandMark } from '@/shared/ui/brand-mark';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import type { PrototypeIconName } from '@/shared/ui/prototype-glyphs';
 
@@ -75,7 +76,7 @@ function AuthMark() {
     return (
         <div className="auth-brand">
             <span>
-                <Icon name="brand" />
+                <BrandMark />
             </span>
             <b>
                 tass<span>.</span>

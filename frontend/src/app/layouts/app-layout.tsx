@@ -8,6 +8,7 @@ import {
 import { flushSync } from 'react-dom';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Icon } from '@/shared/ui/icon';
+import { BrandMark } from '@/shared/ui/brand-mark';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import { useToast } from '@/shared/ui/toast-context';
 import { useTeacherPersonalQuery } from '@/features/session/queries';
@@ -210,7 +211,7 @@ export function AppLayout() {
             >
                 <div className="brand">
                     <div className="brandmark">
-                        <Icon name="brand" size={27} />
+                        <BrandMark size={27} />
                     </div>
                     <div>
                         <div className="brandword">
