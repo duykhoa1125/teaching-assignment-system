@@ -1,3 +1,4 @@
+import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import { useEffect, useRef } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { assignmentApi, readAssignmentRows, readWorkloads } from './api';
@@ -168,13 +169,7 @@ export function useSolverRun(
         if (settledRef.current === signature) return;
         settledRef.current = signature;
         if (data.summary?.apply_outcome === 'APPLIED') {
-            void Promise.all([
-                client.invalidateQueries({ queryKey: assignmentKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
-                client.invalidateQueries({ queryKey: ['mock-layout'] }),
-                client.invalidateQueries({ queryKey: ['mock-session'] }),
-                client.invalidateQueries({ queryKey: ['overview'] }),
-            ]);
+            void invalidatePlanQueries(client);
         } else {
             void client.invalidateQueries({
                 queryKey: assignmentKeys.optimization(data.version_id),
@@ -245,13 +240,7 @@ export function useRunValidation() {
                 assignmentKeys.validation(report.version_id, null),
                 report,
             );
-            await Promise.all([
-                client.invalidateQueries({ queryKey: assignmentKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
-                client.invalidateQueries({ queryKey: ['mock-layout'] }),
-                client.invalidateQueries({ queryKey: ['mock-session'] }),
-                client.invalidateQueries({ queryKey: ['overview'] }),
-            ]);
+            await invalidatePlanQueries(client);
         },
     });
 }
@@ -348,13 +337,7 @@ export function usePlanOperation() {
                     assignmentKeys.plan(result.round_id),
                     result,
                 );
-            await Promise.all([
-                client.invalidateQueries({ queryKey: assignmentKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
-                client.invalidateQueries({ queryKey: ['mock-layout'] }),
-                client.invalidateQueries({ queryKey: ['mock-session'] }),
-                client.invalidateQueries({ queryKey: ['overview'] }),
-            ]);
+            await invalidatePlanQueries(client);
         },
     });
 }

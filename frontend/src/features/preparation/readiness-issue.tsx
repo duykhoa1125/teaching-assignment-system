@@ -2,8 +2,17 @@ import { Link } from 'react-router';
 import { Icon } from '@/shared/ui/icon';
 import { badgeStatusForIssue, resolveIssueTarget } from './model';
 import type { ReadinessIssue as Issue } from './types';
+import { roundPath } from './round-navigation';
 
-export function ReadinessIssue({ issue }: { issue: Issue }) {
+export function ReadinessIssue({
+    issue,
+    roundId,
+    contextId,
+}: {
+    issue: Issue;
+    roundId?: number;
+    contextId?: string;
+}) {
     const badge = badgeStatusForIssue(issue);
     const target = resolveIssueTarget(issue);
     return (
@@ -17,7 +26,14 @@ export function ReadinessIssue({ issue }: { issue: Issue }) {
                 <h3>{issue.message}</h3>
                 <p>{issue.suggestion}</p>
             </div>
-            <Link to={target.path} className="btn small">
+            <Link
+                to={
+                    contextId
+                        ? roundPath(target.path, roundId, contextId)
+                        : target.path
+                }
+                className="btn small"
+            >
                 {target.label}
                 <Icon name="arrow" />
             </Link>

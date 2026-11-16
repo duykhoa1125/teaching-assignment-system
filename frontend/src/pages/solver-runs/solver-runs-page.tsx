@@ -1,3 +1,4 @@
+import { roundPath } from '@/features/preparation/round-navigation';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -239,7 +240,14 @@ export function SolverRunsPage() {
                         : 'Tạo đợt phân công và chuẩn bị dữ liệu trước khi chạy bộ giải.'
                 }
                 actions={
-                    <Link to="/preparation" className="btn small">
+                    <Link
+                        to={roundPath(
+                            '/preparation',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn small"
+                    >
                         Mở Chuẩn bị dữ liệu
                     </Link>
                 }
@@ -307,7 +315,14 @@ export function SolverRunsPage() {
                 description="Cấu hình năm mục tiêu và theo dõi từng lượt giải."
                 actions={
                     <div className="mvp-actions">
-                        <Link to="/assignment" className="btn">
+                        <Link
+                            to={roundPath(
+                                '/assignment',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn"
+                        >
                             <Icon name="matrix" />
                             Bảng phân công
                         </Link>
@@ -424,7 +439,14 @@ export function SolverRunsPage() {
                     }
                     detail={readSolverErrorMessage(planQuery.error)}
                     actions={
-                        <Link to="/assignment" className="btn primary small">
+                        <Link
+                            to={roundPath(
+                                '/assignment',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn primary small"
+                        >
                             Tạo bản nháp trong Phân công
                         </Link>
                     }
@@ -440,7 +462,14 @@ export function SolverRunsPage() {
                                 so với nguồn chuẩn bị. Hãy làm mới snapshot
                                 trong Phân công trước khi chạy solver.
                             </span>
-                            <Link to="/assignment" className="btn small">
+                            <Link
+                                to={roundPath(
+                                    '/assignment',
+                                    activeRound?.id,
+                                    contextId,
+                                )}
+                                className="btn small"
+                            >
                                 Tới Phân công
                             </Link>
                         </div>
@@ -763,17 +792,35 @@ export function SolverRunsPage() {
                             {activeInterpretation.applied ? (
                                 <div className="mvp-actions section-gap">
                                     <Link
-                                        to="/assignment"
+                                        to={roundPath(
+                                            '/assignment',
+                                            activeRound?.id,
+                                            contextId,
+                                        )}
                                         className="btn primary small"
                                     >
                                         <Icon name="matrix" />
                                         Xem bảng phân công đã lưu
                                     </Link>
-                                    <Link to="/checks" className="btn small">
+                                    <Link
+                                        to={roundPath(
+                                            '/checks',
+                                            activeRound?.id,
+                                            contextId,
+                                        )}
+                                        className="btn small"
+                                    >
                                         <Icon name="check" />
                                         Kiểm tra phương án
                                     </Link>
-                                    <Link to="/workload" className="btn small">
+                                    <Link
+                                        to={roundPath(
+                                            '/workload',
+                                            activeRound?.id,
+                                            contextId,
+                                        )}
+                                        className="btn small"
+                                    >
                                         <Icon name="balance" />
                                         Đối chiếu tải
                                     </Link>

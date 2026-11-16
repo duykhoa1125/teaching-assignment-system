@@ -58,6 +58,8 @@ export type PlanSnapshotTeacherLoad = {
     full_name: string;
     color_index: number;
     portrait_key: 'manager' | number;
+    subjects: string[];
+    weekly_limit: number;
     f: number;
     a: number;
     c: number;
@@ -119,6 +121,11 @@ export type ExportDocumentRecord = {
     pdf_base64: string;
     snapshot: PlanSnapshot;
 };
+
+export type IssueDocumentRequest = Omit<
+    ExportDocumentRecord,
+    'id' | 'at' | 'by'
+> & { actor_name?: string };
 
 export type GovernanceOverviewResponse = {
     context_id: string;

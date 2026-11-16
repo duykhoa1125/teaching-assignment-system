@@ -8,7 +8,6 @@ import { layoutPreview } from '../fixtures/layout.ts';
 import {
     overviewByContext,
     readOverviewFixture,
-    readTeacherPortalOverview,
 } from '../fixtures/overview.ts';
 import { scenarios } from '../scenarios/index.ts';
 import { mockStore, MockError } from '../store.ts';
@@ -331,53 +330,33 @@ export const handlers = [
                     'Không tìm thấy không gian học kỳ được yêu cầu.',
                 );
             }
-            const teacherLoad = readTeacherPortalOverview(
+            const portal = governanceStore.teacherPortal(
                 contextId,
                 teacherId,
-                empty,
+                releaseId,
+                mockStore.list(),
             );
-            const gov = governanceStore.overview(contextId, mockStore.list());
-            const releasedByRevision = new Map<
-                string,
-                {
-                    id: string;
-                    version_no: number;
-                    revision_no: number;
-                    at: string;
-                    phase: string;
-                    annual_warning: string | null;
-                }
-            >();
-            for (const snap of gov.snapshots) {
-                if (
-                    !snap.is_full ||
-                    ![
-                        'OPEN_FOR_FEEDBACK',
-                        'READY_TO_EXPORT',
-                        'EXPORTED',
-                    ].includes(snap.phase)
-                ) {
-                    continue;
-                }
-                releasedByRevision.set(
-                    `${snap.version_no}:${snap.revision_no}`,
-                    {
-                        id: snap.id,
-                        version_no: snap.version_no,
-                        revision_no: snap.revision_no,
-                        at: snap.at,
-                        phase: snap.phase,
-                        annual_warning: snap.annual_warning,
-                    },
-                );
-            }
-            const releasedVersions = [...releasedByRevision.values()];
-            const selectedRelease =
-                (releaseId
-                    ? releasedVersions.find((item) => item.id === releaseId)
-                    : undefined) ?? releasedVersions.at(-1);
+            const gov = portal.gov;
+            const teacherLoad = empty ? null : portal.teacher;
+            const releasedVersions = (empty ? [] : portal.releases).map(
+                (snap) => ({
+                    id: snap.id,
+                    version_no: snap.version_no,
+                    revision_no: snap.revision_no,
+                    at: snap.at,
+                    phase: snap.phase,
+                    annual_warning: snap.annual_warning,
+                }),
+            );
+            const selectedRelease = empty ? null : portal.selected;
             const teacherFeedbacks = gov.feedback
-                .filter((item) => item.teacher_id === teacherId)
+                .filter(
+                    (item) =>
+                        item.teacher_id === teacherId &&
+                        selectedRelease &&
+                        item.version_no === selectedRelease.version_no &&
+                        item.source_revision === selectedRelease.revision_no,
+                )
                 .map((item) => ({
                     id: String(item.id),
                     title: item.title,

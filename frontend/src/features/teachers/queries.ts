@@ -5,6 +5,7 @@ import {
     useQueryClient,
 } from '@tanstack/react-query';
 import { teachersApi } from './api';
+import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import type { TeacherFilters, TeacherRequest } from './types';
 
 export const teacherQueryKeys = {
@@ -57,6 +58,7 @@ export function useSaveTeacherMutation() {
             await queryClient.invalidateQueries({
                 queryKey: teacherQueryKeys.all,
             });
+            await invalidatePlanQueries(queryClient);
         },
     });
 }
@@ -73,6 +75,7 @@ export function useDeleteTeacherMutation() {
             await queryClient.invalidateQueries({
                 queryKey: teacherQueryKeys.lists(),
             });
+            await invalidatePlanQueries(queryClient);
         },
     });
 }

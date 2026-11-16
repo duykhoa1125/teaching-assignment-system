@@ -1,3 +1,4 @@
+import { roundPath } from '@/features/preparation/round-navigation';
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -79,7 +80,14 @@ export function WorkloadPage() {
                 title="Chưa có đợt phân công để tính tải"
                 detail="Kiểm tra lại danh sách đợt phân công trong Chuẩn bị dữ liệu."
                 actions={
-                    <Link to="/preparation" className="btn small">
+                    <Link
+                        to={roundPath(
+                            '/preparation',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn small"
+                    >
                         Mở Chuẩn bị dữ liệu
                     </Link>
                 }
@@ -108,7 +116,14 @@ export function WorkloadPage() {
                         : 'Tạo phương án ở Phân công giảng dạy trước khi xem tải.'
                 }
                 actions={
-                    <Link to="/assignment" className="btn primary small">
+                    <Link
+                        to={roundPath(
+                            '/assignment',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn primary small"
+                    >
                         Mở Phân công
                     </Link>
                 }
@@ -205,7 +220,14 @@ export function WorkloadPage() {
                             <Icon name="download" />
                             Tải CSV tải
                         </button>
-                        <Link to="/checks" className="btn">
+                        <Link
+                            to={roundPath(
+                                '/checks',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn"
+                        >
                             <Icon name="shield" />
                             Kiểm tra phương án
                         </Link>
@@ -826,7 +848,14 @@ export function WorkloadPage() {
                         >
                             Đóng
                         </button>
-                        <Link to="/assignment" className="btn primary">
+                        <Link
+                            to={roundPath(
+                                '/assignment',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn primary"
+                        >
                             <Icon name="matrix" />
                             Mở bảng phân công
                         </Link>

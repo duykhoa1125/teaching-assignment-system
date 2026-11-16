@@ -200,7 +200,7 @@ export const governanceHandlers = [
         guarded(async ({ request }) => {
             const body = await bodyObject(request);
             return HttpResponse.json(
-                governanceStore.issueDocument(
+                await governanceStore.issueDocument(
                     body as unknown as {
                         context_id: string;
                         mode: 'teachers' | 'classes';
@@ -215,6 +215,7 @@ export const governanceHandlers = [
                         actor_name?: string;
                     },
                     mockStore.list(),
+                    request.signal,
                 ),
                 { status: 201 },
             );

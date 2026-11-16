@@ -1,3 +1,4 @@
+import { roundPath } from '@/features/preparation/round-navigation';
 import '@/pages/preparation/preparation-ui.css';
 import '../results/results.css';
 import { ReadinessIssue } from '@/features/preparation/readiness-issue';
@@ -170,7 +171,14 @@ export function ChecksPage() {
                 description="Kết quả gắn với phiên bản, revision, snapshot nguồn và bộ quy tắc đang chọn."
                 actions={
                     <div className="mvp-actions">
-                        <Link to="/assignment" className="btn">
+                        <Link
+                            to={roundPath(
+                                '/assignment',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn"
+                        >
                             <Icon name="matrix" />
                             Bảng phân công
                         </Link>
@@ -281,7 +289,11 @@ export function ChecksPage() {
                             }
                             actions={
                                 <Link
-                                    to="/assignment"
+                                    to={roundPath(
+                                        '/assignment',
+                                        activeRound?.id,
+                                        contextId,
+                                    )}
                                     className="btn primary small"
                                 >
                                     Mở Phân công
@@ -572,7 +584,11 @@ export function ChecksPage() {
                                                             </p>
                                                         </div>
                                                         <Link
-                                                            to={target.path}
+                                                            to={roundPath(
+                                                                target.path,
+                                                                activeRound?.id,
+                                                                contextId,
+                                                            )}
                                                             className="btn small"
                                                         >
                                                             {target.label}
@@ -751,7 +767,11 @@ export function ChecksPage() {
                                     />
                                     {readiness.can_run_solver ? (
                                         <Link
-                                            to="/solver-runs"
+                                            to={roundPath(
+                                                '/solver-runs',
+                                                activeRound?.id,
+                                                contextId,
+                                            )}
                                             className="btn small primary"
                                         >
                                             Mở Bộ giải đề xuất
@@ -943,6 +963,8 @@ export function ChecksPage() {
                                         <ReadinessIssue
                                             key={`${issue.code}-${idx}`}
                                             issue={issue}
+                                            roundId={activeRound?.id}
+                                            contextId={contextId}
                                         />
                                     ))
                                 ) : (

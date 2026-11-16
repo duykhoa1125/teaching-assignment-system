@@ -14,6 +14,7 @@ import type {
     SourceEvidenceRecord,
     SourcesBundleResponse,
     TeacherFeedbackSubmitRequest,
+    IssueDocumentRequest,
 } from '../features/governance/types.ts';
 import {
     canCompletePlanReady,
@@ -25,12 +26,17 @@ import { normalizeSubjectSearch } from '../features/catalogs/subject-visual.ts';
 import type { Teacher } from '../features/teachers/types.ts';
 import { assignmentStore } from './assignment-store.ts';
 import { MockError } from './mock-error.ts';
+import { readMockSection, writeMockSection } from './persistence.ts';
 import { preparationStore } from './preparation-store.ts';
 import { demoAccounts } from './fixtures/accounts.ts';
+import { captureWorkspaceTeachers } from './fixtures/assignment.ts';
 import {
-    CONTEXT_OVERVIEW_CONFIG,
-    readTeacherPortalOverview,
-} from './fixtures/overview.ts';
+    selectTeacherRelease,
+    teacherFromRelease,
+    unreleasedTeacher,
+} from './teacher-release.ts';
+import { snapshotContent, verifyExportPdf } from './export-validation.ts';
+import { CONTEXT_OVERVIEW_CONFIG } from './fixtures/overview.ts';
 
 type ContextGovernanceState = {
     phase: PlanLifecyclePhase;
@@ -42,8 +48,6 @@ type ContextGovernanceState = {
     documents: ExportDocumentRecord[];
 };
 
-const STORAGE_KEY = 'tass-mock-governance-v1';
-
 const clone = <T>(value: T): T => structuredClone(value);
 const now = () => new Date().toISOString();
 
@@ -54,17 +58,6 @@ let nextRuleSeq = 1;
 let nextSourceSeq = 1;
 let nextAliasSeq = 1;
 let nextAuditSeq = 1;
-
-function browserStorage(): Storage | null {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        return window.sessionStorage;
-    } catch {
-        return null;
-    }
-}
 
 function seedRules(): RuleRecord[] {
     return [
@@ -155,8 +148,8 @@ function createInitialContexts(): Record<string, ContextGovernanceState> {
                     version_no: 1,
                     round_id: 1,
                     round_code: 'PC-01',
-                    teacher_id: 1,
-                    teacher_name: 'Nguyễn Minh Anh',
+                    teacher_id: 101,
+                    teacher_name: 'Nguyễn Minh An',
                     teacher_code: 'GV001',
                     portrait_key: 1,
                     color_index: 0,
@@ -329,42 +322,30 @@ let sourcesState: SourceEvidenceRecord[] = seedSources();
 let aliasesState: AliasRecord[] = [];
 let auditState: GovernanceAuditRecord[] = seedAudit();
 let hydrated = false;
+let stateGeneration = 0;
 
 function saveStorage() {
-    const store = browserStorage();
-    if (!store) return;
-    try {
-        store.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-                nextFeedbackId,
-                nextSnapshotSeq,
-                nextDocSeq,
-                nextRuleSeq,
-                nextSourceSeq,
-                nextAliasSeq,
-                nextAuditSeq,
-                contextsState,
-                rulesState,
-                sourcesState,
-                aliasesState,
-                auditState,
-            }),
-        );
-    } catch {
-        // Ignore browser storage quota issues in mock mode
-    }
+    writeMockSection('governance', {
+        nextFeedbackId,
+        nextSnapshotSeq,
+        nextDocSeq,
+        nextRuleSeq,
+        nextSourceSeq,
+        nextAliasSeq,
+        nextAuditSeq,
+        contextsState,
+        rulesState,
+        sourcesState,
+        aliasesState,
+        auditState,
+    });
 }
 
 function ensureHydrated() {
     if (hydrated) return;
     hydrated = true;
-    const store = browserStorage();
-    if (!store) return;
     try {
-        const raw = store.getItem(STORAGE_KEY);
-        if (!raw) return;
-        const parsed = JSON.parse(raw) as {
+        const parsed = readMockSection<{
             nextFeedbackId: number;
             nextSnapshotSeq: number;
             nextDocSeq: number;
@@ -377,7 +358,7 @@ function ensureHydrated() {
             sourcesState: SourceEvidenceRecord[];
             aliasesState: AliasRecord[];
             auditState: GovernanceAuditRecord[];
-        };
+        }>('governance');
         if (!parsed || typeof parsed !== 'object' || !parsed.contextsState) {
             return;
         }
@@ -436,6 +417,15 @@ function recordAudit(
 
 function checkValidationStatus(versionId: number) {
     const report = assignmentStore.latestValidation(versionId);
+    const meta = assignmentStore.version(versionId);
+    const source = preparationStore.evaluateReadiness(
+        meta.round_id,
+        {
+            optimization_config_id: meta.optimization_config_id,
+            rule_set_version_id: meta.rule_set_version_id,
+        },
+        'normal',
+    );
     const fresh = Boolean(report?.fresh);
     const annualFinding = report?.results.find(
         (item) => item.calculation_period === 'ANNUAL',
@@ -443,6 +433,7 @@ function checkValidationStatus(versionId: number) {
     const releasable = Boolean(
         report &&
         fresh &&
+        source.can_open_feedback &&
         !report.results.some(
             (item) =>
                 item.result_status === 'VIOLATION' ||
@@ -487,6 +478,8 @@ function buildSnapshotFromPlan(
             full_name: teacher.full_name,
             color_index: teacher.color_index,
             portrait_key: teacher.portrait_key,
+            subjects: teacher.subjects.map((subject) => subject.name),
+            weekly_limit: teacher.weekly_limit,
             f: load?.f ?? teacher.fixed,
             a: load?.a ?? 0,
             c: load?.c ?? teacher.converted,
@@ -592,8 +585,45 @@ function buildOverviewResponse(
     });
 }
 
+function buildTeacherPortal(
+    contextId: string,
+    teacherId: number,
+    releaseId: string | undefined,
+    teachers: Teacher[],
+) {
+    const gov = buildOverviewResponse(contextId, teachers);
+    const { releases, selected } = selectTeacherRelease(
+        gov.snapshots,
+        releaseId,
+    );
+    const { cfg } = requireContextConfig(contextId);
+    const round = preparationStore.detailRound(cfg.roundId);
+    const semester = preparationStore.detailSemester(round.semester_id);
+    const year = preparationStore.detailAcademicYear(semester.academic_year_id);
+    const profile = selected
+        ? undefined
+        : captureWorkspaceTeachers(
+              teachers,
+              year.school_id,
+              preparationStore.listSubjects({ limit: 100000 }),
+              semester.starts_on,
+              semester.ends_on,
+              cfg.ruleSetId,
+          ).find((item) => item.id === teacherId);
+    return {
+        gov,
+        releases,
+        selected,
+        teacher: selected
+            ? teacherFromRelease(selected, teacherId)
+            : unreleasedTeacher(profile),
+    };
+}
+
 export const governanceStore = {
+    teacherPortal: buildTeacherPortal,
     reset() {
+        stateGeneration++;
         contextsState = createInitialContexts();
         rulesState = seedRules();
         sourcesState = seedSources();
@@ -607,14 +637,7 @@ export const governanceStore = {
         nextAliasSeq = 1;
         nextAuditSeq = 1;
         hydrated = true;
-        const store = browserStorage();
-        if (store) {
-            try {
-                store.removeItem(STORAGE_KEY);
-            } catch {
-                // Ignore
-            }
-        }
+        writeMockSection('governance', undefined);
     },
     pendingCount(contextId: string): number {
         ensureHydrated();
@@ -818,11 +841,26 @@ export const governanceStore = {
                 'Phiên bản này không còn mở nhận phản hồi.',
             );
         }
-        const portalTeacher = readTeacherPortalOverview(
+        const portal = buildTeacherPortal(
             input.context_id,
             input.teacher_id,
-            false,
+            input.release_id ?? undefined,
+            teachers,
         );
+        const portalTeacher = portal.teacher;
+        const chosenSnap = portal.selected;
+        const preview = assignmentStore.preview(cfg.roundCode);
+        if (
+            !chosenSnap ||
+            !preview ||
+            chosenSnap.version_no !== preview.meta.version_no ||
+            chosenSnap.revision_no !== preview.meta.revision_no
+        )
+            throw new MockError(
+                409,
+                'FEEDBACK_RELEASE_NOT_CURRENT',
+                'Chỉ gửi phản hồi cho bản phát hành đang mở nhận ý kiến.',
+            );
         if (!portalTeacher) {
             throw new MockError(
                 403,
@@ -864,20 +902,6 @@ export const governanceStore = {
                 );
             }
         }
-        const released = gov.snapshots
-            .filter(
-                (snap) =>
-                    snap.is_full &&
-                    (snap.phase === 'OPEN_FOR_FEEDBACK' ||
-                        snap.phase === 'READY_TO_EXPORT' ||
-                        snap.phase === 'EXPORTED'),
-            )
-            .sort((a, b) => a.version_no - b.version_no);
-        const chosenSnap =
-            (input.release_id
-                ? released.find((item) => item.id === input.release_id)
-                : undefined) ?? released.at(-1);
-        const preview = assignmentStore.preview(cfg.roundCode);
         const versionNo =
             chosenSnap?.version_no ?? preview?.meta.version_no ?? 1;
         const revisionNo =
@@ -1157,22 +1181,11 @@ export const governanceStore = {
         saveStorage();
         return buildOverviewResponse(contextId, teachers);
     },
-    issueDocument(
-        input: {
-            context_id: string;
-            mode: 'teachers' | 'classes';
-            filename: string;
-            bytes: number;
-            sha256: string;
-            source_token: string;
-            base_revision: number;
-            validation_id: string;
-            pdf_base64: string;
-            snapshot: PlanSnapshot;
-            actor_name?: string;
-        },
+    async issueDocument(
+        input: IssueDocumentRequest,
         teachers: Teacher[],
-    ): ExportDocumentRecord {
+        signal?: AbortSignal,
+    ): Promise<ExportDocumentRecord> {
         ensureHydrated();
         assignmentStore.ensure(teachers);
         const { cfg, gov } = requireContextConfig(input.context_id);
@@ -1202,6 +1215,50 @@ export const governanceStore = {
             );
         }
         const actor = input.actor_name?.trim() || 'Nguyễn Minh Khoa';
+        const expected = buildSnapshotFromPlan(
+            input.context_id,
+            'Phát hành tài liệu',
+            actor,
+        );
+        if (
+            !preview ||
+            !expected ||
+            !input.snapshot ||
+            input.base_revision !== preview.meta.revision_no ||
+            input.source_token !== preview.meta.source_revision_token ||
+            input.validation_id !== val.validationId ||
+            snapshotContent(input.snapshot) !== snapshotContent(expected)
+        )
+            throw new MockError(
+                409,
+                'EXPORT_SOURCE_CHANGED',
+                'Phiên bản, snapshot hoặc kết quả kiểm tra đã đổi. Tải lại và tạo lại PDF.',
+            );
+        const generation = stateGeneration;
+        const hash = await verifyExportPdf(input);
+        if (generation !== stateGeneration || signal?.aborted)
+            throw new MockError(
+                409,
+                'MOCK_STATE_CHANGED',
+                'Mock đã được đặt lại hoặc yêu cầu đã hủy; tài liệu chưa được phát hành.',
+            );
+        const latest = assignmentStore.preview(cfg.roundCode);
+        if (
+            gov.phase !== 'READY_TO_EXPORT' ||
+            gov.feedback.some((item) => item.status === 'pending') ||
+            !latest ||
+            latest.meta.version_id !== preview.meta.version_id ||
+            latest.meta.revision_no !== preview.meta.revision_no ||
+            latest.meta.input_snapshot_id !== preview.meta.input_snapshot_id ||
+            !checkValidationStatus(latest.meta.version_id).releasable ||
+            checkValidationStatus(latest.meta.version_id).validationId !==
+                input.validation_id
+        )
+            throw new MockError(
+                409,
+                'EXPORT_SOURCE_CHANGED',
+                'Phương án đã đổi trong khi kiểm tra PDF; tạo lại tệp trước khi phát hành.',
+            );
         const record: ExportDocumentRecord = {
             id: `PDF-${nextDocSeq++}`,
             context_id: input.context_id,
@@ -1210,7 +1267,7 @@ export const governanceStore = {
             filename: input.filename,
             mode: input.mode,
             bytes: input.bytes,
-            sha256: input.sha256,
+            sha256: hash,
             validation_id: input.validation_id,
             source_token: input.source_token,
             base_revision: input.base_revision,

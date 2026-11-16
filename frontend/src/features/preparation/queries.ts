@@ -1,3 +1,4 @@
+import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { catalogKeys } from '@/features/catalogs/queries';
 import { preparationApi } from './api';
@@ -101,7 +102,7 @@ export function useSaveScopeMutation() {
                 : preparationApi.updateScope(id, payload),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -115,7 +116,7 @@ export function useDeleteScopeMutation() {
         mutationFn: (id: number) => preparationApi.deleteScope(id),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -138,7 +139,7 @@ export function useSaveApplicabilityMutation() {
                 : preparationApi.updateApplicability(id, payload),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -151,7 +152,7 @@ export function useDeleteApplicabilityMutation() {
     return useMutation({
         mutationFn: (id: number) => preparationApi.deleteApplicability(id),
         onSuccess: async () => {
-            await client.invalidateQueries({ queryKey: preparationKeys.all });
+            await invalidatePlanQueries(client);
         },
     });
 }
@@ -171,7 +172,7 @@ export function useSaveRequiredComponentMutation() {
                 : preparationApi.updateRequiredComponent(id, payload),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -185,7 +186,7 @@ export function useDeleteRequiredComponentMutation() {
         mutationFn: (id: number) => preparationApi.deleteRequiredComponent(id),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -208,7 +209,7 @@ export function useSaveDemandMutation() {
                 : preparationApi.updateDemand(id, payload),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
@@ -222,7 +223,7 @@ export function useDeleteDemandMutation() {
         mutationFn: (id: number) => preparationApi.deleteDemand(id),
         onSuccess: async () => {
             await Promise.all([
-                client.invalidateQueries({ queryKey: preparationKeys.all }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: catalogKeys.rounds() }),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);

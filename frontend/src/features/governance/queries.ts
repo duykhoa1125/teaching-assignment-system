@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { governanceApi } from './api';
+import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import type {
     ExportDocumentRecord,
     FeedbackDecision,
@@ -22,15 +23,7 @@ export const governanceKeys = {
 
 function useInvalidateGovernance() {
     const client = useQueryClient();
-    return async () => {
-        await client.invalidateQueries({ queryKey: governanceKeys.all });
-        await client.invalidateQueries({ queryKey: ['assignment-workspace'] });
-        await client.invalidateQueries({ queryKey: ['overview'] });
-        await client.invalidateQueries({ queryKey: ['mock-layout'] });
-        await client.invalidateQueries({ queryKey: ['mock-session'] });
-        await client.invalidateQueries({ queryKey: ['teacher-overview'] });
-        await client.invalidateQueries({ queryKey: ['admin-overview'] });
-    };
+    return () => invalidatePlanQueries(client);
 }
 
 export function useGovernanceOverviewQuery(contextId: string, enabled = true) {

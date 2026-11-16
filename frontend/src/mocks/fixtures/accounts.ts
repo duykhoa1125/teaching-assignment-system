@@ -38,11 +38,12 @@ export const demoAccounts: MockDemoAccount[] = [
     {
         id: 'teacher',
         login: 'giaovien@tass.demo',
-        name: 'Nguyễn Minh Anh',
+        name: 'Nguyễn Minh An',
         roles: ['teacher'],
         status: 'active',
         school: 'anhoa',
-        teacherId: 1,
+        teacherId: 101,
+        portraitId: 1,
     },
     {
         id: 'dual',
@@ -56,11 +57,12 @@ export const demoAccounts: MockDemoAccount[] = [
     {
         id: 'locked',
         login: 'tamkhoa@tass.demo',
-        name: 'Trần Hoàng Nam',
+        name: 'Võ Thanh Bình',
         roles: ['teacher'],
         status: 'locked',
         school: 'anhoa',
-        teacherId: 2,
+        teacherId: 105,
+        portraitId: 5,
     },
     {
         id: 'unscoped',
@@ -74,10 +76,11 @@ export const demoAccounts: MockDemoAccount[] = [
     {
         id: 'teacher-thcs',
         login: 'gvthcs@tass.demo',
-        name: 'Phạm Khánh Linh',
+        name: 'Bùi Quang Huy',
         roles: ['teacher'],
         status: 'active',
-        school: 'anhoa',
-        teacherId: 13,
+        school: 'binhminh',
+        teacherId: 201,
+        portraitId: 1,
     },
 ];

@@ -1,3 +1,4 @@
+import { roundPath } from '@/features/preparation/round-navigation';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -236,7 +237,14 @@ export function StatisticsPage() {
                 title="Chưa có đợt phân công để thống kê"
                 detail="Mở Chuẩn bị dữ liệu để chọn hoặc khởi tạo đợt phân công."
                 actions={
-                    <Link to="/preparation" className="btn small">
+                    <Link
+                        to={roundPath(
+                            '/preparation',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn small"
+                    >
                         Chuẩn bị dữ liệu
                     </Link>
                 }
@@ -265,7 +273,14 @@ export function StatisticsPage() {
                         : 'Tạo bản nháp trong Phân công trước khi xem thống kê.'
                 }
                 actions={
-                    <Link to="/assignment" className="btn primary small">
+                    <Link
+                        to={roundPath(
+                            '/assignment',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn primary small"
+                    >
                         Mở Phân công
                     </Link>
                 }
@@ -302,7 +317,14 @@ export function StatisticsPage() {
                 description="Tổng hợp theo môn, khối hoặc lớp và truy về các cặp còn thiếu."
                 actions={
                     <div className="mvp-actions">
-                        <Link to="/workload" className="btn">
+                        <Link
+                            to={roundPath(
+                                '/workload',
+                                activeRound?.id,
+                                contextId,
+                            )}
+                            className="btn"
+                        >
                             <Icon name="balance" />
                             Định mức & Tải
                         </Link>
@@ -513,7 +535,14 @@ export function StatisticsPage() {
                             cầu bắt buộc
                         </p>
                     </div>
-                    <Link to="/assignment" className="btn small">
+                    <Link
+                        to={roundPath(
+                            '/assignment',
+                            activeRound?.id,
+                            contextId,
+                        )}
+                        className="btn small"
+                    >
                         Mở bảng phân công
                     </Link>
                 </div>

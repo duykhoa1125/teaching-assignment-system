@@ -238,9 +238,13 @@ export function accountPortraitSpec(account: AuthAccount | null | undefined): {
         return { portraitKey: 'manager', colorIndex: 0 };
     }
     if (account.teacherId !== undefined) {
+        const portrait =
+            typeof account.portraitId === 'number'
+                ? account.portraitId
+                : account.teacherId;
         return {
-            portraitKey: account.teacherId,
-            colorIndex: (Math.abs(account.teacherId) - 1) % 6,
+            portraitKey: portrait,
+            colorIndex: (Math.abs(portrait) - 1) % 6,
         };
     }
     const id = account.portraitId ?? 1;

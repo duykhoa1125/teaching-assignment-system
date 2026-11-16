@@ -1,3 +1,4 @@
+import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { catalogsApi } from './api';
 import type {
@@ -102,7 +103,7 @@ export function useSaveSubjectMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
         },
@@ -116,7 +117,7 @@ export function useDeleteSubjectMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
             ]);
         },
     });
@@ -138,7 +139,7 @@ export function useSaveClassMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
         },
@@ -152,7 +153,7 @@ export function useDeleteClassMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
             ]);
         },
     });
@@ -174,7 +175,7 @@ export function useSaveGradeMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
             ]);
         },
     });
@@ -264,7 +265,7 @@ export function useSaveSemesterMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
             ]);
         },
     });
@@ -296,7 +297,7 @@ export function useSaveAssignmentRoundMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
                 client.invalidateQueries({ queryKey: ['overview'] }),
             ]);
         },
@@ -310,7 +311,7 @@ export function useDeleteAssignmentRoundMutation() {
         onSuccess: async () => {
             await Promise.all([
                 client.invalidateQueries({ queryKey: catalogKeys.all }),
-                client.invalidateQueries({ queryKey: ['preparation'] }),
+                invalidatePlanQueries(client),
             ]);
         },
     });

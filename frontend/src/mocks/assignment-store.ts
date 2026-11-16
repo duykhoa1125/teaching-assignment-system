@@ -24,13 +24,21 @@ import type {
     WorkloadRow,
     WorkspaceTeacher,
 } from '../features/assignment/types.ts';
-import type { RoundReadinessDto } from '../features/preparation/types.ts';
+import type {
+    RoundReadinessDto,
+    RequiredDemandComponent,
+    ReadinessIssue,
+} from '../features/preparation/types.ts';
 import type { Teacher } from '../features/teachers/types.ts';
 import { preparationStore } from './preparation-store.ts';
 import { MockError } from './mock-error.ts';
+import { readMockSection, writeMockSection } from './persistence.ts';
 import { captureWorkspaceTeachers } from './fixtures/assignment.ts';
+import { completeRoundDemands } from './fixtures/complete-round.ts';
 
 type Snapshot = {
+    required_components: RequiredDemandComponent[];
+    preparation_issues: ReadinessIssue[];
     context_label: string;
     rows: AssignmentRow[];
     teachers: WorkspaceTeacher[];
@@ -70,55 +78,27 @@ let initialized = false;
 let setup = 'normal';
 let conflictInjected = false;
 let audit: Audit[] = [];
-const STORAGE_KEY = 'tass-mock-assignment-v1';
-
-function browserStorage(): Storage | null {
-    if (typeof document === 'undefined' || typeof window === 'undefined') {
-        return null;
-    }
-    try {
-        return window.sessionStorage;
-    } catch {
-        return null;
-    }
-}
-
 function saveStorage() {
-    const store = browserStorage();
-    if (!store) return;
-    try {
-        store.setItem(
-            STORAGE_KEY,
-            JSON.stringify({
-                setup,
-                nextRow,
-                nextVersion,
-                nextSnapshot,
-                nextRunId,
-                nextValidationId,
-                conflictInjected,
-                audit,
-                versions: [...versions.entries()],
-                current: [...current.entries()],
-                solverRuns: [...solverRuns.entries()],
-                validationReports: [...validationReports.entries()],
-                latestValidationByVersion: [
-                    ...latestValidationByVersion.entries(),
-                ],
-            }),
-        );
-    } catch {
-        // Ignore quota/storage errors in mock browser helper
-    }
+    writeMockSection('assignment', {
+        setup,
+        nextRow,
+        nextVersion,
+        nextSnapshot,
+        nextRunId,
+        nextValidationId,
+        conflictInjected,
+        audit,
+        versions: [...versions.entries()],
+        current: [...current.entries()],
+        solverRuns: [...solverRuns.entries()],
+        validationReports: [...validationReports.entries()],
+        latestValidationByVersion: [...latestValidationByVersion.entries()],
+    });
 }
 
 function restoreStorage(): boolean {
-    const store = browserStorage();
-    if (!store) return false;
     try {
-        const raw = store.getItem(STORAGE_KEY);
-        if (!raw) return false;
-        const parsed = JSON.parse(raw) as {
+        const parsed = readMockSection<{
             setup: string;
             nextRow: number;
             nextVersion: number;
@@ -132,8 +112,9 @@ function restoreStorage(): boolean {
             solverRuns: [number, InternalSolverRun][];
             validationReports: [number, ValidationReport][];
             latestValidationByVersion: [number, number][];
-        };
-        if (parsed.setup !== setup) return false;
+        }>('assignment');
+        if (!parsed) return false;
+        setup = parsed.setup;
         nextRow = parsed.nextRow;
         nextVersion = parsed.nextVersion;
         nextSnapshot = parsed.nextSnapshot;
@@ -153,13 +134,7 @@ function restoreStorage(): boolean {
 }
 
 function clearStorage() {
-    const store = browserStorage();
-    if (!store) return;
-    try {
-        store.removeItem(STORAGE_KEY);
-    } catch {
-        // Ignore storage errors
-    }
+    writeMockSection('assignment', undefined);
 }
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -215,6 +190,7 @@ function snapshot(
     roundId: number,
     teachers: Teacher[],
     rule: number,
+    config: number,
 ): Snapshot {
     const round = preparationStore.detailRound(roundId);
     const semester = preparationStore.detailSemester(round.semester_id);
@@ -251,6 +227,19 @@ function snapshot(
                 eligiblePairs.has(`${demand.class_id}:${demand.subject_id}`),
         );
     return {
+        required_components: preparationStore
+            .listRequiredComponents({ limit: 100000 })
+            .filter(
+                (req) =>
+                    apps.some((app) => app.id === req.applicability_id) &&
+                    req.valid_from <= semester.ends_on &&
+                    req.valid_to >= semester.starts_on,
+            ),
+        preparation_issues: preparationStore.evaluateReadiness(
+            roundId,
+            { optimization_config_id: config, rule_set_version_id: rule },
+            'normal',
+        ).issues,
         context_label: `Học kỳ ${semester.semester_no === 1 ? 'I' : 'II'} · ${year.year_code.replace('-', '–')}`,
         starts_on: semester.starts_on,
         ends_on: semester.ends_on,
@@ -295,7 +284,12 @@ function makeVersion(
     input: PlanConfiguration,
     teachers: Teacher[],
 ): SavedVersion {
-    const data = snapshot(round, teachers, input.rule_set_version_id);
+    const data = snapshot(
+        round,
+        teachers,
+        input.rule_set_version_id,
+        input.optimization_config_id,
+    );
     const stamp = now(),
         id = nextVersion++;
     return {
@@ -342,6 +336,7 @@ function initialize(teachers: Teacher[]) {
         saveStorage();
         return;
     }
+    if (setup === 'validationPass') completeRoundDemands(1);
     const old = makeVersion(
         1,
         { optimization_config_id: 1, rule_set_version_id: 1 },
@@ -620,6 +615,35 @@ function computeWorkloadRows(
     });
 }
 
+function planCoverage(version: Snapshot, rows = version.rows) {
+    const missing = version.required_components.filter(
+        (req) =>
+            !rows.some(
+                (row) =>
+                    row.demand_id === req.demand_id &&
+                    row.demand_type === req.demand_type &&
+                    row.valid_from <=
+                        (req.valid_from > version.starts_on
+                            ? req.valid_from
+                            : version.starts_on) &&
+                    row.valid_to >=
+                        (req.valid_to < version.ends_on
+                            ? req.valid_to
+                            : version.ends_on),
+            ),
+    );
+    const assigned = rows.filter((row) => row.teacher_id !== null).length;
+    return {
+        required: rows.length + missing.length,
+        assigned,
+        unassigned: rows.length - assigned + missing.length,
+        missing,
+    };
+}
+function coverageCounts(version: Snapshot) {
+    const { required, assigned, unassigned } = planCoverage(version);
+    return { required, assigned, unassigned };
+}
 function evaluateValidationFindings(
     version: SavedVersion,
     rows: AssignmentRow[],
@@ -643,24 +667,41 @@ function evaluateValidationFindings(
             live_source_revision_token: meta.live_source_revision_token,
         },
     });
-    const unassignedRows = rows.filter((row) => row.teacher_id === null);
+    const coverage = planCoverage(version, rows);
     findings.push({
         br_code: 'REQUIRED_COVERAGE',
         subject_type: 'VERSION',
         subject_ref: String(meta.version_id),
         calculation_period: 'WEEKLY',
-        result_status: unassignedRows.length === 0 ? 'PASS' : 'VIOLATION',
-        severity: unassignedRows.length === 0 ? 'INFO' : 'ERROR',
+        result_status: coverage.unassigned === 0 ? 'PASS' : 'VIOLATION',
+        severity: coverage.unassigned === 0 ? 'INFO' : 'ERROR',
         missing_data: [],
         message:
-            unassignedRows.length === 0
-                ? `Đã phân công đủ ${rows.length}/${rows.length} thành phần nhu cầu.`
-                : `Còn ${unassignedRows.length}/${rows.length} thành phần chưa có giáo viên phụ trách.`,
+            coverage.unassigned === 0
+                ? `Đã phân công đủ ${coverage.assigned}/${coverage.required} thành phần nhu cầu.`
+                : `Còn ${coverage.unassigned}/${coverage.required} thành phần chưa có giáo viên phụ trách, gồm ${coverage.missing.length} thành phần chưa có dòng nhu cầu trong snapshot.`,
         details: {
-            required: rows.length,
-            assigned: rows.length - unassignedRows.length,
-            unassigned: unassignedRows.length,
+            required: coverage.required,
+            assigned: coverage.assigned,
+            unassigned: coverage.unassigned,
+            missing_component_ids: coverage.missing.map((item) => item.id),
         },
+    });
+    const sourceErrors = version.preparation_issues.filter(
+        (issue) => issue.severity === 'ERROR',
+    );
+    findings.push({
+        br_code: 'PREPARATION_READINESS',
+        subject_type: 'VERSION',
+        subject_ref: String(meta.version_id),
+        calculation_period: 'WEEKLY',
+        result_status: sourceErrors.length ? 'VIOLATION' : 'PASS',
+        severity: sourceErrors.length ? 'ERROR' : 'INFO',
+        missing_data: sourceErrors.map((issue) => issue.code),
+        message: sourceErrors.length
+            ? 'Snapshot còn thiếu hoặc chưa xác nhận dữ liệu nguồn bắt buộc.'
+            : 'Dữ liệu nguồn bắt buộc đã được chuẩn bị đầy đủ.',
+        details: { issues: sourceErrors },
     });
     const ineligibleRows = rows.filter((row) => {
         if (row.teacher_id === null) return false;
@@ -762,9 +803,6 @@ function createValidationReport(
         workloads,
     );
     const overallStatus = summarizeReportStatus(results);
-    const assignedCount = version.rows.filter(
-        (row) => row.teacher_id !== null,
-    ).length;
     return {
         id: nextValidationId++,
         version_id: meta.version_id,
@@ -786,11 +824,7 @@ function createValidationReport(
             contract_version: 1,
             illustrative_rules: true,
             finding_count: results.length,
-            coverage: {
-                required: version.rows.length,
-                assigned: assignedCount,
-                unassigned: version.rows.length - assignedCount,
-            },
+            coverage: coverageCounts(version),
             warnings: results
                 .filter((item) => item.result_status === 'INSUFFICIENT_DATA')
                 .map((item) => item.br_code),
@@ -1462,20 +1496,13 @@ export const assignmentStore = {
                     check.result_status === 'VIOLATION',
             ),
         );
-        const assignedCount = version.rows.filter(
-            (row) => row.teacher_id !== null,
-        ).length;
         return clone({
             version: context(version),
             total: filtered.length,
             limit,
             offset,
             items: filtered.slice(offset, offset + limit),
-            coverage: {
-                required: version.rows.length,
-                assigned: assignedCount,
-                unassigned: version.rows.length - assignedCount,
-            },
+            coverage: coverageCounts(version),
             overall_status: hasWeeklyViolation
                 ? 'VIOLATION'
                 : 'INSUFFICIENT_DATA',
@@ -1601,6 +1628,7 @@ export const assignmentStore = {
             version.meta.round_id,
             teachers,
             input.rule_set_version_id,
+            input.optimization_config_id,
         );
         for (const old of version.rows.filter((row) => row.locked)) {
             const fresh = captured.rows.find(
@@ -1668,6 +1696,8 @@ export const assignmentStore = {
             return next;
         });
         version.rows = captured.rows;
+        version.required_components = captured.required_components;
+        version.preparation_issues = captured.preparation_issues;
         version.teachers = captured.teachers;
         version.starts_on = captured.starts_on;
         version.context_label = captured.context_label;

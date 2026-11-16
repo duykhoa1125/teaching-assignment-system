@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect } from 'react';
+import { useSearchParams } from 'react-router';
+import { roundFromUrl } from './round-navigation';
 import type { AssignmentRound, Semester } from '../catalogs/types.ts';
 
 const CONTEXT_ROUND_CODES: Record<string, string> = {
@@ -45,21 +47,29 @@ export function useRoundSelection(
     contextId: string,
     activeContextRound?: string,
 ) {
-    const [override, setOverride] = useState<{
-        contextId: string;
-        roundId: number;
-    } | null>(null);
-
-    const activeRound = useMemo(() => {
-        if (override && override.contextId === contextId) {
-            const matched = rounds.find((r) => r.id === override.roundId);
-            if (matched) return matched;
-        }
-        return resolveDefaultRound(rounds, contextId, activeContextRound);
-    }, [rounds, contextId, activeContextRound, override]);
-
+    const [params, setParams] = useSearchParams();
+    const urlContext = params.get('context_id');
+    const changingContext = urlContext !== null && urlContext !== contextId;
+    const fallback = resolveDefaultRound(rounds, contextId, activeContextRound);
+    const activeRound = changingContext
+        ? fallback
+        : roundFromUrl(rounds, params.get('round_id'), fallback);
+    useEffect(() => {
+        if (!changingContext) return;
+        const next = new URLSearchParams(params);
+        for (const key of ['round_id', 'version_id', 'run_id'])
+            next.delete(key);
+        next.set('context_id', contextId);
+        setParams(next, { replace: true });
+    }, [changingContext, contextId, params, setParams]);
     const selectRoundId = (roundId: number) => {
-        setOverride({ contextId, roundId });
+        if (!rounds.some((round) => round.id === roundId)) return;
+        const next = new URLSearchParams(params);
+        next.set('round_id', String(roundId));
+        next.set('context_id', contextId);
+        next.delete('version_id');
+        next.delete('run_id');
+        setParams(next);
     };
 
     return { activeRound, selectRoundId };

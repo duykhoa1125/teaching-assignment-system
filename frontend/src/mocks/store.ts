@@ -10,12 +10,27 @@ import { MockError } from './mock-error.ts';
 import { preparationStore } from './preparation-store.ts';
 import { assignmentStore } from './assignment-store.ts';
 import { governanceStore } from './governance-store.ts';
+import {
+    readMockSection,
+    writeMockSection,
+    clearMockPersistence,
+} from './persistence.ts';
 
 export { MockError };
-let data = structuredClone(fixtureTeachers);
-let nextId = Math.max(...fixtureTeachers.map((teacher) => teacher.id)) + 1;
-let scenario: MockScenario = 'normal';
+const savedDirectory = readMockSection<{
+    teachers: Teacher[];
+    nextId: number;
+    scenario: MockScenario;
+}>('directory');
+let data = savedDirectory?.teachers ?? structuredClone(fixtureTeachers);
+let nextId =
+    savedDirectory?.nextId ??
+    Math.max(...fixtureTeachers.map((teacher) => teacher.id)) + 1;
+let scenario: MockScenario = savedDirectory?.scenario ?? 'normal';
 let generation = 0;
+function persistDirectory() {
+    writeMockSection('directory', { teachers: data, nextId, scenario });
+}
 
 export const mockStore = {
     get generation() {
@@ -31,8 +46,10 @@ export const mockStore = {
         assignmentStore.configureScenario(value);
         governanceStore.reset();
         generation++;
+        persistDirectory();
     },
     reset() {
+        clearMockPersistence();
         data = structuredClone(fixtureTeachers);
         nextId = Math.max(...data.map((teacher) => teacher.id)) + 1;
         preparationStore.reset();
@@ -40,6 +57,7 @@ export const mockStore = {
         governanceStore.reset();
         scenario = 'normal';
         generation++;
+        persistDirectory();
     },
     list() {
         return structuredClone(data);
@@ -81,6 +99,7 @@ export const mockStore = {
         preparationStore.touchSchoolSource(input.school_id);
         if (previous && previous.school_id !== input.school_id)
             preparationStore.touchSchoolSource(previous.school_id);
+        persistDirectory();
         return structuredClone(teacher);
     },
     remove(id: number) {
@@ -93,6 +112,7 @@ export const mockStore = {
             );
         data = data.filter((teacher) => teacher.id !== id);
         preparationStore.touchSchoolSource();
+        persistDirectory();
     },
     listAccounts() {
         return structuredClone(fixtureAccounts);

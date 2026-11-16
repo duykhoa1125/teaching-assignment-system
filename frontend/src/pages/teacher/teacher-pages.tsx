@@ -60,8 +60,8 @@ function ReleaseVersionSelect({
                 name="release_id"
                 aria-label="Phiên bản phân công cá nhân"
                 value={
-                    releaseId ??
                     data.selected_release_id ??
+                    releaseId ??
                     releases.at(-1)?.id ??
                     ''
                 }

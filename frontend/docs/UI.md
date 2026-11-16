@@ -128,3 +128,7 @@ Kiểm tra tự động dự án bằng typecheck/lint/format/test/build. Kiểm
 - **Lịch sử & phát hành PDF (`/history`, `/documents`)**: dùng chung `SnapshotDocumentMarkup` (`src/features/governance/document-markup.tsx`); `/history` hỗ trợ tạo snapshot thủ công, xem lại mẫu in và khôi phục thành bản nháp mới (chặn khôi phục snapshot legacy `is_full: false`); `/documents` dựng PDF nhiều trang phía client (`src/features/results/pdf.ts`) kèm băm `SHA-256`, tải xuống và theo dõi các bản đã phát hành.
 - **Nguồn/bí danh & quản trị (`/sources`, `/admin/sources`, `/admin/rules`, `/admin/audit`)**: quản lý nguồn dữ liệu & bí danh chuẩn hóa giáo viên/môn học; chỉnh sửa quy tắc định mức (`B-THPT`, `B-THCS`, `R-DUTY`, `LIMIT-T`); lọc nhật ký audit không dấu theo từ khóa, ngày, tác vụ và xem diff chi tiết.
 - **CSS prototype & bảng**: `scripts/extract-demo-shell.mjs` trích thêm `history-row`, `version-icon`, `mvp-feedback-detail`, `mvp-print-preview`, `mvp-document-head`, `document-author`; `src/pages/results/results.css` bổ sung co giãn ô tìm kiếm và bọc chữ bảng `.mvp-table` trên desktop.
+
+## Sửa lỗi review 16/11/2026
+
+Giữ nguyên bố cục, màu, font, glyph và hiệu ứng. Sửa hành vi: giữ đợt qua URL và liên kết sửa lỗi nguồn; đồng bộ cache sau thay đổi; cổng giáo viên hiển thị đúng dữ liệu đóng băng của bản đang chọn. Tên/mã giáo viên theo danh bạ thay persona portal cũ để thống nhất ID với phân công và phản hồi; giữ nguyên ảnh đại diện. Luồng phát hành nay từ chối đầu vào thiếu, nguồn cũ hoặc PDF sai; không thay thiết kế prototype.

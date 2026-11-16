@@ -1,3 +1,4 @@
+import { roundPath } from '@/features/preparation/round-navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -417,7 +418,10 @@ function Workspace({
                             <Icon name="download" />
                             Xuất PDF
                         </button>
-                        <Link to="/solver-runs" className="btn primary">
+                        <Link
+                            to={roundPath('/solver-runs', round.id, contextId)}
+                            className="btn primary"
+                        >
                             <Icon name="spark" />
                             Sinh đề xuất
                         </Link>
@@ -501,6 +505,8 @@ function Workspace({
                         <ReadinessIssue
                             key={`${issue.code}-${index}`}
                             issue={issue}
+                            roundId={round?.id}
+                            contextId={contextId}
                         />
                     ))}
                 </section>
@@ -903,11 +909,17 @@ function Workspace({
                             </span>
                         </span>
                         <div className="mvp-actions">
-                            <Link to="/workload" className="btn">
+                            <Link
+                                to={roundPath('/workload', round.id, contextId)}
+                                className="btn"
+                            >
                                 <Icon name="balance" />
                                 Xem tải
                             </Link>
-                            <Link to="/checks" className="btn">
+                            <Link
+                                to={roundPath('/checks', round.id, contextId)}
+                                className="btn"
+                            >
                                 <Icon name="check" />
                                 Kiểm tra phương án
                             </Link>

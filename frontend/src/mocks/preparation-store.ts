@@ -58,6 +58,7 @@ import {
     preparationSubjects,
 } from './fixtures/preparation.ts';
 import { MockError } from './mock-error.ts';
+import { readMockSection, writeMockSection } from './persistence.ts';
 import type { MockScenario } from './scenarios/index.ts';
 
 type PreparationState = {
@@ -134,7 +135,8 @@ function createInitialState(): PreparationState {
     };
 }
 
-let state = createInitialState();
+let state =
+    readMockSection<PreparationState>('preparation') ?? createInitialState();
 
 function nowIso(): string {
     return new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
@@ -223,7 +225,7 @@ function paginate<Row extends { id: number }>(
     return structuredClone(sorted.slice(offset, offset + limit));
 }
 
-export const preparationStore = {
+const preparationMethods = {
     touchRoundSource(id: number) {
         this.detailRound(id);
         bumpRoundRevision(id);
@@ -1848,3 +1850,29 @@ export const preparationStore = {
         };
     },
 };
+
+// Persist successful outer source mutations, including nested token/confirmation updates.
+let mutationDepth = 0;
+export const preparationStore = new Proxy(preparationMethods, {
+    get(target, key, receiver) {
+        const method = Reflect.get(target, key, receiver);
+        if (
+            typeof method !== 'function' ||
+            !/^(save|remove|touch|reset)/.test(String(key))
+        )
+            return method;
+        return (...args: unknown[]) => {
+            mutationDepth++;
+            let succeeded = false;
+            try {
+                const result: unknown = Reflect.apply(method, receiver, args);
+                succeeded = true;
+                return result;
+            } finally {
+                mutationDepth--;
+                if (succeeded && mutationDepth === 0)
+                    writeMockSection('preparation', state);
+            }
+        };
+    },
+});

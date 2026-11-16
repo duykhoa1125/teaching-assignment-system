@@ -164,7 +164,8 @@ test('solver run lifecycle: 202 + Location, poll -> APPLIED, optimization matche
     assert.equal(afterOverview.data.summary.assigned_demands, 9);
     assert.equal(afterOverview.data.summary.coverage_percent, 100);
     assert.equal(afterOverview.data.readiness.validation_fresh, true);
-    assert.equal(afterOverview.data.readiness.validation_releasable, true);
+    // Solver fills existing rows; the missing required demand still blocks publication.
+    assert.equal(afterOverview.data.readiness.validation_releasable, false);
     assert.equal(afterOverview.data.latest_solver_status, 'SUCCEEDED');
 
     // Second run with no changes -> no-op APPLIED keeps revision unchanged

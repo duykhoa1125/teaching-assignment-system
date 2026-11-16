@@ -16,6 +16,8 @@ import {
 } from '../src/features/results/pdf.ts';
 import { mockServer } from '../src/mocks/node.ts';
 import { mockStore } from '../src/mocks/store.ts';
+import { completeRoundDemands } from '../src/mocks/fixtures/complete-round.ts';
+import { sha256Hex } from '../src/features/results/pdf.ts';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const frontendDir = resolve(testDir, '..');
@@ -226,6 +228,7 @@ test('FE-08 pure governance validators and multi-page PDF byte builder work dete
 });
 
 test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit -> close -> resolve -> next draft -> ready -> issue PDF -> restore snapshot', async () => {
+    completeRoundDemands(1);
     // 1. Initial governance overview matches layout badge
     const initGov = await jsonFetch('/mock/governance/overview?context_id=hk1');
     assert.equal(initGov.status, 200);
@@ -275,7 +278,7 @@ test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit ->
 
     // 3. Teacher portal sees open version + submits feedback -> manager pending count becomes 3
     const teacherView = await jsonFetch(
-        '/mock/teacher/overview?context_id=hk1&teacher_id=1',
+        '/mock/teacher/overview?context_id=hk1&teacher_id=101',
     );
     assert.equal(teacherView.data.phase, 'OPEN_FOR_FEEDBACK');
     assert.ok(teacherView.data.released_versions.length >= 1);
@@ -284,7 +287,7 @@ test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit ->
         method: 'POST',
         body: JSON.stringify({
             context_id: 'hk1',
-            teacher_id: 1,
+            teacher_id: 101,
             type: 'REQUEST_SUBJECT_TOTAL',
             title: 'Nhận thêm Toán',
             text: 'Tổng tiết thấp hơn hiện có',
@@ -298,7 +301,7 @@ test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit ->
         method: 'POST',
         body: JSON.stringify({
             context_id: 'hk1',
-            teacher_id: 1,
+            teacher_id: 101,
             type: 'REQUEST_SUBJECT_TOTAL',
             title: 'Đề nghị dạy 12 tiết Toán',
             text: 'Có thể nhận thêm 1 lớp khối 10.',
@@ -381,7 +384,7 @@ test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit ->
             mode: 'teachers',
             filename: 'TASS-PC-01-V3-teachers.pdf',
             bytes: pdfBytes.length,
-            sha256: 'deadbeef01234567',
+            sha256: await sha256Hex(pdfBytes),
             source_token: readyRes.data.source_token,
             base_revision: readyRes.data.revision_no,
             validation_id: readyRes.data.validation_id ?? 'VAL-1',
@@ -422,7 +425,7 @@ test('FE-08 end-to-end lifecycle: validate -> open feedback -> teacher submit ->
 
     // Released versions stay deduplicated per (version_no, revision_no) and remain viewable by teacher
     const teacherAfterRestore = await jsonFetch(
-        '/mock/teacher/overview?context_id=hk1&teacher_id=1',
+        '/mock/teacher/overview?context_id=hk1&teacher_id=101',
     );
     assert.equal(teacherAfterRestore.status, 200);
     const seenPairs = new Set(

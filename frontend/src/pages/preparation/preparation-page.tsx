@@ -1372,6 +1372,8 @@ export function PreparationPage() {
                                         <ReadinessIssue
                                             key={`${issue.code}-${idx}`}
                                             issue={issue}
+                                            roundId={activeRound?.id}
+                                            contextId={contextId}
                                         />
                                     ))}
                                 </div>

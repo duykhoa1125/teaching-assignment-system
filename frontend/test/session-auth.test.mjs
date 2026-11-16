@@ -396,19 +396,19 @@ test('MSW mock auth, session, admin, and teacher handlers honor contracts and sc
     assert.equal(adminBody.stats.accounts_active, 6);
     assert.equal(adminBody.stats.accounts_locked, 1);
 
-    // 7. Teacher overview across contexts (teacher_id=13 only exists in thcs-demo)
+    // 7. Teacher IDs match the directory/snapshot, scoped to the correct school.
     const missingTeacherHk1 = await fetch(
-        `${base}/mock/teacher/overview?context_id=hk1&teacher_id=13`,
+        `${base}/mock/teacher/overview?context_id=hk1&teacher_id=201`,
     );
     assert.equal(missingTeacherHk1.status, 200);
     assert.equal((await missingTeacherHk1.json()).teacher, null);
 
     const presentTeacherThcs = await fetch(
-        `${base}/mock/teacher/overview?context_id=thcs-demo&teacher_id=13`,
+        `${base}/mock/teacher/overview?context_id=thcs-demo&teacher_id=201`,
     );
     assert.equal(presentTeacherThcs.status, 200);
     const thcsBody = await presentTeacherThcs.json();
-    assert.equal(thcsBody.teacher.id, 13);
+    assert.equal(thcsBody.teacher.id, 201);
     assert.equal(thcsBody.context_id, 'thcs-demo');
 
     // 8. Logout -> 204
