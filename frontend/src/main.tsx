@@ -5,6 +5,7 @@ import { AppRouter } from '@/app/router';
 import '@/styles/global.css';
 import '@/app/layouts/prototype-shell.css';
 import '@/styles/icon-treatment.css';
+import '@/styles/icon-motion.css';
 import '@/styles/table-spacing.css';
 import '@/styles/dropdowns.css';
 

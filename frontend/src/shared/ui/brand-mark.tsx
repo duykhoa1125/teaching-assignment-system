@@ -5,7 +5,7 @@ export function BrandMark({ size = 18 }: { size?: number }) {
             width={size}
             height={size}
             viewBox="0 0 24 24"
-            className="icon"
+            className="icon brand-glyph"
             aria-hidden="true"
             focusable="false"
         >

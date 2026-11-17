@@ -6,7 +6,7 @@ import {
     type CSSProperties,
 } from 'react';
 import { flushSync } from 'react-dom';
-import { Outlet, useLocation, useNavigate } from 'react-router';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 import { Icon } from '@/shared/ui/icon';
 import { BrandMark } from '@/shared/ui/brand-mark';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
@@ -33,7 +33,7 @@ type QuickState = {
 
 export function AppLayout() {
     const navigate = useNavigate();
-    const { pathname } = useLocation();
+    const { pathname, search } = useLocation();
     const notify = useToast();
     const {
         isMockMode,
@@ -447,12 +447,34 @@ export function AppLayout() {
                         >
                             <Icon name="menu" />
                         </button>
-                        <div className="breadcrumb">
-                            <Icon name={roleDef.icon} />
-                            <span>/</span>
-                            <span>{roleDef.space}</span>
-                            <span>/</span>
-                            <b id="breadcrumb">
+                        <nav
+                            className="breadcrumb"
+                            aria-label="Đường dẫn trang"
+                        >
+                            <Link
+                                to={roleDef.home}
+                                aria-label="Trang tổng quan"
+                            >
+                                <Icon name="home" />
+                            </Link>
+                            <span aria-hidden="true">/</span>
+                            <Link to={roleDef.home}>
+                                {role === 'manager'
+                                    ? 'Điều phối'
+                                    : role === 'admin'
+                                      ? 'Quản trị'
+                                      : 'Cổng giáo viên'}
+                            </Link>
+                            {pathname === '/solver-runs' ? (
+                                <>
+                                    <span aria-hidden="true">/</span>
+                                    <Link to={`/assignment${search}`}>
+                                        Phân công
+                                    </Link>
+                                </>
+                            ) : null}
+                            <span aria-hidden="true">/</span>
+                            <b id="breadcrumb" aria-current="page">
                                 {resolveGuardedPageTitle(
                                     pathname,
                                     role,
@@ -460,7 +482,7 @@ export function AppLayout() {
                                     isMockMode,
                                 )}
                             </b>
-                        </div>
+                        </nav>
                     </div>
                     <div className="top-actions">
                         <button

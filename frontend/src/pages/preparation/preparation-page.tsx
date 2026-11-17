@@ -1,3 +1,4 @@
+import '@/pages/admin/catalog-actions.css';
 import { ReadinessIssue } from '@/features/preparation/readiness-issue';
 import '@/pages/preparation/preparation-ui.css';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -581,19 +582,29 @@ export function PreparationPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        className="icon-btn"
+                        title={row.confirmed_at ? 'Bỏ xác nhận' : 'Xác nhận'}
+                        aria-label={
+                            row.confirmed_at ? 'Bỏ xác nhận' : 'Xác nhận'
+                        }
                         onClick={() => void handleToggleScopeConfirm(row)}
                     >
-                        {row.confirmed_at ? 'Bỏ xác nhận' : 'Xác nhận'}
+                        {row.confirmed_at ? (
+                            <Icon name="unconfirm" />
+                        ) : (
+                            <Icon name="check" />
+                        )}
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        aria-label="Gỡ phạm vi"
+                        title="Gỡ phạm vi"
+                        className="icon-btn catalog-delete-action"
                         onClick={() =>
                             setDeleteTarget({
                                 kind: 'scope',
@@ -602,7 +613,7 @@ export function PreparationPage() {
                             })
                         }
                     >
-                        Gỡ phạm vi
+                        <Icon name="unlink" />
                     </button>
                 </div>
             ),

@@ -1,4 +1,5 @@
 import '@/pages/preparation/preparation-ui.css';
+import './catalog-actions.css';
 import { useSchoolsQuery } from '@/features/teachers/queries';
 import { useMemo, useState, type FormEvent } from 'react';
 import {
@@ -491,13 +492,12 @@ export function AdminCatalogsPage() {
             title: 'THAO TÁC',
             align: 'right',
             render: (row) => (
-                <div
-                    className="mvp-actions"
-                    style={{ justifyContent: 'flex-end' }}
-                >
+                <div className="catalog-row-actions">
                     <button
                         type="button"
-                        className="btn small"
+                        className="icon-btn"
+                        aria-label={`Sửa môn ${row.name}`}
+                        title="Sửa"
                         onClick={() =>
                             setSubjectModal({
                                 editing: row,
@@ -513,16 +513,17 @@ export function AdminCatalogsPage() {
                         }
                     >
                         <Icon name="edit" />
-                        Sửa
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        className="icon-btn catalog-delete-action"
+                        aria-label={`Xóa môn ${row.name}`}
+                        title="Xóa"
                         onClick={() =>
                             setDeleteTarget({ kind: 'subject', row })
                         }
                     >
-                        Xóa
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),

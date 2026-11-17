@@ -135,13 +135,17 @@ Giữ nguyên bố cục, màu, font, glyph và hiệu ứng. Sửa hành vi: gi
 
 ## Quy tắc icon — yêu cầu người dùng 17/11/2026
 
+Bảng môn học: theo ảnh phản hồi 17/11, cột thao tác đổi từ nút chữ Sửa/Xóa xuống dòng thành hai icon edit/thùng rác trên một hàng không wrap (`pages/admin/catalog-actions.css`). Giữ handler sửa và xác nhận xóa, màu cảnh báo, tooltip, aria-label theo tên môn và focus bàn phím; không đổi các cột khác hoặc prototype.
+
+Yêu cầu bổ sung 17/11: hover icon nâng 2px/phóng 1.08 trong 180ms ease-out; logo nâng 2px/phóng 1.12/nghiêng -6° trong 220ms. Khi nhấn control, glyph thu về 0.96. `styles/icon-motion.css` áp dụng chung cho icon và BrandMark, hover cả vùng nút/link và hàng thương hiệu; không đổi nền, màu, SVG hoặc bố cục. Dùng translate/scale/rotate độc lập để giữ transform hướng mũi tên và animation có sẵn. Chỉ bật với chuột chính xác và prefers-reduced-motion: no-preference; control disabled không có motion mới. Đây là ngoại lệ được người dùng yêu cầu; prototype giữ nguyên.
+
 Icon nghiệp vụ dùng nét và phần tô bên trong SVG như sidebar, không đặt trong ô nền/viền/bóng màu riêng. Đây là ngoại lệ có chủ đích so với demo: trước đây bộ chọn học kỳ, KPI, môn học, thẻ quản trị, lịch sử/tài liệu và trạng thái trống/lỗi có tile bao quanh; nay tile trong suốt, giữ màu và SVG gốc, kích thước, khoảng cách, vùng bấm và chuyển động. Nền của cả dòng được chọn, nút có nhãn, trạng thái, ảnh đại diện và logo giữ nguyên; nút chỉ có icon vẫn có chỉ báo focus bàn phím.
 
 `src/styles/icon-treatment.css` áp dụng chung sau CSS demo; wrapper dùng CSS module thêm lớp `icon-surface`. Icon mới cũng theo quy tắc này. Không sửa prototype hoặc CSS sinh bởi công cụ trích demo.
 
 ## Sidebar desktop thu gọn — yêu cầu người dùng 17/11/2026
 
-Thêm icon Thu gọn/Mở rộng ở góc phải hàng logo trong header sidebar trên màn hình lớn hơn 700px; không có dòng nút/nhãn ở chân sidebar. Chế độ gọn rộng 80px, giữ logo, icon gốc, active, số lượng cần xử lý, thanh tiến độ và tài khoản; tên mục có nhãn truy cập và tooltip. Vùng nội dung mở rộng theo sidebar, các mục điều hướng cuộn riêng khi thiếu chiều cao để nút mở rộng/tài khoản vẫn sẵn dùng. Lựa chọn lưu ở localStorage `tass-sidebar-collapsed` và vẫn đổi được khi storage bị chặn.
+Thêm icon Thu gọn/Mở rộng ở góc phải hàng logo trong header sidebar trên màn hình lớn hơn 700px; không có dòng nút/nhãn ở chân sidebar. Chế độ gọn rộng 68px, giữ logo, icon gốc, active, số lượng cần xử lý, thanh tiến độ và tài khoản; tên mục có nhãn truy cập và tooltip. Vùng nội dung mở rộng theo sidebar, các mục điều hướng cuộn riêng khi thiếu chiều cao để nút mở rộng/tài khoản vẫn sẵn dùng. Lựa chọn lưu ở localStorage `tass-sidebar-collapsed` và vẫn đổi được khi storage bị chặn.
 
 Đây là phần bổ sung được người dùng yêu cầu so với demo, triển khai trong `app/layouts/sidebar-collapse.css`, không sửa CSS sinh/prototype. Giữ menu mobile đầy đủ 270px và nút mở menu cũ; tắt chuyển động khi prefers-reduced-motion.
 
@@ -151,3 +155,19 @@ Thêm icon Thu gọn/Mở rộng ở góc phải hàng logo trong header sidebar
 - Thẻ thống kê Tải & định mức thiếu padding vì công cụ trích demo bỏ sót lớp `.metric`. Đã bổ sung tên lớp trong `scripts/extract-demo-shell.mjs` rồi sinh lại CSS, khôi phục đúng padding/min-height và các breakpoint của demo; không sửa tay CSS sinh hoặc prototype.
 - Bộ chọn học kỳ: nhấn lần hai đóng; vẫn hỗ trợ nhấn ngoài, Escape/trả focus và `aria-expanded`.
 - `styles/dropdowns.css` đồng bộ select/filter/form với font Be Vietnam Pro, màu nền/viền/bo góc, menu option, hover/selected/focus, chiều cao mục chọn và glyph down/check gốc. Dùng native select với `appearance: base-select` khi được hỗ trợ, giữ hành vi form/bàn phím; trình duyệt cũ dùng picker native và cùng kiểu control. Select multiple/listbox giữ chế độ gốc. Tham khảo cơ chế: [MDN customizable select](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select).
+
+## Thu gọn thao tác, bộ lọc và breadcrumb — phản hồi 17/11/2026
+
+Nhật ký quản trị: hai ô ngày trước đây không có nhãn nhìn thấy và có thể rơi xuống hai hàng gây khó hiểu. Theo phản hồi người dùng, gom thành nhóm “Thời gian ghi nhận”, gắn label “Từ ngày”/“Đến ngày”, đặt cạnh nhau; ô tìm kiếm có label riêng và thẳng hàng đáy. CSS riêng `pages/admin/audit-filters.css`; màn hình nhỏ chuyển cả nhóm xuống hàng, hai ngày vẫn cạnh nhau. Giữ nguyên giá trị/query lọc và native date picker. Đã xem trực quan desktop 1482×734, typecheck/lint/format đạt; chưa xem mobile trong lượt này. Prototype không sửa.
+
+- Các bảng trong ảnh phản hồi (giáo viên, đợt phân công, quy tắc, phạm vi và nhu cầu) dùng icon trên một hàng không wrap: mắt xem hồ sơ, bút sửa, thùng rác xóa/bỏ nhu cầu, panel mở chi tiết, BadgeX bỏ xác nhận, Unlink gỡ phạm vi. Giữ handler, xác nhận xóa, focus và title/aria-label. Glyph có trong demo vẫn giữ nguyên; ba nghĩa chưa có trong demo dùng bộ bổ sung tập trung ở Icon. Nhãn Đang chọn của đợt thay bằng check nhỏ màu aqua, có tooltip và nhãn truy cập.
+- Ma trận: bỏ bóng inset tạo vạch trái ở teacher-highlight; giữ nền/viền bao quanh và hành vi theo dõi giáo viên.
+- Bộ lọc thống kê dùng flex ngang có wrap khi thiếu chỗ; hàng cấu hình solver có chiều cao cố định, nhãn thẳng hàng, ô cấu hình rộng hơn và không bọc nội dung đã chọn. Menu option mở vẫn bọc tên dài. Không thay dữ liệu lọc.
+- Breadcrumb dùng nav/Link thật: trang tổng quan, tên không gian ngắn, trang hiện tại aria-current. Solver thêm cấp Phân công có thể nhấn, giữ query đợt/ngữ cảnh.
+- QA desktop 1482×734: đã xem hàng icon giáo viên, bộ lọc thống kê/solver và nhấn breadcrumb Phân công thành công. Chưa kiểm tra lại toàn bộ màn hình và mobile trong lượt này. Typecheck/lint/build và 94 tests đạt; prototype nguyên SHA-256.
+
+
+Phản hồi tiếp 17/11: sidebar thu gọn giảm từ 80px còn 68px, padding ngang 8px và khung logo 32px để logo/nút mở rộng vẫn vừa. Ẩn pseudo-element vạch đỏ trái của mục active chỉ trong rail; giữ nền/viền chọn, màu icon, tooltip và focus. Desktop mở rộng/mobile giữ nguyên. Đã xem desktop 1482×734, rail gọn và không còn vạch đỏ; format/build đạt.
+
+
+Nhật ký — phản hồi tiếp 17/11: bỏ legend nhìn thấy “Thời gian ghi nhận” để không tăng một dòng. Giữ nhóm fieldset qua aria-label; ba nhãn Tìm nhật ký/Từ ngày/Đến ngày cùng một hàng trên desktop. Typecheck/lint đạt.

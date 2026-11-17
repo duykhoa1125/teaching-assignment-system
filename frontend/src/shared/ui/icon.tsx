@@ -14,10 +14,15 @@ import {
     School,
     UsersRound,
     X,
+    Trash2,
+    Unlink,
+    BadgeX,
     type LucideIcon,
 } from 'lucide-react';
 import { prototypeGlyphs, type PrototypeIconName } from './prototype-glyphs';
 import styles from './icon.module.css';
+
+const actionGlyphs = { trash: Trash2, unlink: Unlink, unconfirm: BadgeX };
 
 const originalByGlyph = new Map<LucideIcon, PrototypeIconName>([
     [LayoutDashboard, 'dashboard'],
@@ -38,17 +43,26 @@ const originalByGlyph = new Map<LucideIcon, PrototypeIconName>([
 ]);
 
 export function Icon({
-    glyph: Glyph,
+    glyph,
     name,
     size = 18,
     className,
 }: {
     glyph?: LucideIcon;
-    name?: PrototypeIconName;
+    name?: PrototypeIconName | keyof typeof actionGlyphs;
     size?: 16 | 18 | 20 | 24 | 27;
     className?: string;
 }) {
-    const original = name ?? (Glyph && originalByGlyph.get(Glyph));
+    const Glyph =
+        glyph ??
+        (name && name in actionGlyphs
+            ? actionGlyphs[name as keyof typeof actionGlyphs]
+            : undefined);
+    const original =
+        (name && name in prototypeGlyphs
+            ? (name as PrototypeIconName)
+            : undefined) ??
+        (Glyph && originalByGlyph.get(Glyph));
     if (original)
         return (
             <svg
@@ -74,7 +88,7 @@ export function Icon({
         <Glyph
             size={size}
             strokeWidth={1.6}
-            className={className}
+            className={`icon ${className ?? ''}`}
             aria-hidden="true"
             focusable="false"
         />

@@ -1,3 +1,4 @@
+import '@/pages/admin/catalog-actions.css';
 import '@/pages/preparation/preparation-ui.css';
 import { useMemo, useState, type FormEvent } from 'react';
 import './demands-page.css';
@@ -462,12 +463,14 @@ export function DemandsPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        aria-label="Chi tiết"
+                        title="Chi tiết"
+                        className="icon-btn"
                         onClick={() =>
                             setDrawerState({
                                 row,
@@ -489,14 +492,15 @@ export function DemandsPage() {
                         }
                     >
                         <Icon name="panel" />
-                        Chi tiết
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        aria-label="Bỏ nhu cầu"
+                        title="Bỏ nhu cầu"
+                        className="icon-btn catalog-delete-action"
                         onClick={() => setDeleteTarget(row)}
                     >
-                        Bỏ nhu cầu
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),

@@ -197,10 +197,12 @@ export function AdminRulesPage() {
                                     <td>
                                         <button
                                             type="button"
-                                            className="btn small"
+                                            className="icon-btn"
+                                            title="Chỉnh sửa"
+                                            aria-label={`Chỉnh sửa ${item.code}`}
                                             onClick={() => openForm(item)}
                                         >
-                                            Chỉnh sửa
+                                            <Icon name="edit" />
                                         </button>
                                     </td>
                                 </tr>

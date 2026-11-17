@@ -20,6 +20,27 @@
 .results-round-strip select {
     min-width: 170px;
     max-width: 260px;
+    height: var(--control-height, 40px);
+    min-height: var(--control-height, 40px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.results-round-strip label {
+    min-width: 0;
+    flex: 1 1 240px;
+    max-width: 420px;
+}
+
+.results-round-strip label:first-child {
+    flex: 0 1 200px;
+}
+
+.results-round-strip label select {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
 }
 
 .fe05-page .mvp-check-result {

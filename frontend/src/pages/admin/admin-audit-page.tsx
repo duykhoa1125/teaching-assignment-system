@@ -1,4 +1,5 @@
 import '@/pages/results/results.css';
+import './audit-filters.css';
 import { useState } from 'react';
 import { formatGovernanceDateTime } from '@/features/governance/model';
 import { useGovernanceAuditQuery } from '@/features/governance/queries';
@@ -55,28 +56,46 @@ export function AdminAuditPage() {
             />
 
             <div className="mvp-toolbar">
-                <div className="mvp-filter">
-                    <input
-                        name="audit_search"
-                        aria-label="Tìm nhật ký"
-                        placeholder="Tìm người, hành động, đối tượng…"
-                        value={searchText}
-                        onChange={(e) => setSearchText(e.target.value)}
-                    />
-                    <input
-                        name="audit_from"
-                        type="date"
-                        aria-label="Nhật ký từ ngày"
-                        value={fromDate}
-                        onChange={(e) => setFromDate(e.target.value)}
-                    />
-                    <input
-                        name="audit_to"
-                        type="date"
-                        aria-label="Nhật ký đến ngày"
-                        value={toDate}
-                        onChange={(e) => setToDate(e.target.value)}
-                    />
+                <div className="mvp-filter audit-filters">
+                    <label className="audit-search">
+                        Tìm nhật ký
+                        <input
+                            name="audit_search"
+                            aria-label="Tìm nhật ký"
+                            placeholder="Tìm người, hành động, đối tượng…"
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                        />
+                    </label>
+                    <fieldset
+                        className="audit-date-range"
+                        aria-label="Thời gian ghi nhận"
+                    >
+                        <div className="audit-date-fields">
+                            <label>
+                                Từ ngày
+                                <input
+                                    name="audit_from"
+                                    type="date"
+                                    aria-label="Nhật ký từ ngày"
+                                    value={fromDate}
+                                    onChange={(e) =>
+                                        setFromDate(e.target.value)
+                                    }
+                                />
+                            </label>
+                            <label>
+                                Đến ngày
+                                <input
+                                    name="audit_to"
+                                    type="date"
+                                    aria-label="Nhật ký đến ngày"
+                                    value={toDate}
+                                    onChange={(e) => setToDate(e.target.value)}
+                                />
+                            </label>
+                        </div>
+                    </fieldset>
                 </div>
             </div>
 

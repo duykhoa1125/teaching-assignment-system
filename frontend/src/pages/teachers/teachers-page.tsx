@@ -1,3 +1,4 @@
+import '@/pages/admin/catalog-actions.css';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
 import {
@@ -403,12 +404,13 @@ export function TeachersPage() {
                                                 >
                                                     <div
                                                         className={
-                                                            styles.rowActions
+                                                            'catalog-row-actions'
                                                         }
                                                     >
                                                         <button
                                                             type="button"
-                                                            className="btn small"
+                                                            title="Hồ sơ"
+                                                            className="icon-btn"
                                                             aria-label={`Hồ sơ ${teacher.full_name}`}
                                                             onClick={(
                                                                 event,
@@ -420,11 +422,12 @@ export function TeachersPage() {
                                                                 );
                                                             }}
                                                         >
-                                                            Hồ sơ
+                                                            <Icon name="eye" />
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            className="btn small"
+                                                            title="Sửa"
+                                                            className="icon-btn"
                                                             aria-label={`Sửa ${teacher.full_name}`}
                                                             onClick={() =>
                                                                 setFormState({
@@ -434,11 +437,11 @@ export function TeachersPage() {
                                                             }
                                                         >
                                                             <Icon name="edit" />
-                                                            Sửa
                                                         </button>
                                                         <button
                                                             type="button"
-                                                            className="btn small danger"
+                                                            title="Xóa"
+                                                            className="icon-btn catalog-delete-action"
                                                             aria-label={`Xóa ${teacher.full_name}`}
                                                             onClick={() =>
                                                                 setDeleteTarget(
@@ -448,7 +451,7 @@ export function TeachersPage() {
                                                                 )
                                                             }
                                                         >
-                                                            Xóa
+                                                            <Icon name="trash" />
                                                         </button>
                                                     </div>
                                                 </td>

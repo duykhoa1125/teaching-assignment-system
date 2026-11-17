@@ -1,6 +1,20 @@
 /* Keep filters distinct from the results they control, including empty/loading states. */
 .tass-shell .mvp-filter {
     margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.tass-shell .mvp-filter > select {
+    flex: 0 1 180px;
+    width: 180px;
+    min-width: 0;
+}
+
+.tass-shell .matrix-viewport .matrix-assignment.teacher-highlight {
+    box-shadow: none;
 }
 
 /* Shared by catalogs/periods as well as results; do not depend on visiting a

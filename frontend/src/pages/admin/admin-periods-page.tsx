@@ -1,3 +1,4 @@
+import '@/pages/admin/catalog-actions.css';
 import '@/pages/preparation/preparation-ui.css';
 import { useSchoolsQuery } from '@/features/teachers/queries';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -376,14 +377,16 @@ export function AdminPeriodsPage() {
             key: 'code',
             title: 'ĐỢT PHÂN CÔNG',
             render: (row) => (
-                <div>
+                <div className="round-code-label">
                     <strong>{row.round_code}</strong>
                     {activeRound?.id === row.id ? (
                         <span
-                            className="muted"
-                            style={{ marginLeft: 8, fontSize: 11 }}
+                            className="round-selected-mark"
+                            title="Đang chọn"
+                            role="img"
+                            aria-label="Đang chọn"
                         >
-                            Đang chọn
+                            <Icon name="check" size={16} />
                         </span>
                     ) : null}
                 </div>
@@ -453,12 +456,14 @@ export function AdminPeriodsPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        aria-label="Sửa"
+                        title="Sửa"
+                        className="icon-btn"
                         onClick={() =>
                             setRoundModal({
                                 editing: row,
@@ -475,14 +480,15 @@ export function AdminPeriodsPage() {
                         }
                     >
                         <Icon name="edit" />
-                        Sửa
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        aria-label="Xóa"
+                        title="Xóa"
+                        className="icon-btn catalog-delete-action"
                         onClick={() => setDeleteTarget({ kind: 'round', row })}
                     >
-                        Xóa
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),
