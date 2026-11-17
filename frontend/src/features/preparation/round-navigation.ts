@@ -1,5 +1,23 @@
 import type { AssignmentRound } from '../catalogs/types.ts';
 
+export type PreparationStep = 1 | 2 | 3 | 4;
+
+export function parsePreparationStep(raw: string | null): PreparationStep {
+    return raw === '2' || raw === '3' || raw === '4'
+        ? (Number(raw) as PreparationStep)
+        : 1;
+}
+
+/** Switching preparation steps must retain the selected round and context. */
+export function preparationStepParams(
+    current: URLSearchParams,
+    step: PreparationStep,
+): URLSearchParams {
+    const next = new URLSearchParams(current);
+    next.set('step', String(step));
+    return next;
+}
+
 export function roundFromUrl(
     rounds: readonly AssignmentRound[],
     raw: string | null,

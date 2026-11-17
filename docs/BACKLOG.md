@@ -11,7 +11,7 @@ Danh sách này giữ các việc chưa làm khi lưu trữ kế hoạch cũ. Ng
 | P0 | Lifecycle plan/version | Bản DRAFT kế tiếp, chuyển trạng thái, mở/đóng nhận phản hồi, phát hành; giữ cùng CAS/token/validation/audit |
 | P0 | Feedback và duyệt tăng nhu cầu theo lớp | Tách nguyện vọng tổng tiết môn với tăng nhu cầu một lớp/thành phần; xác định lớp/môn/nguồn/số tiết và quyết định quản lý; không tự gán phần tăng cho người gửi |
 | P0 — FE trước mắt | Hoàn thiện màn hình với UI/mock đã thiết lập | FE-03–08: CRUD giáo viên, session mô phỏng và các màn hình nghiệp vụ; mở rộng component/handler/scenario theo feature, chạy độc lập không cần backend/PostgreSQL |
-| P0 — giai đoạn tích hợp FE | Nối frontend với API thật sau nghiệm thu UI mock | FE-09–11: chốt auth/dataset/hợp đồng còn thiếu rồi nối CRUD → readiness → DRAFT → sửa/khóa → run/poll/cancel → tải/validation; xử lý409/422/503 và revision thực |
+| P0 — giai đoạn tích hợp FE | Nối frontend với API thật sau nghiệm thu UI mock | [FE-09 đã có ma trận API/DTO và kế hoạch](../frontend/docs/FE09_API_INTEGRATION.md), chưa chốt auth/dataset/API cấu hình và workspace; sau đó FE-10–11 nối CRUD → readiness → DRAFT → sửa/khóa → run/poll/cancel → tải/validation; xử lý409/422/503 và revision thực |
 | P0 | Nghiệm thu build/tích hợp nhóm | Maven verify/CI và Docker test profile với mạng/cache đủ; logs JUnit trực tiếp không thay bằng chứng Maven thành công |
 | P1 | Quy tắc nghiệp vụ thực tế, tải năm | Evaluator hiện ILLUSTRATIVE_MVP_V1; annual thiếu giữ INSUFFICIENT_DATA. Chốt nguồn/quy tắc và thêm handler có kiểm thử, không chỉ bỏ nhãn demo |
 | P1 | PDF và phản hồi/restore mở rộng | Chỉ xuất từ kết quả còn phù hợp với lifecycle/revision/token; thống nhất quyền truy cập |

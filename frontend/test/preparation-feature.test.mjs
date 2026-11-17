@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import test, { after, before, beforeEach } from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -97,6 +97,9 @@ test('FE-05 features, shared UI and pages never import src/mocks or lucide-react
         'src/pages/preparation/preparation-page.tsx',
         'src/pages/demands/demands-page.tsx',
         'src/pages/checks/checks-page.tsx',
+        ...readdirSync(resolve(frontendDir, 'src/features/preparation'))
+            .filter((name) => /\.tsx?$/.test(name))
+            .map((name) => `src/features/preparation/${name}`),
     ];
 
     for (const rel of files) {

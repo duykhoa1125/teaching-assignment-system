@@ -1,6 +1,6 @@
 # TASS frontend
 
-**Quy tắc giao diện:** copy y chang demo về màu sắc, font, icon, họa tiết và bố cục; chỉ thay đổi có lý do cụ thể về lỗi thiết kế, tối ưu kỹ thuật cần thiết hoặc backend. Chi tiết và tiêu chí đối chiếu tại [quy trình frontend](../docs/FRONTEND_DEVELOPMENT.md). Không coi bộ khung hiện tại là giao diện đã khớp hoàn chỉnh.
+**Quy tắc giao diện (17/11/2026):** không còn yêu cầu khớp hoàn toàn prototype vì người dùng đã chỉnh sửa giao diện đẹp hơn. Lấy giao diện hiện tại và các chỉnh sửa đã được duyệt làm chuẩn; prototype là tài liệu tham khảo gốc. Giữ các cải tiến, kiểm chứng responsive, khả năng truy cập và tương tác theo [quy trình frontend](../docs/FRONTEND_DEVELOPMENT.md).
 
 Cập nhật **17/11/2026**. React/TypeScript/Vite với React Router, TanStack Query và MSW. FE-01–07 đã có nền tảng và các luồng nghiệp vụ mô phỏng; FE-08 đã hoàn thành vòng QA mock theo [ma trận kiểm chứng](docs/FE08_QA.md), có giới hạn phạm vi được ghi rõ. Chưa nghiệm thu tích hợp API thật (FE-09–11).
 
@@ -20,7 +20,7 @@ Dev mặc định mock; MSW chặn request qua HTTP client. Dữ liệu nguồn/
 
 Auth, solver, validation và phát hành PDF hiện là mô phỏng. Các hợp đồng `/api/mock/*` không đại diện endpoint backend đã có. API mode không tự bật mock khi request lỗi. Backend/PostgreSQL không cần cho phát triển UI mock.
 
-Bước tiếp theo: hoàn tất QA FE-08, sau đó FE-09 đối chiếu DTO/endpoint, chốt auth, ID/config/quyền và dataset; FE-10 nối từng feature; FE-11 nghiệm thu tích hợp. Xem [quy trình](../docs/FRONTEND_DEVELOPMENT.md), [mock](docs/MOCKS.md) và [QA FE-08](docs/FE08_QA.md).
+Bước hiện tại: [FE-09 — đối chiếu API và kế hoạch tích hợp](docs/FE09_API_INTEGRATION.md) đã có lượt rà soát source, bảng lệch DTO và danh sách phụ thuộc. Chưa chốt/triển khai auth, API lựa chọn cấu hình/workspace và dataset đăng nhập thật nên FE-09 chưa nghiệm thu đầy đủ. Sau khi giải quyết các phụ thuộc, FE-10 nối từng feature; FE-11 nghiệm thu tích hợp. Xem [quy trình](../docs/FRONTEND_DEVELOPMENT.md), [mock](docs/MOCKS.md) và [QA FE-08](docs/FE08_QA.md).
 
 ## Môi trường
 

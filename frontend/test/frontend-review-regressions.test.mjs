@@ -11,6 +11,8 @@ import { completeRoundDemands } from '../src/mocks/fixtures/complete-round.ts';
 import {
     roundFromUrl,
     roundPath,
+    parsePreparationStep,
+    preparationStepParams,
 } from '../src/features/preparation/round-navigation.ts';
 import { invalidatePlanQueries } from '../src/features/workspace/invalidate-plan-queries.ts';
 import {
@@ -18,6 +20,27 @@ import {
     sha256Hex,
     uint8ToBase64,
 } from '../src/features/results/pdf.ts';
+
+test('preparation step changes retain a non-default round, context and other URL parameters', () => {
+    const original = new URLSearchParams(
+        'round_id=3&context_id=thcs-demo&step=1&version_id=22',
+    );
+    let params = original;
+    for (const step of [2, 3, 4, 1]) {
+        params = preparationStepParams(params, step);
+        assert.equal(params.get('step'), String(step));
+        assert.equal(params.get('round_id'), '3');
+        assert.equal(params.get('context_id'), 'thcs-demo');
+        assert.equal(params.get('version_id'), '22');
+    }
+    assert.equal(original.get('step'), '1');
+    for (const value of [null, '', '0', '5', '-1', '2junk']) {
+        assert.equal(parsePreparationStep(value), 1);
+    }
+    for (const value of ['1', '2', '3', '4']) {
+        assert.equal(parsePreparationStep(value), Number(value));
+    }
+});
 
 before(() => mockServer.listen({ onUnhandledFrame: 'error' }));
 beforeEach(() => mockStore.reset());
