@@ -27,7 +27,7 @@ const adminNav: NavigationItem[] = [
     { path: '/admin/periods', label: 'Năm học & đợt', icon: 'calendar' },
     { path: '/admin/rules', label: 'Bộ quy tắc', icon: 'rules' },
     { path: '/admin/access', label: 'Phạm vi & quyền', icon: 'access' },
-    { path: '/admin/sources', label: 'Nguồn & bí danh', icon: 'file' },
+    { path: '/admin/sources', label: 'Nguồn & bí danh', icon: 'compare' },
     { path: '/admin/audit', label: 'Nhật ký quản trị', icon: 'history' },
 ];
 

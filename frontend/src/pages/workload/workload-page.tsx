@@ -200,58 +200,62 @@ export function WorkloadPage() {
 
     return (
         <div>
-            <RolePageHeader
-                roundLabel={activeRound.round_code}
-                contextLabel={`V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`}
-                title="Mỗi thành phần tải, một nguồn rõ ràng."
-                description="Đối chiếu T = F + A + C + R, W = F + A + C, Q = max(0, B − R) trên đúng snapshot hiệu lực."
-                actions={
-                    <div className="mvp-actions">
-                        <button
-                            type="button"
-                            className="btn"
-                            onClick={() =>
-                                triggerDownload(
-                                    buildWorkloadCsv(allItems),
-                                    `TASS-tai-${activeRound.round_code}-V${plan.version_no}.csv`,
-                                )
+            <div className="page-control-row">
+                <RolePageHeader
+                    roundLabel={activeRound.round_code}
+                    contextLabel={`V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`}
+                    title="Mỗi thành phần tải, một nguồn rõ ràng."
+                    description="Đối chiếu T = F + A + C + R, W = F + A + C, Q = max(0, B − R) trên đúng snapshot hiệu lực."
+                    actions={
+                        <div className="mvp-actions">
+                            <button
+                                type="button"
+                                className="btn"
+                                onClick={() =>
+                                    triggerDownload(
+                                        buildWorkloadCsv(allItems),
+                                        `TASS-tai-${activeRound.round_code}-V${plan.version_no}.csv`,
+                                    )
+                                }
+                            >
+                                <Icon name="download" />
+                                Tải CSV tải
+                            </button>
+                            <Link
+                                to={roundPath(
+                                    '/checks',
+                                    activeRound?.id,
+                                    contextId,
+                                )}
+                                className="btn"
+                            >
+                                <Icon name="shield" />
+                                Kiểm tra phương án
+                            </Link>
+                        </div>
+                    }
+                />
+
+                <div className="results-round-strip">
+                    <label>
+                        Đợt phân công
+                        <select
+                            id="workload-round-select"
+                            name="round_id"
+                            aria-label="Chọn đợt phân công xem tải"
+                            value={activeRound.id}
+                            onChange={(e) =>
+                                selectRoundId(Number(e.target.value))
                             }
                         >
-                            <Icon name="download" />
-                            Tải CSV tải
-                        </button>
-                        <Link
-                            to={roundPath(
-                                '/checks',
-                                activeRound?.id,
-                                contextId,
-                            )}
-                            className="btn"
-                        >
-                            <Icon name="shield" />
-                            Kiểm tra phương án
-                        </Link>
-                    </div>
-                }
-            />
-
-            <div className="results-round-strip">
-                <label>
-                    Đợt phân công
-                    <select
-                        id="workload-round-select"
-                        name="round_id"
-                        aria-label="Chọn đợt phân công xem tải"
-                        value={activeRound.id}
-                        onChange={(e) => selectRoundId(Number(e.target.value))}
-                    >
-                        {rounds.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.round_code} ({item.status})
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                            {rounds.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.round_code} ({item.status})
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
             </div>
 
             <div className="metrics">

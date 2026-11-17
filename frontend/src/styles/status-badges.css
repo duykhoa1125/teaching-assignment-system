@@ -1,0 +1,29 @@
+/* Status is conveyed by text and semantic color, without a decorative dot. */
+.tass-shell .pill > i {
+    display: none;
+}
+
+.tass-shell .mvp-status {
+    background: var(--soft);
+    color: var(--muted);
+    border-color: var(--line);
+}
+
+.tass-shell .mvp-status:is(.PASS, .SUCCESS, .CONFIRMED) {
+    background: var(--success-soft);
+    color: var(--success);
+    border-color: color-mix(in srgb, var(--success) 35%, var(--success-soft));
+}
+
+.tass-shell
+    .mvp-status:is(.VIOLATION, .LOCK_CONFLICT, .REJECTED, .FAILED, .ERROR) {
+    background: var(--red-bg);
+    color: var(--danger);
+    border-color: color-mix(in srgb, var(--danger) 35%, var(--red-bg));
+}
+
+.tass-shell .mvp-status:is(.INSUFFICIENT_DATA, .PARTIAL, .WARNING) {
+    background: var(--amber-bg);
+    color: var(--amber);
+    border-color: color-mix(in srgb, var(--amber) 35%, var(--amber-bg));
+}

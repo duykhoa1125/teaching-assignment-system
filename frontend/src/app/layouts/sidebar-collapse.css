@@ -1,18 +1,56 @@
 /* Desktop rail is a user-requested addition; the mobile drawer stays full width. */
+@property --sidebar-current-width {
+    syntax: '<length>';
+    inherits: false;
+    initial-value: 246px;
+}
+
 .tass-shell .sidebar-toggle {
     display: none;
 }
 
 @media (min-width: 701px) {
+    .tass-shell {
+        --sidebar-current-width: var(--sidebar);
+        transition: --sidebar-current-width 280ms var(--spring);
+    }
     .tass-shell .sidebar {
-        transition:
-            width 240ms var(--spring),
-            padding 240ms var(--spring);
+        --sidebar-current-width: inherit;
+        /* A single animated length drives every edge; no separate tracks. */
+        width: var(--sidebar-current-width);
+        transition: none;
+        border-right: 0;
+        box-shadow: none;
+        overflow: hidden;
     }
     .tass-shell .app {
-        transition: margin-left 240ms var(--spring);
+        /* Layout the page once, then slide its cached layer in React/WAAPI. */
+        margin-left: var(--sidebar);
+        transition: none;
+    }
+    .tass-shell .sidebar::after {
+        --sidebar-current-width: inherit;
+        content: '';
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: calc(var(--sidebar-current-width) - 1px);
+        width: 1px;
+        background: var(--line);
+        pointer-events: none;
+    }
+    .tass-shell .sidebar .nav {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        align-content: start;
+    }
+    .tass-shell .sidebar-bottom {
+        flex-shrink: 0;
     }
     .tass-shell .sidebar-toggle {
+        --sidebar-current-width: inherit;
         display: inline-grid;
         position: absolute;
         top: 0;
@@ -24,6 +62,7 @@
         padding: 0;
     }
     .tass-shell .sidebar .brand {
+        --sidebar-current-width: inherit;
         position: relative;
     }
     .tass-shell .sidebar-toggle > .icon {
@@ -37,15 +76,23 @@
     }
     .tass-shell.sidebar-collapsed .sidebar {
         padding-inline: 8px;
+        overflow: hidden;
     }
     .tass-shell.sidebar-collapsed .brand {
         justify-content: flex-start;
-        margin-inline: -4px;
-        padding-inline: 0;
+        margin-inline: 0;
+        padding-inline: 10px 0;
     }
     .tass-shell.sidebar-collapsed .sidebar-toggle {
-        top: 4px;
-        right: 0;
+        position: fixed;
+        top: 24px;
+        left: calc(var(--sidebar-current-width) - 14px);
+        right: auto;
+        width: 28px;
+        min-width: 28px;
+        height: 28px;
+        min-height: 28px;
+        z-index: 1;
     }
     .tass-shell.sidebar-collapsed .brandmark {
         flex-shrink: 0;
@@ -64,9 +111,9 @@
         display: none;
     }
     .tass-shell.sidebar-collapsed .workspace {
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 44px;
-        padding: 0;
+        padding: 0 0 0 8px;
         border-color: transparent;
         background: transparent;
         box-shadow: none;
@@ -83,16 +130,17 @@
         background: var(--line);
     }
     .tass-shell.sidebar-collapsed .nav button {
-        justify-content: center;
+        justify-content: flex-start;
         min-height: 44px;
-        padding: 10px 0;
+        padding: 10px 0 10px 16px;
     }
     .tass-shell.sidebar-collapsed .nav {
         flex: 1;
         min-height: 0;
         overflow-y: auto;
+        overflow-x: hidden;
         align-content: start;
-        scrollbar-width: thin;
+        scrollbar-width: none;
     }
     .tass-shell.sidebar-collapsed .nav button.active::before {
         display: none;
@@ -113,16 +161,38 @@
         padding-inline: 0;
     }
     .tass-shell.sidebar-collapsed .account-control {
-        justify-content: center;
-        padding-inline: 0;
+        justify-content: flex-start;
+        padding-inline: 10px 0;
+    }
+    .tass-shell:not(.sidebar-collapsed)
+        :is(.brand-copy, .nav button > span:not(.count), .account-identity) {
+        animation: sidebar-label-in 180ms ease-out both;
+    }
+}
+
+@keyframes sidebar-label-in {
+    from {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .tass-shell {
+        transition: none;
+    }
     .tass-shell .sidebar,
     .tass-shell .app,
     .tass-shell .sidebar-toggle > .icon {
         transition: none;
+    }
+    .tass-shell
+        :is(.brand-copy, .nav button > span:not(.count), .account-identity) {
+        animation: none !important;
     }
 }
 

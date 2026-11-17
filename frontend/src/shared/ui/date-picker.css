@@ -1,0 +1,158 @@
+.tass-shell .date-picker {
+    display: block;
+    min-width: 0;
+    width: 100%;
+}
+.tass-shell .date-picker-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    height: var(--control-height, 40px);
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: var(--control-radius, 8px);
+    background: var(--surface);
+    color: var(--text);
+    font: 400 var(--control-font, 12px)/1.5 var(--body);
+    text-align: left;
+}
+.tass-shell .date-picker-trigger:hover {
+    border-color: var(--muted);
+}
+.tass-shell .date-picker-placeholder {
+    color: var(--muted);
+}
+.tass-shell .date-picker-popup {
+    position: fixed;
+    inset: auto;
+    left: var(--date-left);
+    top: var(--date-top);
+    margin: 0;
+    width: min(300px, calc(100vw - 24px));
+    box-sizing: border-box;
+    padding: 12px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: var(--floating-shadow);
+    font: 400 12px/1.5 var(--body);
+    max-height: calc(100dvh - 24px);
+    overflow: auto;
+}
+.tass-shell .date-picker-heading {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 10px;
+}
+.tass-shell .date-picker-heading .icon-btn {
+    width: 28px;
+    min-width: 28px;
+    height: 28px;
+    min-height: 28px;
+}
+.tass-shell .date-picker-prev {
+    transform: rotate(180deg);
+}
+.tass-shell .date-picker-month {
+    display: flex;
+    justify-content: center;
+    flex: 1;
+    gap: 4px;
+    min-width: 0;
+}
+.tass-shell
+    .date-picker-popup
+    .date-picker-month
+    select:not([multiple]):not([size]) {
+    min-width: 0;
+    flex: 0 1 94px;
+    width: 94px;
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    padding: 2px 8px;
+    font-size: 11px;
+    line-height: 18px;
+    gap: 4px;
+    border-radius: 6px;
+}
+.tass-shell
+    .date-picker-popup
+    .date-picker-month
+    select[aria-label='Năm']:not([multiple]):not([size]) {
+    flex-basis: 76px;
+    width: 76px;
+}
+.tass-shell .date-picker-month select::picker-icon {
+    width: 11px;
+    height: 11px;
+    margin-inline-start: 4px;
+}
+.tass-shell .date-picker-grid {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 2px;
+}
+.tass-shell .date-picker-grid th {
+    padding: 3px 0 6px;
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: center;
+}
+.tass-shell .date-picker-grid td {
+    padding: 0;
+    border: 0;
+    text-align: center;
+}
+.tass-shell .date-picker-day {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    height: 32px;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+}
+.tass-shell .date-picker-day.outside {
+    color: var(--muted);
+    opacity: 0.55;
+}
+.tass-shell .date-picker-day:hover {
+    background: var(--soft);
+}
+.tass-shell .date-picker-day[aria-current='date'] {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+.tass-shell .date-picker-day.selected {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+    opacity: 1;
+}
+.tass-shell .date-picker-footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--line);
+    margin-top: 10px;
+    padding-top: 8px;
+}
+.tass-shell .date-picker-footer button {
+    background: transparent;
+    color: var(--primary);
+    font: 500 11px/1.5 var(--body);
+    padding: 5px 8px;
+    border-radius: 6px;
+}
+.tass-shell .date-picker-footer button:hover {
+    background: var(--soft);
+}

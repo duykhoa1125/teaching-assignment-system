@@ -107,7 +107,7 @@ export function OverviewPage() {
 
     const canRunSolver = dashboard?.phase === 'DRAFT';
 
-    const renderPageHeader = (withActions: boolean) => (
+    const renderPageHeader = () => (
         <div className={`${styles.pageHeading} page-heading`}>
             <PageHeadingContent>
                 <div>
@@ -125,34 +125,13 @@ export function OverviewPage() {
                     </p>
                 </div>
             </PageHeadingContent>
-            {withActions ? (
-                <div className={`${styles.headingActions} flex`}>
-                    <button
-                        type="button"
-                        className="btn"
-                        onClick={() => void navigate('/statistics')}
-                    >
-                        <Icon name="chart" />
-                        Thống kê
-                    </button>
-                    <button
-                        type="button"
-                        className="btn primary"
-                        disabled={!canRunSolver}
-                        onClick={() => void navigate('/solver-runs')}
-                    >
-                        <Icon name="spark" />
-                        Sinh đề xuất
-                    </button>
-                </div>
-            ) : null}
         </div>
     );
 
     if (!isMockMode) {
         return (
             <div className={styles.overviewRoot}>
-                {renderPageHeader(false)}
+                {renderPageHeader()}
                 <EmptyState
                     title="Tổng quan chưa nối API thật"
                     action={
@@ -172,7 +151,7 @@ export function OverviewPage() {
     if (query.isPending) {
         return (
             <div className={styles.overviewRoot}>
-                {renderPageHeader(false)}
+                {renderPageHeader()}
                 <section className={styles.panel}>
                     <div
                         className={`${styles.stateCard} ${styles.stateLoading}`}
@@ -195,7 +174,7 @@ export function OverviewPage() {
     if (query.isError) {
         return (
             <div className={styles.overviewRoot}>
-                {renderPageHeader(false)}
+                {renderPageHeader()}
                 <section className={styles.panel}>
                     <div
                         className={`${styles.stateCard} ${styles.stateError}`}
@@ -232,7 +211,7 @@ export function OverviewPage() {
     if (isEmpty) {
         return (
             <div className={styles.overviewRoot}>
-                {renderPageHeader(false)}
+                {renderPageHeader()}
                 <section className={styles.panel}>
                     <div className={styles.stateCard}>
                         <span className={`${styles.stateSymbol} icon-surface`}>
@@ -263,9 +242,30 @@ export function OverviewPage() {
                 onOpenExport={() => setModalKind('export')}
             />
 
-            {renderPageHeader(true)}
+            {renderPageHeader()}
 
             <ReadinessBanner
+                actions={
+                    <>
+                        <button
+                            type="button"
+                            className="btn"
+                            onClick={() => void navigate('/statistics')}
+                        >
+                            <Icon name="chart" />
+                            Thống kê
+                        </button>
+                        <button
+                            type="button"
+                            className="btn primary"
+                            disabled={!canRunSolver}
+                            onClick={() => void navigate('/solver-runs')}
+                        >
+                            <Icon name="spark" />
+                            Sinh đề xuất
+                        </button>
+                    </>
+                }
                 readiness={dashboard.readiness}
                 validationStatus={dashboard.validation_status}
                 latestSolverStatus={dashboard.latest_solver_status}

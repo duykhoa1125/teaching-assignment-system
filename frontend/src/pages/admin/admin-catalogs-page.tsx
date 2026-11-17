@@ -566,12 +566,14 @@ export function AdminCatalogsPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        title="Sửa"
+                        aria-label="Sửa"
+                        className="icon-btn"
                         onClick={() =>
                             setClassModal({
                                 editing: row,
@@ -589,14 +591,15 @@ export function AdminCatalogsPage() {
                         }
                     >
                         <Icon name="edit" />
-                        Sửa
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        title="Xóa"
+                        aria-label="Xóa"
+                        className="icon-btn catalog-delete-action"
                         onClick={() => setDeleteTarget({ kind: 'class', row })}
                     >
-                        Xóa
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),
@@ -627,12 +630,14 @@ export function AdminCatalogsPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        title="Sửa"
+                        aria-label="Sửa"
+                        className="icon-btn"
                         onClick={() =>
                             setGradeModal({
                                 editing: row,
@@ -649,14 +654,15 @@ export function AdminCatalogsPage() {
                         }
                     >
                         <Icon name="edit" />
-                        Sửa
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        title="Xóa"
+                        aria-label="Xóa"
+                        className="icon-btn catalog-delete-action"
                         onClick={() => setDeleteTarget({ kind: 'grade', row })}
                     >
-                        Xóa
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),
@@ -680,12 +686,14 @@ export function AdminCatalogsPage() {
             align: 'right',
             render: (row) => (
                 <div
-                    className="mvp-actions"
+                    className="catalog-row-actions"
                     style={{ justifyContent: 'flex-end' }}
                 >
                     <button
                         type="button"
-                        className="btn small"
+                        title="Sửa"
+                        aria-label="Sửa"
+                        className="icon-btn"
                         onClick={() =>
                             setLevelModal({
                                 editing: row,
@@ -699,14 +707,15 @@ export function AdminCatalogsPage() {
                         }
                     >
                         <Icon name="edit" />
-                        Sửa
                     </button>
                     <button
                         type="button"
-                        className="btn small danger"
+                        title="Xóa"
+                        aria-label="Xóa"
+                        className="icon-btn catalog-delete-action"
                         onClick={() => setDeleteTarget({ kind: 'level', row })}
                     >
-                        Xóa
+                        <Icon name="trash" />
                     </button>
                 </div>
             ),
@@ -730,46 +739,48 @@ export function AdminCatalogsPage() {
 
     return (
         <div className="admin-overview fe05-page">
-            <RolePageHeader
-                title="Một bộ danh mục nhất quán."
-                description="Mã duy nhất, hiệu lực rõ ràng; ngừng sử dụng thay vì xóa lịch sử."
-                actions={
-                    <button
-                        type="button"
-                        className="btn primary"
-                        onClick={openCreateModal}
-                    >
-                        <Icon name="plus" />
-                        {createButtonLabel}
-                    </button>
-                }
-            />
-
-            <div>
-                <div
-                    className="mvp-tabs"
-                    role="tablist"
-                    aria-label="Nhóm danh mục nền"
-                >
-                    {(
-                        [
-                            ['subjects', 'Môn học'],
-                            ['classes', 'Lớp học'],
-                            ['grades', 'Khối lớp'],
-                            ['levels', 'Cấp học'],
-                        ] as const
-                    ).map(([id, label]) => (
+            <div className="page-toolbar">
+                <RolePageHeader
+                    title="Một bộ danh mục nhất quán."
+                    description="Mã duy nhất, hiệu lực rõ ràng; ngừng sử dụng thay vì xóa lịch sử."
+                    actions={
                         <button
-                            key={id}
                             type="button"
-                            role="tab"
-                            aria-selected={tab === id}
-                            className={tab === id ? 'active' : ''}
-                            onClick={() => setTab(id)}
+                            className="btn primary"
+                            onClick={openCreateModal}
                         >
-                            {label}
+                            <Icon name="plus" />
+                            {createButtonLabel}
                         </button>
-                    ))}
+                    }
+                />
+
+                <div>
+                    <div
+                        className="mvp-tabs"
+                        role="tablist"
+                        aria-label="Nhóm danh mục nền"
+                    >
+                        {(
+                            [
+                                ['subjects', 'Môn học'],
+                                ['classes', 'Lớp học'],
+                                ['grades', 'Khối lớp'],
+                                ['levels', 'Cấp học'],
+                            ] as const
+                        ).map(([id, label]) => (
+                            <button
+                                key={id}
+                                type="button"
+                                role="tab"
+                                aria-selected={tab === id}
+                                className={tab === id ? 'active' : ''}
+                                onClick={() => setTab(id)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

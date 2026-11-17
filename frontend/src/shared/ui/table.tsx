@@ -110,19 +110,23 @@ export function Pagination({
                 <Button
                     variant="secondary"
                     size="sm"
+                    className="icon-btn"
+                    aria-label="Trang trước"
+                    title="Trang trước"
                     disabled={offset === 0 || busy}
                     onClick={() => onPageChange(Math.max(0, offset - limit))}
                 >
                     <Icon glyph={ChevronLeft} size={16} />
-                    Trước
                 </Button>
                 <Button
                     variant="secondary"
                     size="sm"
+                    className="icon-btn"
+                    aria-label="Trang sau"
+                    title="Trang sau"
                     disabled={!hasNext || busy}
                     onClick={() => onPageChange(offset + limit)}
                 >
-                    Sau
                     <Icon glyph={ChevronRight} size={16} />
                 </Button>
             </div>

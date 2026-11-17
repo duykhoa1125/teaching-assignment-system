@@ -1,3 +1,4 @@
+import { DatePicker } from '@/shared/ui/date-picker';
 import '@/pages/results/results.css';
 import './audit-filters.css';
 import { useState } from 'react';
@@ -74,24 +75,20 @@ export function AdminAuditPage() {
                         <div className="audit-date-fields">
                             <label>
                                 Từ ngày
-                                <input
+                                <DatePicker
                                     name="audit_from"
-                                    type="date"
-                                    aria-label="Nhật ký từ ngày"
+                                    label="Nhật ký từ ngày"
                                     value={fromDate}
-                                    onChange={(e) =>
-                                        setFromDate(e.target.value)
-                                    }
+                                    onChange={setFromDate}
                                 />
                             </label>
                             <label>
                                 Đến ngày
-                                <input
+                                <DatePicker
                                     name="audit_to"
-                                    type="date"
-                                    aria-label="Nhật ký đến ngày"
+                                    label="Nhật ký đến ngày"
                                     value={toDate}
-                                    onChange={(e) => setToDate(e.target.value)}
+                                    onChange={setToDate}
                                 />
                             </label>
                         </div>

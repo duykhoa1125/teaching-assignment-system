@@ -160,104 +160,112 @@ export function ChecksPage() {
 
     return (
         <div className="fe05-page">
-            <RolePageHeader
-                roundLabel={activeRound?.round_code}
-                contextLabel={
-                    plan
-                        ? `V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`
-                        : undefined
-                }
-                title="Kiểm tra có căn cứ. Quyết định rõ ràng."
-                description="Kết quả gắn với phiên bản, revision, snapshot nguồn và bộ quy tắc đang chọn."
-                actions={
-                    <div className="mvp-actions">
-                        <Link
-                            to={roundPath(
-                                '/assignment',
-                                activeRound?.id,
-                                contextId,
+            <div className="page-control-row">
+                <RolePageHeader
+                    roundLabel={activeRound?.round_code}
+                    contextLabel={
+                        plan
+                            ? `V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`
+                            : undefined
+                    }
+                    title="Kiểm tra có căn cứ. Quyết định rõ ràng."
+                    description="Kết quả gắn với phiên bản, revision, snapshot nguồn và bộ quy tắc đang chọn."
+                    actions={
+                        <div className="mvp-actions">
+                            <Link
+                                to={roundPath(
+                                    '/assignment',
+                                    activeRound?.id,
+                                    contextId,
+                                )}
+                                className="btn"
+                            >
+                                <Icon name="matrix" />
+                                Bảng phân công
+                            </Link>
+                            {activeTab === 'validation' ? (
+                                <button
+                                    type="button"
+                                    className="btn primary"
+                                    disabled={
+                                        !plan || runValidationMutation.isPending
+                                    }
+                                    onClick={() => void handleRunValidation()}
+                                >
+                                    <Icon name="check" />
+                                    {runValidationMutation.isPending
+                                        ? 'Đang kiểm tra…'
+                                        : 'Chạy kiểm tra phương án'}
+                                </button>
+                            ) : (
+                                <button
+                                    type="button"
+                                    className="btn primary"
+                                    disabled={
+                                        !activeRound ||
+                                        !isPairedValid ||
+                                        readinessQuery.isFetching
+                                    }
+                                    onClick={() =>
+                                        void readinessQuery.refetch()
+                                    }
+                                >
+                                    <Icon name="reset" />
+                                    {readinessQuery.isFetching
+                                        ? 'Đang kiểm tra…'
+                                        : 'Chạy tiền kiểm lại'}
+                                </button>
                             )}
-                            className="btn"
-                        >
-                            <Icon name="matrix" />
-                            Bảng phân công
-                        </Link>
-                        {activeTab === 'validation' ? (
-                            <button
-                                type="button"
-                                className="btn primary"
-                                disabled={
-                                    !plan || runValidationMutation.isPending
-                                }
-                                onClick={() => void handleRunValidation()}
-                            >
-                                <Icon name="check" />
-                                {runValidationMutation.isPending
-                                    ? 'Đang kiểm tra…'
-                                    : 'Chạy kiểm tra phương án'}
-                            </button>
-                        ) : (
-                            <button
-                                type="button"
-                                className="btn primary"
-                                disabled={
-                                    !activeRound ||
-                                    !isPairedValid ||
-                                    readinessQuery.isFetching
-                                }
-                                onClick={() => void readinessQuery.refetch()}
-                            >
-                                <Icon name="reset" />
-                                {readinessQuery.isFetching
-                                    ? 'Đang kiểm tra…'
-                                    : 'Chạy tiền kiểm lại'}
-                            </button>
-                        )}
-                    </div>
-                }
-            />
+                        </div>
+                    }
+                />
 
-            <div className="mvp-toolbar">
-                <div
-                    className="mvp-tabs"
-                    role="tablist"
-                    aria-label="Loại kiểm tra"
-                >
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === 'validation'}
-                        className={activeTab === 'validation' ? 'active' : ''}
-                        onClick={() => setTab('validation')}
+                <div className="mvp-toolbar">
+                    <div
+                        className="mvp-tabs"
+                        role="tablist"
+                        aria-label="Loại kiểm tra"
                     >
-                        Kiểm tra phương án
-                    </button>
-                    <button
-                        type="button"
-                        role="tab"
-                        aria-selected={activeTab === 'readiness'}
-                        className={activeTab === 'readiness' ? 'active' : ''}
-                        onClick={() => setTab('readiness')}
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'validation'}
+                            className={
+                                activeTab === 'validation' ? 'active' : ''
+                            }
+                            onClick={() => setTab('validation')}
+                        >
+                            Kiểm tra phương án
+                        </button>
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={activeTab === 'readiness'}
+                            className={
+                                activeTab === 'readiness' ? 'active' : ''
+                            }
+                            onClick={() => setTab('readiness')}
+                        >
+                            Tiền kiểm nguồn ({issues.length})
+                        </button>
+                    </div>
+                    <select
+                        id="checks-round-select"
+                        name="round_id"
+                        aria-label="Chọn đợt phân công"
+                        value={activeRound?.id ?? ''}
+                        onChange={(e) => {
+                            const id = Number(e.target.value);
+                            if (id) selectRoundId(id);
+                        }}
                     >
-                        Tiền kiểm nguồn ({issues.length})
-                    </button>
+                        {rounds.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {r.round_code} ({r.status})
+                            </option>
+                        ))}
+                    </select>
                 </div>
-                <select
-                    id="checks-round-select"
-                    name="round_id"
-                    aria-label="Chọn đợt phân công"
-                    value={activeRound?.id ?? ''}
-                    onChange={(e) => {
-                        const id = Number(e.target.value);
-                        if (id) selectRoundId(id);
-                    }}
-                >
-                    {rounds.map((r) => (
-                        <option key={r.id} value={r.id}>
-                            {r.round_code} ({r.status})
-                        </option>
-                    ))}
-                </select>
             </div>
 
             {activeTab === 'validation' ? (

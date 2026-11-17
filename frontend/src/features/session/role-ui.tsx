@@ -9,22 +9,16 @@ import type { AuthAccount } from './types';
 
 export type PillTone = '' | 'gray' | 'amber' | 'red' | 'purple';
 
-/** Renders a `.pill` badge matching the prototype `badge(text, type, withDot)` markup. */
+/** Text-only status pill; user-requested removal of the prototype's leading dot. */
 export function PillBadge({
     label,
     tone = '',
-    dot = false,
 }: {
     label: string | number;
     tone?: PillTone;
-    dot?: boolean;
+    dot?: boolean; // Compatibility for existing callers; no dot is rendered.
 }) {
-    return (
-        <span className={tone ? `pill ${tone}` : 'pill'}>
-            {dot ? <i /> : null}
-            {label}
-        </span>
-    );
+    return <span className={tone ? `pill ${tone}` : 'pill'}>{label}</span>;
 }
 
 /** Page header shared by Admin, Teacher, and Settings workspaces. */

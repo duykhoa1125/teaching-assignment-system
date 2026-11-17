@@ -310,90 +310,96 @@ export function StatisticsPage() {
 
     return (
         <div>
-            <RolePageHeader
-                roundLabel={activeRound.round_code}
-                contextLabel={`V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`}
-                title="Thấy rõ đội ngũ. Hiểu đủ nhu cầu."
-                description="Tổng hợp theo môn, khối hoặc lớp và truy về các cặp còn thiếu."
-                actions={
-                    <div className="mvp-actions">
-                        <Link
-                            to={roundPath(
-                                '/workload',
-                                activeRound?.id,
-                                contextId,
-                            )}
-                            className="btn"
-                        >
-                            <Icon name="balance" />
-                            Định mức & Tải
-                        </Link>
-                        <button
-                            type="button"
-                            className="btn primary"
-                            onClick={() =>
-                                triggerDownload(
-                                    buildAssignmentStatisticsCsv(rows),
-                                    `TASS-thong-ke-${activeRound.round_code}-V${plan.version_no}.csv`,
-                                )
+            <div className="page-control-row">
+                <RolePageHeader
+                    roundLabel={activeRound.round_code}
+                    contextLabel={`V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`}
+                    title="Thấy rõ đội ngũ. Hiểu đủ nhu cầu."
+                    description="Tổng hợp theo môn, khối hoặc lớp và truy về các cặp còn thiếu."
+                    actions={
+                        <div className="mvp-actions">
+                            <Link
+                                to={roundPath(
+                                    '/workload',
+                                    activeRound?.id,
+                                    contextId,
+                                )}
+                                className="btn"
+                            >
+                                <Icon name="balance" />
+                                Định mức & Tải
+                            </Link>
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={() =>
+                                    triggerDownload(
+                                        buildAssignmentStatisticsCsv(rows),
+                                        `TASS-thong-ke-${activeRound.round_code}-V${plan.version_no}.csv`,
+                                    )
+                                }
+                            >
+                                <Icon name="download" />
+                                Tải bảng CSV
+                            </button>
+                        </div>
+                    }
+                />
+
+                <div className="mvp-toolbar">
+                    <div className="mvp-filter">
+                        <select
+                            id="stats-round-select"
+                            name="round_id"
+                            aria-label="Chọn đợt phân công thống kê"
+                            value={activeRound.id}
+                            onChange={(e) =>
+                                selectRoundId(Number(e.target.value))
                             }
                         >
-                            <Icon name="download" />
-                            Tải bảng CSV
-                        </button>
+                            {rounds.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.round_code}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            id="stats-group-select"
+                            name="group_by"
+                            aria-label="Nhóm thống kê"
+                            value={groupBy}
+                            onChange={(e) => {
+                                setGroupBy(e.target.value as GroupBy);
+                                setGroupFilter('all');
+                            }}
+                        >
+                            <option value="subject">Theo môn</option>
+                            <option value="grade">Theo khối</option>
+                            <option value="class">Theo lớp</option>
+                            <option value="teacher">Theo giáo viên</option>
+                        </select>
+                        <select
+                            id="stats-value-select"
+                            name="group_filter"
+                            aria-label="Lọc nhóm thống kê"
+                            value={effectiveFilter}
+                            onChange={(e) => setGroupFilter(e.target.value)}
+                        >
+                            <option value="all">Tất cả nhóm</option>
+                            {groupNames.map((name) => (
+                                <option key={name} value={name}>
+                                    {groupBy === 'grade'
+                                        ? `Khối ${name}`
+                                        : name}
+                                </option>
+                            ))}
+                        </select>
                     </div>
-                }
-            />
-
-            <div className="mvp-toolbar">
-                <div className="mvp-filter">
-                    <select
-                        id="stats-round-select"
-                        name="round_id"
-                        aria-label="Chọn đợt phân công thống kê"
-                        value={activeRound.id}
-                        onChange={(e) => selectRoundId(Number(e.target.value))}
-                    >
-                        {rounds.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.round_code}
-                            </option>
-                        ))}
-                    </select>
-                    <select
-                        id="stats-group-select"
-                        name="group_by"
-                        aria-label="Nhóm thống kê"
-                        value={groupBy}
-                        onChange={(e) => {
-                            setGroupBy(e.target.value as GroupBy);
-                            setGroupFilter('all');
-                        }}
-                    >
-                        <option value="subject">Theo môn</option>
-                        <option value="grade">Theo khối</option>
-                        <option value="class">Theo lớp</option>
-                        <option value="teacher">Theo giáo viên</option>
-                    </select>
-                    <select
-                        id="stats-value-select"
-                        name="group_filter"
-                        aria-label="Lọc nhóm thống kê"
-                        value={effectiveFilter}
-                        onChange={(e) => setGroupFilter(e.target.value)}
-                    >
-                        <option value="all">Tất cả nhóm</option>
-                        {groupNames.map((name) => (
-                            <option key={name} value={name}>
-                                {groupBy === 'grade' ? `Khối ${name}` : name}
-                            </option>
-                        ))}
-                    </select>
+                    <span className="mvp-code">
+                        Snapshot #{plan.input_snapshot_id} ·{' '}
+                        {workloadsQuery.data?.items.length ?? 0} giáo viên
+                    </span>
                 </div>
-                <span className="mvp-code">
-                    Snapshot #{plan.input_snapshot_id} ·{' '}
-                    {workloadsQuery.data?.items.length ?? 0} giáo viên
-                </span>
             </div>
 
             <div className="mvp-kpis">

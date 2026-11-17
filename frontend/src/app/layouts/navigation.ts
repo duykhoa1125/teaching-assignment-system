@@ -45,7 +45,7 @@ export const navigation: NavigationItem[] = [
         group: 'Theo dõi & lưu trữ',
     },
     { path: '/documents', label: 'Tài liệu đã phát hành', icon: 'file' },
-    { path: '/sources', label: 'Nguồn & đối soát', icon: 'file' },
+    { path: '/sources', label: 'Nguồn & đối soát', icon: 'compare' },
 ];
 export function pageTitle(pathname: string) {
     return (

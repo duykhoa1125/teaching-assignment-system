@@ -138,19 +138,6 @@ export function TeachersPage() {
                         </p>
                     </div>
                 </PageHeadingContent>
-                <div className={styles.headingActions}>
-                    <button
-                        ref={addButtonRef}
-                        type="button"
-                        className="btn primary"
-                        onClick={() =>
-                            setFormState({ open: true, teacher: null })
-                        }
-                    >
-                        <Icon name="plus" />
-                        Thêm giáo viên
-                    </button>
-                </div>
             </div>
 
             {schoolsQuery.isError && !teachersQuery.isError ? (
@@ -245,6 +232,19 @@ export function TeachersPage() {
                         }}
                     />
 
+                    <div className={styles.headingActions}>
+                        <button
+                            ref={addButtonRef}
+                            type="button"
+                            className="btn primary"
+                            onClick={() =>
+                                setFormState({ open: true, teacher: null })
+                            }
+                        >
+                            <Icon name="plus" />
+                            Thêm giáo viên
+                        </button>
+                    </div>
                     {hasActiveFilter ? (
                         <button
                             type="button"
@@ -555,7 +555,9 @@ export function TeachersPage() {
                         <div className={styles.paginationControls}>
                             <button
                                 type="button"
-                                className="btn small"
+                                className="icon-btn"
+                                aria-label="Trang trước"
+                                title="Trang trước"
                                 disabled={
                                     offset === 0 || teachersQuery.isFetching
                                 }
@@ -568,11 +570,12 @@ export function TeachersPage() {
                                 <span className={styles.chevronPrev}>
                                     <Icon name="chevron" />
                                 </span>
-                                Trước
                             </button>
                             <button
                                 type="button"
-                                className="btn small"
+                                className="icon-btn"
+                                aria-label="Trang sau"
+                                title="Trang sau"
                                 disabled={!hasNext || teachersQuery.isFetching}
                                 onClick={() =>
                                     setOffset(
@@ -580,7 +583,6 @@ export function TeachersPage() {
                                     )
                                 }
                             >
-                                Sau
                                 <Icon name="chevron" />
                             </button>
                         </div>

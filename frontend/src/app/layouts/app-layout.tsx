@@ -38,7 +38,7 @@ export function AppLayout() {
         null,
     );
     const navigate = useNavigate();
-    const { pathname, search } = useLocation();
+    const { pathname } = useLocation();
     const notify = useToast();
     const {
         isMockMode,
@@ -72,6 +72,29 @@ export function AppLayout() {
     const searchRef = useRef<HTMLButtonElement>(null);
     const quickRef = useRef<HTMLDivElement>(null);
     const transitionRunning = useRef(false);
+    const contentSlide = useRef<Animation | null>(null);
+
+    function toggleSidebar() {
+        const content = document.querySelector<HTMLElement>('.tass-shell .app');
+        const previousLeft = content?.getBoundingClientRect().left;
+        contentSlide.current?.cancel();
+        flushSync(() => setSidebarCollapsed((value) => !value));
+        if (
+            !content ||
+            previousLeft === undefined ||
+            typeof content.animate !== 'function' ||
+            typeof CSS.registerProperty !== 'function' ||
+            matchMedia('(prefers-reduced-motion: reduce)').matches
+        )
+            return;
+        const delta = previousLeft - content.getBoundingClientRect().left;
+        contentSlide.current = content.animate(
+            [{ transform: `translateX(${delta}px)` }, { transform: 'none' }],
+            { duration: 280, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+        );
+    }
+
+    useEffect(() => () => contentSlide.current?.cancel(), []);
 
     useEffect(() => {
         try {
@@ -269,7 +292,7 @@ export function AppLayout() {
                         onClick={() => {
                             quickRef.current?.hidePopover?.();
                             setQuick(null);
-                            setSidebarCollapsed((value) => !value);
+                            toggleSidebar();
                         }}
                     >
                         <Icon name="chevron" />
@@ -457,6 +480,27 @@ export function AppLayout() {
                                 ref={setHeadingTarget}
                                 className="header-page-title"
                             />
+                            <nav
+                                className="breadcrumb header-breadcrumb"
+                                aria-label="Đường dẫn trang"
+                            >
+                                <Link
+                                    to={roleDef.home}
+                                    aria-label={`Tổng quan ${roleDef.label}`}
+                                    title={roleDef.label}
+                                >
+                                    <Icon name={roleDef.icon} />
+                                </Link>
+                                <span aria-hidden="true">/</span>
+                                <b id="breadcrumb" aria-current="page">
+                                    {resolveGuardedPageTitle(
+                                        pathname,
+                                        role,
+                                        hasSchoolScope,
+                                        isMockMode,
+                                    )}
+                                </b>
+                            </nav>
                         </div>
                     </div>
                     <div className="top-actions">
@@ -485,37 +529,7 @@ export function AppLayout() {
                         </button>
                     </div>
                 </header>
-                <nav
-                    className="breadcrumb header-breadcrumb"
-                    aria-label="Đường dẫn trang"
-                >
-                    <Link to={roleDef.home} aria-label="Trang tổng quan">
-                        <Icon name="home" />
-                    </Link>
-                    <span aria-hidden="true">/</span>
-                    <Link to={roleDef.home}>
-                        {role === 'manager'
-                            ? 'Điều phối'
-                            : role === 'admin'
-                              ? 'Quản trị'
-                              : 'Cổng giáo viên'}
-                    </Link>
-                    {pathname === '/solver-runs' ? (
-                        <>
-                            <span aria-hidden="true">/</span>
-                            <Link to={`/assignment${search}`}>Phân công</Link>
-                        </>
-                    ) : null}
-                    <span aria-hidden="true">/</span>
-                    <b id="breadcrumb" aria-current="page">
-                        {resolveGuardedPageTitle(
-                            pathname,
-                            role,
-                            hasSchoolScope,
-                            isMockMode,
-                        )}
-                    </b>
-                </nav>
+
                 <main id="main-content" className="main" tabIndex={-1}>
                     <PageHeadingTarget.Provider value={headingTarget}>
                         <Outlet context={context} />

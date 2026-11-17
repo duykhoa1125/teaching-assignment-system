@@ -623,51 +623,53 @@ export function AdminPeriodsPage() {
 
     return (
         <div className="admin-overview fe05-page">
-            <RolePageHeader
-                title="Thời gian là một phần của dữ liệu."
-                description="Năm học, học kỳ, đợt và bộ quy tắc được ghi nhận cùng nhau."
-                actions={
-                    <div className="mvp-actions">
-                        <button
-                            type="button"
-                            className="btn primary"
-                            onClick={openCreateModal}
-                        >
-                            <Icon name="plus" />
-                            {tab === 'rounds'
-                                ? 'Thêm đợt phân công'
-                                : tab === 'semesters'
-                                  ? 'Thêm học kỳ'
-                                  : 'Thêm năm học'}
-                        </button>
-                    </div>
-                }
-            />
+            <div className="page-toolbar">
+                <RolePageHeader
+                    title="Thời gian là một phần của dữ liệu."
+                    description="Năm học, học kỳ, đợt và bộ quy tắc được ghi nhận cùng nhau."
+                    actions={
+                        <div className="mvp-actions">
+                            <button
+                                type="button"
+                                className="btn primary"
+                                onClick={openCreateModal}
+                            >
+                                <Icon name="plus" />
+                                {tab === 'rounds'
+                                    ? 'Thêm đợt phân công'
+                                    : tab === 'semesters'
+                                      ? 'Thêm học kỳ'
+                                      : 'Thêm năm học'}
+                            </button>
+                        </div>
+                    }
+                />
 
-            <div>
-                <div
-                    className="mvp-tabs"
-                    role="tablist"
-                    aria-label="Nhóm mốc thời gian"
-                >
-                    {(
-                        [
-                            ['rounds', 'Đợt phân công'],
-                            ['semesters', 'Học kỳ'],
-                            ['years', 'Năm học'],
-                        ] as const
-                    ).map(([id, label]) => (
-                        <button
-                            key={id}
-                            type="button"
-                            role="tab"
-                            aria-selected={tab === id}
-                            className={tab === id ? 'active' : ''}
-                            onClick={() => setTab(id)}
-                        >
-                            {label}
-                        </button>
-                    ))}
+                <div>
+                    <div
+                        className="mvp-tabs"
+                        role="tablist"
+                        aria-label="Nhóm mốc thời gian"
+                    >
+                        {(
+                            [
+                                ['rounds', 'Đợt phân công'],
+                                ['semesters', 'Học kỳ'],
+                                ['years', 'Năm học'],
+                            ] as const
+                        ).map(([id, label]) => (
+                            <button
+                                key={id}
+                                type="button"
+                                role="tab"
+                                aria-selected={tab === id}
+                                className={tab === id ? 'active' : ''}
+                                onClick={() => setTab(id)}
+                            >
+                                {label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 

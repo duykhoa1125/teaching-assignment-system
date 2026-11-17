@@ -8,6 +8,8 @@ import '@/styles/icon-treatment.css';
 import '@/styles/icon-motion.css';
 import '@/styles/table-spacing.css';
 import '@/styles/dropdowns.css';
+import '@/styles/filter-controls.css';
+import '@/styles/status-badges.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Không tìm thấy phần tử gốc của ứng dụng.');

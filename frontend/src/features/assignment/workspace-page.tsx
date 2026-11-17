@@ -402,73 +402,83 @@ function Workspace({
     }
     return (
         <div className="assignment-workspace fe05-page">
-            <RolePageHeader
-                roundLabel={round.round_code}
-                contextLabel={workspaceQuery.data?.context_label}
-                title="Phân công giảng dạy"
-                description="Kết nối đúng chuyên môn với từng nhu cầu của nhà trường."
-                actions={
-                    <>
-                        <button
-                            className="btn"
-                            type="button"
-                            disabled
-                            title="Chỉ xuất tài liệu đã phát hành"
-                        >
-                            <Icon name="download" />
-                            Xuất PDF
-                        </button>
-                        <Link
-                            to={roundPath('/solver-runs', round.id, contextId)}
-                            className="btn primary"
-                        >
-                            <Icon name="spark" />
-                            Sinh đề xuất
-                        </Link>
-                    </>
-                }
-            />
-            <div className="mvp-filter assignment-context">
-                <label>
-                    Đợt phân công
-                    <select
-                        aria-label="Chọn đợt phân công"
-                        value={round.id}
-                        onChange={(event) =>
-                            chooseRound(Number(event.target.value))
-                        }
-                    >
-                        {rounds.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.round_code}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                {plan && workspaceQuery.data && (
+            <div className="page-control-row">
+                <RolePageHeader
+                    roundLabel={round.round_code}
+                    contextLabel={workspaceQuery.data?.context_label}
+                    title="Phân công giảng dạy"
+                    description="Kết nối đúng chuyên môn với từng nhu cầu của nhà trường."
+                    actions={
+                        <>
+                            <button
+                                className="btn"
+                                type="button"
+                                disabled
+                                title="Chỉ xuất tài liệu đã phát hành"
+                            >
+                                <Icon name="download" />
+                                Xuất PDF
+                            </button>
+                            <Link
+                                to={roundPath(
+                                    '/solver-runs',
+                                    round.id,
+                                    contextId,
+                                )}
+                                className="btn primary"
+                            >
+                                <Icon name="spark" />
+                                Sinh đề xuất
+                            </Link>
+                        </>
+                    }
+                />
+                <div className="mvp-filter assignment-context">
                     <label>
-                        Phiên bản
+                        Đợt phân công
                         <select
-                            aria-label="Chọn phiên bản phương án"
-                            value={plan.version_id}
+                            aria-label="Chọn đợt phân công"
+                            value={round.id}
                             onChange={(event) =>
-                                chooseVersion(Number(event.target.value))
+                                chooseRound(Number(event.target.value))
                             }
                         >
-                            {workspaceQuery.data.versions.map((item) => (
-                                <option
-                                    key={item.version_id}
-                                    value={item.version_id}
-                                >
-                                    V{String(item.version_no).padStart(2, '0')}
-                                    {item.is_current
-                                        ? ' · Hiện hành'
-                                        : ' · Lưu trữ'}
+                            {rounds.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.round_code}
                                 </option>
                             ))}
                         </select>
                     </label>
-                )}
+                    {plan && workspaceQuery.data && (
+                        <label>
+                            Phiên bản
+                            <select
+                                aria-label="Chọn phiên bản phương án"
+                                value={plan.version_id}
+                                onChange={(event) =>
+                                    chooseVersion(Number(event.target.value))
+                                }
+                            >
+                                {workspaceQuery.data.versions.map((item) => (
+                                    <option
+                                        key={item.version_id}
+                                        value={item.version_id}
+                                    >
+                                        V
+                                        {String(item.version_no).padStart(
+                                            2,
+                                            '0',
+                                        )}
+                                        {item.is_current
+                                            ? ' · Hiện hành'
+                                            : ' · Lưu trữ'}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    )}
+                </div>
             </div>
             {planQuery.isPending ? (
                 <RoleStateCard
@@ -843,7 +853,9 @@ function Workspace({
                                         </span>
                                         <div className="mvp-actions">
                                             <button
-                                                className="btn small"
+                                                className="icon-btn"
+                                                aria-label="Trang trước"
+                                                title="Trang trước"
                                                 disabled={!pageOffset}
                                                 onClick={() =>
                                                     setOffset(
@@ -855,10 +867,20 @@ function Workspace({
                                                     )
                                                 }
                                             >
-                                                Trước
+                                                <span
+                                                    style={{
+                                                        transform:
+                                                            'rotate(180deg)',
+                                                        display: 'inline-flex',
+                                                    }}
+                                                >
+                                                    <Icon name="chevron" />
+                                                </span>
                                             </button>
                                             <button
-                                                className="btn small"
+                                                className="icon-btn"
+                                                aria-label="Trang sau"
+                                                title="Trang sau"
                                                 disabled={
                                                     pageOffset +
                                                         ASSIGNMENT_PAGE_SIZE >=
@@ -871,7 +893,7 @@ function Workspace({
                                                     )
                                                 }
                                             >
-                                                Sau
+                                                <Icon name="chevron" />
                                             </button>
                                         </div>
                                     </div>

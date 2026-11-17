@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Link } from 'react-router';
 import type {
     OverviewActivityItem,
@@ -99,11 +100,13 @@ export function CompletionBanner({
 }
 
 export function ReadinessBanner({
+    actions,
     readiness,
     validationStatus,
     latestSolverStatus,
     latestApplyOutcome,
 }: {
+    actions?: ReactNode;
     readiness: OverviewDashboard['readiness'];
     validationStatus?: string | null;
     latestSolverStatus?: string | null;
@@ -130,6 +133,7 @@ export function ReadinessBanner({
                 styles.banner,
                 'banner',
                 'mvp-app-note',
+                'overview-readiness-toolbar',
                 isReady ? '' : styles.bannerAmber,
             ]
                 .filter(Boolean)
@@ -154,6 +158,7 @@ export function ReadinessBanner({
                 <Link to="/preparation" className="btn small">
                     Chuẩn bị dữ liệu
                 </Link>
+                {actions}
             </div>
         </div>
     );
@@ -498,7 +503,6 @@ export function CoveragePanel({
                         .filter(Boolean)
                         .join(' ')}
                 >
-                    <i />
                     {PHASE_LABELS[phase]}
                 </span>
             </div>

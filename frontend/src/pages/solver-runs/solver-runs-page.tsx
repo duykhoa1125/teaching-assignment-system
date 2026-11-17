@@ -304,117 +304,119 @@ export function SolverRunsPage() {
 
     return (
         <div>
-            <RolePageHeader
-                roundLabel={activeRound.round_code}
-                contextLabel={
-                    plan
-                        ? `V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`
-                        : 'Chưa có phương án'
-                }
-                title="Đề xuất có thể kiểm tra lại."
-                description="Cấu hình năm mục tiêu và theo dõi từng lượt giải."
-                actions={
-                    <div className="mvp-actions">
-                        <Link
-                            to={roundPath(
-                                '/assignment',
-                                activeRound?.id,
-                                contextId,
-                            )}
-                            className="btn"
-                        >
-                            <Icon name="matrix" />
-                            Bảng phân công
-                        </Link>
-                        {plan ? (
+            <div className="page-control-row">
+                <RolePageHeader
+                    roundLabel={activeRound.round_code}
+                    contextLabel={
+                        plan
+                            ? `V${String(plan.version_no).padStart(2, '0')} · r${plan.revision_no}`
+                            : 'Chưa có phương án'
+                    }
+                    title="Đề xuất có thể kiểm tra lại."
+                    description="Cấu hình năm mục tiêu và theo dõi từng lượt giải."
+                    actions={
+                        <div className="mvp-actions">
+                            <Link
+                                to={roundPath(
+                                    '/assignment',
+                                    activeRound?.id,
+                                    contextId,
+                                )}
+                                className="btn"
+                            >
+                                <Icon name="matrix" />
+                                Bảng phân công
+                            </Link>
+                            {plan ? (
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    onClick={() => setConfigModalOpen(true)}
+                                >
+                                    <Icon name="rules" />
+                                    Cấu hình
+                                </button>
+                            ) : null}
                             <button
                                 type="button"
-                                className="btn"
-                                onClick={() => setConfigModalOpen(true)}
+                                className="btn primary"
+                                disabled={!canSubmit}
+                                title={
+                                    currentRun &&
+                                    isSolverRunActive(currentRun.status)
+                                        ? 'Đang có lượt chạy hoạt động — có thể hủy lượt hiện tại trước khi chạy mới.'
+                                        : undefined
+                                }
+                                onClick={() => void handleStartSolver()}
                             >
-                                <Icon name="rules" />
-                                Cấu hình
+                                <Icon name="spark" />
+                                {startMutation.isPending
+                                    ? 'Đang gửi lượt…'
+                                    : 'Sinh đề xuất'}
                             </button>
-                        ) : null}
-                        <button
-                            type="button"
-                            className="btn primary"
-                            disabled={!canSubmit}
-                            title={
-                                currentRun &&
-                                isSolverRunActive(currentRun.status)
-                                    ? 'Đang có lượt chạy hoạt động — có thể hủy lượt hiện tại trước khi chạy mới.'
-                                    : undefined
-                            }
-                            onClick={() => void handleStartSolver()}
-                        >
-                            <Icon name="spark" />
-                            {startMutation.isPending
-                                ? 'Đang gửi lượt…'
-                                : 'Sinh đề xuất'}
-                        </button>
-                    </div>
-                }
-            />
+                        </div>
+                    }
+                />
 
-            <div className="results-round-strip">
-                <label>
-                    Đợt phân công
-                    <select
-                        id="solver-round-select"
-                        name="round_id"
-                        aria-label="Chọn đợt phân công chạy solver"
-                        value={activeRound.id}
-                        onChange={(e) => {
-                            setRunIdParam(null);
-                            setOverrideConfigId(null);
-                            setOverrideRuleId(null);
-                            selectRoundId(Number(e.target.value));
-                        }}
-                    >
-                        {rounds.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.round_code} ({item.status})
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label>
-                    Cấu hình tối ưu
-                    <select
-                        id="solver-config-select"
-                        name="optimization_config_id"
-                        aria-label="Chọn cấu hình tối ưu để chạy"
-                        value={selectedConfigId}
-                        onChange={(e) =>
-                            setOverrideConfigId(Number(e.target.value))
-                        }
-                    >
-                        {OPTIMIZATION_CONFIG_OPTIONS.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.code} · {item.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label>
-                    Bộ quy tắc tải
-                    <select
-                        id="solver-rule-select"
-                        name="rule_set_version_id"
-                        aria-label="Chọn bộ quy tắc để chạy"
-                        value={selectedRuleId}
-                        onChange={(e) =>
-                            setOverrideRuleId(Number(e.target.value))
-                        }
-                    >
-                        {RULE_SET_VERSION_OPTIONS.map((item) => (
-                            <option key={item.id} value={item.id}>
-                                {item.code} · {item.name}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                <div className="results-round-strip">
+                    <label>
+                        Đợt phân công
+                        <select
+                            id="solver-round-select"
+                            name="round_id"
+                            aria-label="Chọn đợt phân công chạy solver"
+                            value={activeRound.id}
+                            onChange={(e) => {
+                                setRunIdParam(null);
+                                setOverrideConfigId(null);
+                                setOverrideRuleId(null);
+                                selectRoundId(Number(e.target.value));
+                            }}
+                        >
+                            {rounds.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.round_code} ({item.status})
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Cấu hình tối ưu
+                        <select
+                            id="solver-config-select"
+                            name="optimization_config_id"
+                            aria-label="Chọn cấu hình tối ưu để chạy"
+                            value={selectedConfigId}
+                            onChange={(e) =>
+                                setOverrideConfigId(Number(e.target.value))
+                            }
+                        >
+                            {OPTIMIZATION_CONFIG_OPTIONS.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.code} · {item.name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                    <label>
+                        Bộ quy tắc tải
+                        <select
+                            id="solver-rule-select"
+                            name="rule_set_version_id"
+                            aria-label="Chọn bộ quy tắc để chạy"
+                            value={selectedRuleId}
+                            onChange={(e) =>
+                                setOverrideRuleId(Number(e.target.value))
+                            }
+                        >
+                            {RULE_SET_VERSION_OPTIONS.map((item) => (
+                                <option key={item.id} value={item.id}>
+                                    {item.code} · {item.name}
+                                </option>
+                            ))}
+                        </select>
+                    </label>
+                </div>
             </div>
 
             {planQuery.isPending ? (

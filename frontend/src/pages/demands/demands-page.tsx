@@ -514,62 +514,66 @@ export function DemandsPage() {
 
     return (
         <div className="fe05-page">
-            <RolePageHeader
-                title="Nhu cầu, theo từng lớp và giai đoạn."
-                description="Chính khóa, chuyên đề và tăng tiết được phân công độc lập."
-                actions={
-                    <div className="mvp-actions">
-                        <button
-                            type="button"
-                            className="btn"
-                            disabled={!activeSemester}
-                            onClick={openBatchModal}
-                        >
-                            <Icon name="layers" />
-                            Nhập nhiều lớp
-                        </button>
-                        <button
-                            type="button"
-                            className="btn primary"
-                            disabled={!activeSemester}
-                            onClick={openCreateModal}
-                        >
-                            <Icon name="plus" />
-                            Tạo nhu cầu
-                        </button>
-                    </div>
-                }
-            />
+            <div className="page-control-row">
+                <RolePageHeader
+                    title="Nhu cầu, theo từng lớp và giai đoạn."
+                    description="Chính khóa, chuyên đề và tăng tiết được phân công độc lập."
+                    actions={
+                        <div className="mvp-actions">
+                            <button
+                                type="button"
+                                className="btn"
+                                disabled={!activeSemester}
+                                onClick={openBatchModal}
+                            >
+                                <Icon name="layers" />
+                                Nhập nhiều lớp
+                            </button>
+                            <button
+                                type="button"
+                                className="btn primary"
+                                disabled={!activeSemester}
+                                onClick={openCreateModal}
+                            >
+                                <Icon name="plus" />
+                                Tạo nhu cầu
+                            </button>
+                        </div>
+                    }
+                />
 
-            <div className="banner">
-                <span className="school-symbol">
-                    <Icon name="calendar" />
-                </span>
-                <div className="grow">
-                    <strong style={{ color: 'var(--ink)', fontWeight: 500 }}>
-                        {activeRound?.round_code ?? 'Đang tải'} ·{' '}
-                        {activeSemester
-                            ? `Học kỳ ${activeSemester.semester_no} (${activeSemester.starts_on} → ${activeSemester.ends_on})`
-                            : ''}
-                    </strong>
+                <div className="banner">
+                    <span className="school-symbol">
+                        <Icon name="calendar" />
+                    </span>
+                    <div className="grow">
+                        <strong
+                            style={{ color: 'var(--ink)', fontWeight: 500 }}
+                        >
+                            {activeRound?.round_code ?? 'Đang tải'} ·{' '}
+                            {activeSemester
+                                ? `Học kỳ ${activeSemester.semester_no} (${activeSemester.starts_on} → ${activeSemester.ends_on})`
+                                : ''}
+                        </strong>
+                    </div>
+                    <select
+                        aria-label="Chọn đợt / học kỳ xem nhu cầu"
+                        value={activeRound?.id ?? ''}
+                        onChange={(e) => {
+                            const id = Number(e.target.value);
+                            if (id) {
+                                selectRoundId(id);
+                                setOffset(0);
+                            }
+                        }}
+                    >
+                        {rounds.map((r) => (
+                            <option key={r.id} value={r.id}>
+                                {r.round_code}
+                            </option>
+                        ))}
+                    </select>
                 </div>
-                <select
-                    aria-label="Chọn đợt / học kỳ xem nhu cầu"
-                    value={activeRound?.id ?? ''}
-                    onChange={(e) => {
-                        const id = Number(e.target.value);
-                        if (id) {
-                            selectRoundId(id);
-                            setOffset(0);
-                        }
-                    }}
-                >
-                    {rounds.map((r) => (
-                        <option key={r.id} value={r.id}>
-                            {r.round_code}
-                        </option>
-                    ))}
-                </select>
             </div>
 
             <div className="mvp-toolbar">

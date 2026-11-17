@@ -22,7 +22,11 @@ import {
 import { prototypeGlyphs, type PrototypeIconName } from './prototype-glyphs';
 import styles from './icon.module.css';
 
-const actionGlyphs = { trash: Trash2, unlink: Unlink, unconfirm: BadgeX };
+const actionGlyphs = {
+    trash: Trash2,
+    unlink: Unlink,
+    unconfirm: BadgeX,
+};
 
 const originalByGlyph = new Map<LucideIcon, PrototypeIconName>([
     [LayoutDashboard, 'dashboard'],

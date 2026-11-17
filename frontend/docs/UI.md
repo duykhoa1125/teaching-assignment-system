@@ -166,12 +166,9 @@ Nhật ký quản trị: hai ô ngày trước đây không có nhãn nhìn th�
 - Breadcrumb dùng nav/Link thật: trang tổng quan, tên không gian ngắn, trang hiện tại aria-current. Solver thêm cấp Phân công có thể nhấn, giữ query đợt/ngữ cảnh.
 - QA desktop 1482×734: đã xem hàng icon giáo viên, bộ lọc thống kê/solver và nhấn breadcrumb Phân công thành công. Chưa kiểm tra lại toàn bộ màn hình và mobile trong lượt này. Typecheck/lint/build và 94 tests đạt; prototype nguyên SHA-256.
 
-
 Phản hồi tiếp 17/11: sidebar thu gọn giảm từ 80px còn 68px, padding ngang 8px và khung logo 32px để logo/nút mở rộng vẫn vừa. Ẩn pseudo-element vạch đỏ trái của mục active chỉ trong rail; giữ nền/viền chọn, màu icon, tooltip và focus. Desktop mở rộng/mobile giữ nguyên. Đã xem desktop 1482×734, rail gọn và không còn vạch đỏ; format/build đạt.
 
-
 Nhật ký — phản hồi tiếp 17/11: bỏ legend nhìn thấy “Thời gian ghi nhận” để không tăng một dòng. Giữ nhóm fieldset qua aria-label; ba nhãn Tìm nhật ký/Từ ngày/Đến ngày cùng một hàng trên desktop. Typecheck/lint đạt.
-
 
 ## Header trang gọn và breadcrumb bên dưới — 17/11/2026
 
@@ -180,3 +177,27 @@ Theo yêu cầu mới, chuyển h1/mô tả từ đầu nội dung lên topbar (
 `PageHeadingContent` portal tới target của AppLayout qua context, nên nội dung tiêu đề vẫn do trang sở hữu và cập nhật theo trạng thái; không dùng bảng tiêu đề hardcode hay sao chép DOM. RolePageHeader áp dụng cho các trang nghiệp vụ/quản trị/giáo viên; overview và danh sách giáo viên chuyển phần tiêu đề riêng tương ứng, 404/dev UI cũng hỗ trợ. Ngoài AppLayout dùng fallback tại chỗ. CSS ở `app/layouts/compact-page-header.css`; tiêu đề cũ không để lại khối trống, header thu gọn tìm kiếm ở chiều rộng nhỏ.
 
 Đã xem tổng quan desktop 1482×734 và mobile 390×844, bỏ dòng ngữ cảnh và breadcrumb tách khỏi header; đã reset viewport. Typecheck/lint/build/format và 94 tests đạt. Chưa đối chiếu trực quan mọi route/tab hoặc trạng thái lỗi với header mới.
+
+Breadcrumb — phản hồi tiếp 17/11: rút còn đúng hai phần ở mọi trang, icon theo roleDefinitions (shield/assignment/user) là Link về tổng quan vai trò, tiếp theo là tên mục hiện tại aria-current. Bỏ icon home, chữ không gian và cấp Phân công phụ của solver. Giữ vị trí dưới header. Đã xem desktop trang Phân công; typecheck/lint/format đạt.
+
+Phản hồi tiếp 17/11: breadcrumb hai phần đưa lại vào header, desktop đặt cạnh khối tiêu đề/mô tả để không thêm hàng; mobile được wrap khi thiếu chỗ, nhãn dài ellipsis và giữ tên truy cập. Sidebar rail căn giữa brand/workspace/nav/avatar; nút mở rộng giữ ở góc phải logo, thanh cuộn nav ẩn để tránh dịch trục icon (vẫn cuộn và dùng bàn phím). Nguồn & đối soát/Nguồn & bí danh dùng glyph compare gốc thay file; Tài liệu đã phát hành giữ file. Đã xem desktop 1482×734 ở rail; typecheck/lint/build đạt, chưa QA lại mobile cho lượt chỉnh này.
+
+## Toolbar, lịch và phân trang gọn — 17/11/2026
+
+- Bỏ padding đầu khối nút cũ sau khi chuyển tiêu đề lên header; main bắt đầu cách header 16px. Danh mục và Năm học & đợt đặt nút Thêm cùng hàng tab (`page-toolbar`). Giáo viên đặt Thêm trong hàng lọc. Phân công, Kiểm tra, Nhu cầu, Solver, Tải, Thống kê dùng `page-control-row` để bộ chọn/tab và nút thao tác cùng hàng khi đủ rộng; mobile wrap, giữ handler và dữ liệu. Nhu cầu gom bộ chọn đợt và thao tác trong cùng panel.
+- Hai ô Từ ngày/Đến ngày của Nhật ký dùng `shared/ui/date-picker.tsx` và CSS riêng: popup tiếng Việt, tuần bắt đầu thứ Hai, chọn tháng/năm, ngày hiện tại/ngày được chọn, Hôm nay/Xóa. Giá trị query/form vẫn YYYY-MM-DD, hiển thị dd/mm/yyyy; có phím mũi tên/Home/End/PageUp/PageDown, Enter chọn, Escape trả focus, native popover click ngoài đóng, tự đóng khi trang cuộn/resize. Chưa chuyển các input date khác.
+- Pagination chung, danh sách giáo viên và chi tiết phân công chỉ còn mũi tên; title/aria-label Trang trước/Trang sau, giữ disabled/busy và logic phân trang. Không đổi nhãn so sánh Trước/Sau của dữ liệu.
+- Sidebar: theo phản hồi cuối, quay lại chevron gốc; bỏ cặp PanelLeft thử trước đó. Rail 68px có nút 28px với tâm x=68px, y=38px (giữa header 76px), giữ vị trí trên đường biên. Root rail overflow hidden, nav chỉ cuộn dọc để tránh scrollbar/vạch dọc thừa; logo/icon vẫn cùng trục.
+- QA desktop: đã xem Danh mục/Năm học & đợt/Giáo viên/Solver/Nhu cầu, lịch Nhật ký, pagination và rail; đo tâm nút đúng đường biên. Lịch chọn bằng ArrowRight/Enter, chọn tháng, Hôm nay/Xóa và query lọc cập nhật đúng. Solver mobile 390×844 đã xem, reset viewport và đóng tab QA riêng. Chưa QA trực quan mọi tab/mọi route hoặc lịch mobile. Typecheck/lint/build và 94 tests đạt; prototype nguyên SHA-256.
+
+Sidebar — sửa viền lặp 17/11: desktop bỏ transition width/padding của sidebar và margin-left của app (trước 240ms riêng biệt), đổi kích thước đồng thời để tránh vệt mép trong lúc thu gọn/scale phân số. Chỉ một pseudo-element fixed 1px tạo phân cách, bỏ border-right/shadow của sidebar; giữ icon/nút và transition xoay chevron, mobile drawer không thay. Đây là điều chỉnh motion có chủ đích theo lỗi người dùng báo. Đã thử mở rồi thu gọn, đo sidebarRight và contentLeft đều 68px, border-right 0/separator 1px; đã xem rail sau cập nhật. Build và format đạt.
+
+## Điều chỉnh hoàn thiện theo phản hồi 17/11/2026
+
+- Filter text/search dùng `styles/filter-controls.css`, đủ chiều rộng placeholder thay giới hạn 180px; danh mục đo 320px cho cả tìm tên/mã và mã chính xác, ngày/select vẫn gọn. Tìm phân công 320px; giáo viên tên co giãn từ 260px, mã 210px; mobile về toàn hàng. Không đổi placeholder hoặc query.
+- Ba tab Lớp học/Khối lớp/Cấp học đồng bộ edit/trash cùng hàng, title/aria-label và handler/xác nhận xóa giữ nguyên.
+- PillBadge và badge tổng quan bỏ dot, giữ chỉ báo live/biểu đồ khác. `styles/status-badges.css` quy định nền/chữ/viền: thành công/đạt xanh, cảnh báo/thiếu dữ liệu vàng, lỗi/từ chối đỏ, chưa xác định trung tính. SUCCESS đo màu #287e72, nền #e7f2ed, viền pha xanh.
+- Lịch: tháng rộng 94px, năm 76px, cùng cao 28px; override đủ specificity để không nhận chiều cao control/filter 40px.
+- Tổng quan: chuyển Thống kê/Sinh đề xuất vào mvp-actions của ReadinessBanner; cả 4 nút cùng 40px, cùng padding/font/box-sizing, wrap khi hẹp. Header không còn hàng nút riêng.
+- Motion sidebar thay cách tắt chuyển động tạm thời trước đó: đăng ký --sidebar-current-width với inherits:false, chỉ truyền tới sidebar/brand/nút/separator. Chỉ rail đổi width trong 280ms spring; app tính layout một lần rồi trượt bằng WAAPI translateX, không reflow bảng mỗi frame. Khi nhấn tiếp, lấy vị trí hiện tại/hủy animation cũ; reduced-motion và thiếu API thì chuyển ngay. Nhãn hiện 180ms ease-out, icon giữ gần trục trái trong lúc rail đổi rộng. Một separator và nút theo cùng chiều rộng, giữ chevron/vị trí biên.
+- QA desktop 1482×678: đã xem placeholder đầy đủ, đo edit/trash cùng y ở cả ba tab, tháng/năm đúng kích thước, màu SUCCESS và 4 nút tổng quan cùng y/cao 40px. Đã thử motion hai chiều, thấy transform hoạt động và kiểm tra mép ở trạng thái cuối; chưa đo FPS hoặc QA lại mobile lượt này. Typecheck/lint/build và 94 tests đạt, prototype không đổi. Đã đóng tab QA riêng.

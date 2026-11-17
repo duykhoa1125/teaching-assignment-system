@@ -1,4 +1,4 @@
-/* User-requested compact page identity above the breadcrumb. */
+/* User-requested compact page identity and breadcrumb inside the topbar. */
 .tass-shell .topbar {
     height: auto;
     min-height: 76px;
@@ -16,8 +16,16 @@
 }
 
 .tass-shell .header-page-stack {
+    display: flex;
+    align-items: center;
+    gap: 18px;
     min-width: 0;
     flex: 1;
+}
+
+.tass-shell .header-page-title {
+    flex: 1;
+    min-width: 0;
 }
 
 .tass-shell .header-page-copy h1 {
@@ -45,11 +53,21 @@
 
 .tass-shell .header-breadcrumb {
     display: flex;
-    padding: 8px 32px;
+    padding: 0;
     font-size: 10px;
     line-height: 1.5;
     gap: 7px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    flex-shrink: 1;
+    min-width: 0;
+    max-width: min(200px, 100%);
+    white-space: nowrap;
+}
+
+.tass-shell .header-breadcrumb b {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .tass-shell .header-breadcrumb .icon {
@@ -62,8 +80,125 @@
     margin-bottom: 16px;
 }
 
+/* The page title now lives in the topbar; its former vertical space is gone. */
+.tass-shell .main {
+    padding-top: 16px;
+}
+
+.tass-shell .main .page-heading > div {
+    /* Late-loaded page/demo rules still reserve space for the old title. */
+    padding-top: 0 !important;
+}
+
+.tass-shell .page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 12px;
+    margin-bottom: 16px;
+}
+
+.tass-shell .main .page-toolbar .page-heading {
+    order: 2;
+    margin: 0;
+}
+
+.tass-shell .page-toolbar > div:not(.page-heading) {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.tass-shell .page-toolbar .mvp-tabs {
+    margin: 0;
+    padding-bottom: 0;
+    border-bottom: 0;
+}
+
+.tass-shell .page-toolbar + .mvp-filter {
+    margin-top: 0;
+}
+
+.tass-shell .page-control-row {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.tass-shell .main .page-control-row > .page-heading {
+    order: 2;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.tass-shell .page-control-row > div:not(.page-heading) {
+    flex: 1 1 360px;
+    min-width: 0;
+    margin: 0;
+}
+
+.tass-shell .page-control-row :is(.mvp-filter, .mvp-tabs) {
+    margin-block: 0;
+}
+
+.tass-shell .page-control-row .results-round-strip label {
+    flex: 1 1 150px;
+    max-width: 320px;
+}
+
+.tass-shell .page-control-row:has(> .banner) {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px 16px;
+    align-items: center;
+}
+
+.tass-shell .page-control-row > .banner {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
 .tass-shell .main .page-heading:empty {
     display: none;
+}
+
+.tass-shell .overview-readiness-toolbar {
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.tass-shell .overview-readiness-toolbar > span {
+    flex: 1 1 280px;
+    min-width: 0;
+}
+
+.tass-shell .overview-readiness-toolbar .mvp-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tass-shell .overview-readiness-toolbar .btn {
+    height: var(--control-height, 40px);
+    min-height: var(--control-height, 40px);
+    padding: 0 14px;
+    margin-top: 0;
+    font-size: var(--control-font, 12px);
+    line-height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-sizing: border-box;
 }
 
 @media (max-width: 1000px) {
@@ -79,8 +214,20 @@
 }
 
 @media (max-width: 700px) {
-    .tass-shell .header-breadcrumb {
-        padding-inline: 18px;
+    .tass-shell .main .page-control-row > .page-heading {
+        flex: 1 1 100%;
+        min-width: 0;
+    }
+    .tass-shell .page-control-row .page-heading > div {
+        flex-wrap: wrap;
+        max-width: 100%;
+    }
+    .tass-shell .header-page-stack {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .tass-shell .header-page-title {
+        flex-basis: 100%;
     }
     .tass-shell .topbar {
         gap: 8px;
