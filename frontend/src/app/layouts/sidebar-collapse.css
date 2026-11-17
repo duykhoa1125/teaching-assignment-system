@@ -1,0 +1,131 @@
+/* Desktop rail is a user-requested addition; the mobile drawer stays full width. */
+.tass-shell .sidebar-toggle {
+    display: none;
+}
+
+@media (min-width: 701px) {
+    .tass-shell .sidebar {
+        transition:
+            width 240ms var(--spring),
+            padding 240ms var(--spring);
+    }
+    .tass-shell .app {
+        transition: margin-left 240ms var(--spring);
+    }
+    .tass-shell .sidebar-toggle {
+        display: inline-grid;
+        position: absolute;
+        top: 0;
+        right: -8px;
+        width: 28px;
+        min-width: 28px;
+        height: 28px;
+        min-height: 28px;
+        padding: 0;
+    }
+    .tass-shell .sidebar .brand {
+        position: relative;
+    }
+    .tass-shell .sidebar-toggle > .icon {
+        transition: transform 160ms ease;
+    }
+    .tass-shell .sidebar-toggle[aria-expanded='true'] > .icon {
+        transform: rotate(180deg);
+    }
+    .tass-shell.sidebar-collapsed {
+        --sidebar: 80px;
+    }
+    .tass-shell.sidebar-collapsed .sidebar {
+        padding-inline: 12px;
+    }
+    .tass-shell.sidebar-collapsed .brand {
+        justify-content: flex-start;
+        margin-inline: -4px;
+        padding-inline: 0;
+    }
+    .tass-shell.sidebar-collapsed .sidebar-toggle {
+        top: 4px;
+        right: 0;
+    }
+    .tass-shell.sidebar-collapsed .brandmark {
+        flex-shrink: 0;
+    }
+    .tass-shell.sidebar-collapsed .brand-copy,
+    .tass-shell.sidebar-collapsed .nav-label,
+    .tass-shell.sidebar-collapsed .nav button > span:not(.count),
+    .tass-shell.sidebar-collapsed .workspace > .grow,
+    .tass-shell.sidebar-collapsed .workspace > .icon,
+    .tass-shell.sidebar-collapsed .semester-box .between,
+    .tass-shell.sidebar-collapsed .role-boundary,
+    .tass-shell.sidebar-collapsed .account-identity,
+    .tass-shell.sidebar-collapsed .account-control > .icon {
+        display: none;
+    }
+    .tass-shell.sidebar-collapsed .workspace {
+        justify-content: center;
+        min-height: 44px;
+        padding: 0;
+        border-color: transparent;
+        background: transparent;
+        box-shadow: none;
+    }
+    .tass-shell.sidebar-collapsed .workspace:hover .school-symbol {
+        color: var(--primary);
+    }
+    .tass-shell.sidebar-collapsed .mvp-nav-group {
+        height: 1px;
+        margin: 12px 8px;
+        padding: 0;
+        overflow: hidden;
+        font-size: 0;
+        background: var(--line);
+    }
+    .tass-shell.sidebar-collapsed .nav button {
+        justify-content: center;
+        min-height: 44px;
+        padding: 10px 0;
+    }
+    .tass-shell.sidebar-collapsed .nav {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        align-content: start;
+        scrollbar-width: thin;
+    }
+    .tass-shell.sidebar-collapsed .nav button.active::before {
+        left: 0;
+    }
+    .tass-shell.sidebar-collapsed .sidebar-bottom {
+        flex-shrink: 0;
+    }
+    .tass-shell.sidebar-collapsed .nav button .count {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        min-width: 15px;
+        padding: 0 3px;
+        font-size: 9px;
+        line-height: 15px;
+    }
+    .tass-shell.sidebar-collapsed .semester-box {
+        padding-inline: 0;
+    }
+    .tass-shell.sidebar-collapsed .account-control {
+        justify-content: center;
+        padding-inline: 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tass-shell .sidebar,
+    .tass-shell .app,
+    .tass-shell .sidebar-toggle > .icon {
+        transition: none;
+    }
+}
+
+@media print {
+    .tass-shell .sidebar-toggle {
+        display: none;
+    }
+}

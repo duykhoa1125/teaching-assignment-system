@@ -5,6 +5,8 @@ import { AppRouter } from '@/app/router';
 import '@/styles/global.css';
 import '@/app/layouts/prototype-shell.css';
 import '@/styles/icon-treatment.css';
+import '@/styles/table-spacing.css';
+import '@/styles/dropdowns.css';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('Không tìm thấy phần tử gốc của ứng dụng.');

@@ -138,3 +138,16 @@ Giữ nguyên bố cục, màu, font, glyph và hiệu ứng. Sửa hành vi: gi
 Icon nghiệp vụ dùng nét và phần tô bên trong SVG như sidebar, không đặt trong ô nền/viền/bóng màu riêng. Đây là ngoại lệ có chủ đích so với demo: trước đây bộ chọn học kỳ, KPI, môn học, thẻ quản trị, lịch sử/tài liệu và trạng thái trống/lỗi có tile bao quanh; nay tile trong suốt, giữ màu và SVG gốc, kích thước, khoảng cách, vùng bấm và chuyển động. Nền của cả dòng được chọn, nút có nhãn, trạng thái, ảnh đại diện và logo giữ nguyên; nút chỉ có icon vẫn có chỉ báo focus bàn phím.
 
 `src/styles/icon-treatment.css` áp dụng chung sau CSS demo; wrapper dùng CSS module thêm lớp `icon-surface`. Icon mới cũng theo quy tắc này. Không sửa prototype hoặc CSS sinh bởi công cụ trích demo.
+
+## Sidebar desktop thu gọn — yêu cầu người dùng 17/11/2026
+
+Thêm icon Thu gọn/Mở rộng ở góc phải hàng logo trong header sidebar trên màn hình lớn hơn 700px; không có dòng nút/nhãn ở chân sidebar. Chế độ gọn rộng 80px, giữ logo, icon gốc, active, số lượng cần xử lý, thanh tiến độ và tài khoản; tên mục có nhãn truy cập và tooltip. Vùng nội dung mở rộng theo sidebar, các mục điều hướng cuộn riêng khi thiếu chiều cao để nút mở rộng/tài khoản vẫn sẵn dùng. Lựa chọn lưu ở localStorage `tass-sidebar-collapsed` và vẫn đổi được khi storage bị chặn.
+
+Đây là phần bổ sung được người dùng yêu cầu so với demo, triển khai trong `app/layouts/sidebar-collapse.css`, không sửa CSS sinh/prototype. Giữ menu mobile đầy đủ 270px và nút mở menu cũ; tắt chuyển động khi prefers-reduced-motion.
+
+## Khoảng cách bảng, thẻ tải và dropdown — 17/11/2026
+
+- Bộ lọc chung cách kết quả 20px. Pagination trong panel có padding 16px 20px (mobile 14px 16px), không áp sát mép bảng. Các bảng danh mục, đợt/học kỳ/năm học, nhu cầu dùng chung; bảng giáo viên đã có toolbar/footer padding riêng. Quy tắc bọc chữ của bảng FE-05 chuyển vào `styles/table-spacing.css` để không phụ thuộc việc đã ghé trang kết quả trước đó.
+- Thẻ thống kê Tải & định mức thiếu padding vì công cụ trích demo bỏ sót lớp `.metric`. Đã bổ sung tên lớp trong `scripts/extract-demo-shell.mjs` rồi sinh lại CSS, khôi phục đúng padding/min-height và các breakpoint của demo; không sửa tay CSS sinh hoặc prototype.
+- Bộ chọn học kỳ: nhấn lần hai đóng; vẫn hỗ trợ nhấn ngoài, Escape/trả focus và `aria-expanded`.
+- `styles/dropdowns.css` đồng bộ select/filter/form với font Be Vietnam Pro, màu nền/viền/bo góc, menu option, hover/selected/focus, chiều cao mục chọn và glyph down/check gốc. Dùng native select với `appearance: base-select` khi được hỗ trợ, giữ hành vi form/bàn phím; trình duyệt cũ dùng picker native và cùng kiểu control. Select multiple/listbox giữ chế độ gốc. Tham khảo cơ chế: [MDN customizable select](https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Forms/Customizable_select).

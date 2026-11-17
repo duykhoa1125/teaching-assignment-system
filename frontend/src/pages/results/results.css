@@ -36,16 +36,6 @@
     width: auto;
 }
 
-.fe05-page .mvp-table td {
-    white-space: normal;
-}
-
-.fe05-page .mvp-table th:last-child,
-.fe05-page .mvp-table td:last-child {
-    width: 1%;
-    white-space: nowrap;
-}
-
 .fe05-page .mvp-toolbar input:not([type='date']) {
     min-width: min(100%, 260px);
     max-width: 340px;

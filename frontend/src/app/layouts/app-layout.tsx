@@ -24,6 +24,7 @@ import type { AuthRole } from '@/features/session/types';
 import { ShellModal } from './shell-modal';
 import { ShellSearch } from './shell-search';
 import './shell-interactions.css';
+import './sidebar-collapse.css';
 
 type QuickState = {
     left: number;
@@ -51,12 +52,32 @@ export function AppLayout() {
     } = useSession();
 
     const [mobileOpen, setMobileOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        try {
+            return (
+                window.localStorage.getItem('tass-sidebar-collapsed') === 'true'
+            );
+        } catch {
+            return false;
+        }
+    });
     const [quick, setQuick] = useState<QuickState | null>(null);
     const menuRef = useRef<HTMLButtonElement>(null);
     const workspaceRef = useRef<HTMLButtonElement>(null);
     const searchRef = useRef<HTMLButtonElement>(null);
     const quickRef = useRef<HTMLDivElement>(null);
     const transitionRunning = useRef(false);
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(
+                'tass-sidebar-collapsed',
+                String(sidebarCollapsed),
+            );
+        } catch {
+            // The sidebar remains usable when browser storage is unavailable.
+        }
+    }, [sidebarCollapsed]);
 
     const teacherNotificationsQuery = useTeacherPersonalQuery(
         contextId,
@@ -81,6 +102,12 @@ export function AppLayout() {
         requestAnimationFrame(() => menuRef.current?.focus());
     }
     function openQuick(anchor: HTMLElement) {
+        if (quick) {
+            quickRef.current?.hidePopover?.();
+            setQuick(null);
+            workspaceRef.current?.focus();
+            return;
+        }
         const rect = anchor.getBoundingClientRect();
         setQuick({
             left: Math.max(14, Math.min(rect.left, innerWidth - 338)),
@@ -159,11 +186,9 @@ export function AppLayout() {
                 setMobileOpen(false);
                 setModal('search');
             }
-            if (
-                event.key === 'Escape' &&
-                quick &&
-                typeof quickRef.current?.hidePopover !== 'function'
-            ) {
+            if (event.key === 'Escape' && quick) {
+                event.preventDefault();
+                quickRef.current?.hidePopover?.();
                 setQuick(null);
                 workspaceRef.current?.focus();
             }
@@ -174,7 +199,7 @@ export function AppLayout() {
                     document.querySelectorAll<HTMLButtonElement>(
                         '#sidebar button:not(:disabled)',
                     ),
-                );
+                ).filter((button) => button.getClientRects().length > 0);
                 const first = buttons[0],
                     last = buttons.at(-1);
                 if (event.shiftKey && document.activeElement === first) {
@@ -200,7 +225,9 @@ export function AppLayout() {
     }, [mobileOpen, quick, modal, setModal]);
 
     return (
-        <div className={`tass-shell${mobileOpen ? ' mobile-nav-open' : ''}`}>
+        <div
+            className={`tass-shell${mobileOpen ? ' mobile-nav-open' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
+        >
             <a className="sr-only" href="#main-content">
                 Đi tới nội dung chính
             </a>
@@ -213,19 +240,44 @@ export function AppLayout() {
                     <div className="brandmark">
                         <BrandMark size={27} />
                     </div>
-                    <div>
+                    <div className="brand-copy">
                         <div className="brandword">
                             tass<span>.</span>
                         </div>
                         <div className="brand-caption">THE ART OF BALANCE</div>
                     </div>
+                    <button
+                        type="button"
+                        className="icon-btn sidebar-toggle"
+                        aria-controls="sidebar"
+                        aria-expanded={!sidebarCollapsed}
+                        aria-label={
+                            sidebarCollapsed
+                                ? 'Mở rộng sidebar'
+                                : 'Thu gọn sidebar'
+                        }
+                        title={
+                            sidebarCollapsed
+                                ? 'Mở rộng sidebar'
+                                : 'Thu gọn sidebar'
+                        }
+                        onClick={() => {
+                            quickRef.current?.hidePopover?.();
+                            setQuick(null);
+                            setSidebarCollapsed((value) => !value);
+                        }}
+                    >
+                        <Icon name="chevron" />
+                    </button>
                 </div>
                 <button
                     ref={workspaceRef}
                     className="workspace"
                     type="button"
                     aria-label="Chọn học kỳ và đợt phân công"
+                    title={`${context?.school ?? 'THPT An Hòa'} · ${context?.label ?? 'Chọn học kỳ và đợt phân công'}`}
                     aria-haspopup="dialog"
+                    aria-expanded={Boolean(quick)}
                     disabled={
                         contexts.length === 0 ||
                         (isMockMode && Boolean(account && !account.school))
@@ -263,6 +315,8 @@ export function AppLayout() {
                             )}
                             <button
                                 type="button"
+                                aria-label={item.label}
+                                title={item.label}
                                 className={
                                     pathname === item.path ? 'active' : ''
                                 }
@@ -299,7 +353,10 @@ export function AppLayout() {
                 </nav>
                 <div className="sidebar-bottom">
                     {role === 'manager' && hasSchoolScope && context ? (
-                        <div className="semester-box">
+                        <div
+                            className="semester-box"
+                            title={`${context.round} · Tiến độ phân công ${progress}%`}
+                        >
                             <div className="between">
                                 <strong>
                                     {context.round} · Tiến độ phân công
@@ -327,12 +384,17 @@ export function AppLayout() {
                             </span>
                         </div>
                     ) : null}
+
                     <button
                         type="button"
                         className="profile account-control"
                         aria-label="Tài khoản cá nhân"
                         aria-haspopup="dialog"
-                        title="Hồ sơ, cài đặt và vai trò"
+                        title={
+                            sidebarCollapsed
+                                ? `${account?.name ?? 'Nguyễn Minh Khoa'} · ${roleDef.label}`
+                                : 'Hồ sơ, cài đặt và vai trò'
+                        }
                         onClick={() => {
                             setMobileOpen(false);
                             if (isMockMode && !isAuthenticated) {

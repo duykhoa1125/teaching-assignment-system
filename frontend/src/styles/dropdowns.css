@@ -1,0 +1,118 @@
+/* The arrow uses the original prototype `down` glyph. */
+.tass-shell select:not([multiple]):not([size]) {
+    appearance: none;
+    font-family: var(--body);
+    color: var(--text);
+    background-color: var(--surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23686d61' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    padding-right: 36px;
+    border-color: var(--line);
+    border-radius: var(--control-radius, 7px);
+    cursor: pointer;
+}
+.tass-shell select:not([multiple]):not([size]):hover:not(:disabled) {
+    border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
+}
+.tass-shell select:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+.tass-shell .mvp-filter > select {
+    min-inline-size: min(180px, 100%);
+}
+
+/* Retain native form, keyboard and accessibility behavior; older browsers
+   keep their native picker with the same styled control above. */
+@supports (appearance: base-select) {
+    .tass-shell select:not([multiple]):not([size]),
+    .tass-shell select:not([multiple]):not([size])::picker(select) {
+        appearance: base-select;
+    }
+    .tass-shell select:not([multiple]):not([size]) {
+        background-image: none;
+        padding-right: 12px;
+        gap: 10px;
+    }
+    .tass-shell select::picker(select) {
+        font-family: var(--body);
+        font-size: var(--control-font, 12px);
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: var(--floating-shadow);
+        padding: 6px;
+        margin-block-start: 6px;
+        max-block-size: min(360px, 60dvh);
+        max-inline-size: calc(100vw - 24px);
+        overflow: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+    }
+    .tass-shell select::picker-icon {
+        content: '';
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+        margin-inline-start: auto;
+        background: currentColor;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+        transition: transform 160ms ease;
+    }
+    .tass-shell select:open::picker-icon {
+        transform: rotate(180deg);
+    }
+    .tass-shell select option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 36px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font: inherit;
+        line-height: 1.6;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        cursor: pointer;
+    }
+    .tass-shell select option:is(:hover, :focus-visible) {
+        background: var(--soft);
+        outline-offset: -2px;
+    }
+    .tass-shell select option:checked {
+        color: var(--primary);
+        background: var(--tint);
+        font-weight: 500;
+    }
+    .tass-shell select option:disabled {
+        color: var(--muted);
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+    .tass-shell select option::checkmark {
+        content: '';
+        order: 1;
+        margin-inline-start: auto;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        color: var(--primary);
+        background: currentColor;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 12 4 4L19 6'/%3E%3C/svg%3E")
+            center / contain no-repeat;
+    }
+    @media (pointer: coarse) {
+        .tass-shell select option {
+            min-height: 44px;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .tass-shell select::picker-icon {
+            transition: none;
+        }
+    }
+}
