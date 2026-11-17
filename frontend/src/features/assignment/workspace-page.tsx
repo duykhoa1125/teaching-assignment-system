@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -436,7 +437,7 @@ function Workspace({
                 <div className="mvp-filter assignment-context">
                     <label>
                         Đợt phân công
-                        <select
+                        <Select
                             aria-label="Chọn đợt phân công"
                             value={round.id}
                             onChange={(event) =>
@@ -448,12 +449,12 @@ function Workspace({
                                     {item.round_code}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     {plan && workspaceQuery.data && (
                         <label>
                             Phiên bản
-                            <select
+                            <Select
                                 aria-label="Chọn phiên bản phương án"
                                 value={plan.version_id}
                                 onChange={(event) =>
@@ -475,7 +476,7 @@ function Workspace({
                                             : ' · Lưu trữ'}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </label>
                     )}
                 </div>
@@ -682,7 +683,7 @@ function Workspace({
                                     }}
                                 />
                             </div>
-                            <select
+                            <Select
                                 aria-label="Lọc môn học"
                                 value={subject}
                                 onChange={(event) => {
@@ -703,7 +704,7 @@ function Workspace({
                                         {name}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </div>
                     </div>
                     {rowsQuery.isError ? (

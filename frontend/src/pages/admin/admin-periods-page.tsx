@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/admin/catalog-actions.css';
 import '@/pages/preparation/preparation-ui.css';
 import { useSchoolsQuery } from '@/features/teachers/queries';
@@ -675,7 +676,7 @@ export function AdminPeriodsPage() {
 
             {tab === 'rounds' ? (
                 <div className="mvp-filter section-gap">
-                    <select
+                    <Select
                         aria-label="Lọc theo học kỳ"
                         value={roundSemesterFilter}
                         onChange={(e) => {
@@ -690,8 +691,8 @@ export function AdminPeriodsPage() {
                                 {yearLabel(s.academic_year_id)}
                             </option>
                         ))}
-                    </select>
-                    <select
+                    </Select>
+                    <Select
                         aria-label="Lọc theo trạng thái đợt"
                         value={roundStatusFilter}
                         onChange={(e) => {
@@ -706,13 +707,13 @@ export function AdminPeriodsPage() {
                         <option value="ACTIVE">Đang mở (ACTIVE)</option>
                         <option value="CLOSED">Đã đóng (CLOSED)</option>
                         <option value="ARCHIVED">Lưu trữ (ARCHIVED)</option>
-                    </select>
+                    </Select>
                 </div>
             ) : null}
 
             {tab === 'semesters' ? (
                 <div className="mvp-filter section-gap">
-                    <select
+                    <Select
                         aria-label="Lọc theo năm học"
                         value={semesterYearFilter}
                         onChange={(e) => {
@@ -726,7 +727,7 @@ export function AdminPeriodsPage() {
                                 {yearLabel(y.id)}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
             ) : null}
 
@@ -749,17 +750,24 @@ export function AdminPeriodsPage() {
                 <section className="panel">
                     {tab === 'rounds' ? (
                         <>
-                            {roundsQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách đợt phân công…"
-                                    detail="Đang đọc dữ liệu đợt phân công."
+                            {roundsQuery.isLoading ||
+                            (roundsQuery.isPlaceholderData &&
+                                roundsPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách đợt phân công"
+                                    columns={roundColumns}
+                                    updating={roundsQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : roundsPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách đợt phân công"
                                     columns={roundColumns}
+                                    updating={roundsQuery.isFetching}
                                     rows={roundsPage.items}
                                     rowKey={(row) => row.id}
                                 />
@@ -783,17 +791,24 @@ export function AdminPeriodsPage() {
 
                     {tab === 'semesters' ? (
                         <>
-                            {semestersPageQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách học kỳ…"
-                                    detail="Đang đọc dữ liệu học kỳ."
+                            {semestersPageQuery.isLoading ||
+                            (semestersPageQuery.isPlaceholderData &&
+                                semestersPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách học kỳ"
+                                    columns={semesterColumns}
+                                    updating={semestersPageQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : semestersPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách học kỳ"
                                     columns={semesterColumns}
+                                    updating={semestersPageQuery.isFetching}
                                     rows={semestersPage.items}
                                     rowKey={(row) => row.id}
                                 />
@@ -817,17 +832,24 @@ export function AdminPeriodsPage() {
 
                     {tab === 'years' ? (
                         <>
-                            {yearsPageQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách năm học…"
-                                    detail="Đang đọc dữ liệu năm học."
+                            {yearsPageQuery.isLoading ||
+                            (yearsPageQuery.isPlaceholderData &&
+                                yearsPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách năm học"
+                                    columns={yearColumns}
+                                    updating={yearsPageQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : yearsPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách năm học"
                                     columns={yearColumns}
+                                    updating={yearsPageQuery.isFetching}
                                     rows={yearsPage.items}
                                     rowKey={(row) => row.id}
                                 />

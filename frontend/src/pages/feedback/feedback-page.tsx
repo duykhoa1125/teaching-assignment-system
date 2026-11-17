@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/results/results.css';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
@@ -696,7 +697,7 @@ export function FeedbackPage() {
                     ) : null}
                     <label className="field full">
                         Quyết định
-                        <select
+                        <Select
                             name="decision"
                             value={decision}
                             onChange={(e) =>
@@ -707,7 +708,7 @@ export function FeedbackPage() {
                                 Chấp thuận / ghi nhận
                             </option>
                             <option value="DECLINED">Không chấp thuận</option>
-                        </select>
+                        </Select>
                     </label>
                     <label className="field full">
                         Kết quả và lý do (bắt buộc)

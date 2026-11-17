@@ -33,6 +33,13 @@ type QuickState = {
     top: number;
 };
 
+type RailTooltipState = {
+    label: string;
+    count?: number;
+    top: number;
+    left: number;
+};
+
 export function AppLayout() {
     const [headingTarget, setHeadingTarget] = useState<HTMLDivElement | null>(
         null,
@@ -67,34 +74,36 @@ export function AppLayout() {
         }
     });
     const [quick, setQuick] = useState<QuickState | null>(null);
+    const [railTip, setRailTip] = useState<RailTooltipState | null>(null);
+    const shellRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLButtonElement>(null);
     const workspaceRef = useRef<HTMLButtonElement>(null);
     const searchRef = useRef<HTMLButtonElement>(null);
     const quickRef = useRef<HTMLDivElement>(null);
     const transitionRunning = useRef(false);
-    const contentSlide = useRef<Animation | null>(null);
 
     function toggleSidebar() {
-        const content = document.querySelector<HTMLElement>('.tass-shell .app');
-        const previousLeft = content?.getBoundingClientRect().left;
-        contentSlide.current?.cancel();
-        flushSync(() => setSidebarCollapsed((value) => !value));
-        if (
-            !content ||
-            previousLeft === undefined ||
-            typeof content.animate !== 'function' ||
-            typeof CSS.registerProperty !== 'function' ||
-            matchMedia('(prefers-reduced-motion: reduce)').matches
-        )
-            return;
-        const delta = previousLeft - content.getBoundingClientRect().left;
-        contentSlide.current = content.animate(
-            [{ transform: `translateX(${delta}px)` }, { transform: 'none' }],
-            { duration: 280, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
-        );
+        setRailTip(null);
+        setSidebarCollapsed((value) => !value);
     }
 
-    useEffect(() => () => contentSlide.current?.cancel(), []);
+    function showRailTip(element: HTMLElement, label: string, count?: number) {
+        if (!sidebarCollapsed || window.innerWidth <= 700 || quick) return;
+        const rect = element.getBoundingClientRect();
+        setRailTip({
+            label,
+            count,
+            top: rect.top + rect.height / 2,
+            left: Math.max(rect.right + 10, 82),
+        });
+    }
+
+    useEffect(() => {
+        const raf = requestAnimationFrame(() => {
+            shellRef.current?.setAttribute('data-sidebar-ready', 'true');
+        });
+        return () => cancelAnimationFrame(raf);
+    }, []);
 
     useEffect(() => {
         try {
@@ -130,6 +139,7 @@ export function AppLayout() {
         requestAnimationFrame(() => menuRef.current?.focus());
     }
     function openQuick(anchor: HTMLElement) {
+        setRailTip(null);
         if (quick) {
             quickRef.current?.hidePopover?.();
             setQuick(null);
@@ -143,6 +153,7 @@ export function AppLayout() {
         });
     }
     function go(to: string) {
+        setRailTip(null);
         quickRef.current?.hidePopover?.();
         setQuick(null);
         setModal(null);
@@ -239,21 +250,33 @@ export function AppLayout() {
                 }
             }
         };
+        let resizeTimer = 0;
         const onResize = () => {
             if (innerWidth > 700) setMobileOpen(false);
             quickRef.current?.hidePopover?.();
             setQuick(null);
+            setRailTip(null);
+            shellRef.current?.removeAttribute('data-sidebar-ready');
+            window.clearTimeout(resizeTimer);
+            resizeTimer = window.setTimeout(() => {
+                shellRef.current?.setAttribute('data-sidebar-ready', 'true');
+            }, 120);
         };
         addEventListener('keydown', onKey);
         addEventListener('resize', onResize);
         return () => {
+            window.clearTimeout(resizeTimer);
             removeEventListener('keydown', onKey);
             removeEventListener('resize', onResize);
         };
     }, [mobileOpen, quick, modal, setModal]);
 
+    const workspaceLabel = `${context?.school ?? 'THPT An Hòa'} · ${context?.label ?? 'Chọn học kỳ và đợt phân công'}`;
+    const accountLabel = `${account?.name ?? 'Nguyễn Minh Khoa'} · ${roleDef.label}`;
+
     return (
         <div
+            ref={shellRef}
             className={`tass-shell${mobileOpen ? ' mobile-nav-open' : ''}${sidebarCollapsed ? ' sidebar-collapsed' : ''}`}
         >
             <a className="sr-only" href="#main-content">
@@ -263,6 +286,12 @@ export function AppLayout() {
                 className={`sidebar${mobileOpen ? ' open' : ''}`}
                 id="sidebar"
                 aria-label="Điều hướng chính"
+                onMouseLeave={() => setRailTip(null)}
+                onBlur={(event) => {
+                    if (!event.currentTarget.contains(event.relatedTarget)) {
+                        setRailTip(null);
+                    }
+                }}
             >
                 <div className="brand">
                     <div className="brandmark">
@@ -276,39 +305,54 @@ export function AppLayout() {
                     </div>
                     <button
                         type="button"
-                        className="icon-btn sidebar-toggle"
-                        aria-controls="sidebar"
-                        aria-expanded={!sidebarCollapsed}
-                        aria-label={
-                            sidebarCollapsed
-                                ? 'Mở rộng sidebar'
-                                : 'Thu gọn sidebar'
-                        }
-                        title={
-                            sidebarCollapsed
-                                ? 'Mở rộng sidebar'
-                                : 'Thu gọn sidebar'
-                        }
-                        onClick={() => {
-                            quickRef.current?.hidePopover?.();
-                            setQuick(null);
-                            toggleSidebar();
-                        }}
+                        className="icon-btn sidebar-mobile-close"
+                        aria-label="Đóng điều hướng"
+                        title="Đóng điều hướng"
+                        onClick={closeMobile}
                     >
-                        <Icon name="chevron" />
+                        <Icon name="close" />
                     </button>
                 </div>
+                <button
+                    type="button"
+                    className="icon-btn sidebar-toggle"
+                    aria-controls="sidebar"
+                    aria-expanded={!sidebarCollapsed}
+                    aria-label={
+                        sidebarCollapsed ? 'Mở rộng sidebar' : 'Thu gọn sidebar'
+                    }
+                    title={sidebarCollapsed ? undefined : 'Thu gọn sidebar'}
+                    onMouseEnter={(event) =>
+                        showRailTip(event.currentTarget, 'Mở rộng sidebar')
+                    }
+                    onFocus={(event) =>
+                        showRailTip(event.currentTarget, 'Mở rộng sidebar')
+                    }
+                    onClick={() => {
+                        quickRef.current?.hidePopover?.();
+                        setQuick(null);
+                        toggleSidebar();
+                    }}
+                >
+                    <Icon name="chevron" />
+                </button>
                 <button
                     ref={workspaceRef}
                     className="workspace"
                     type="button"
                     aria-label="Chọn học kỳ và đợt phân công"
-                    title={`${context?.school ?? 'THPT An Hòa'} · ${context?.label ?? 'Chọn học kỳ và đợt phân công'}`}
+                    title={sidebarCollapsed ? undefined : workspaceLabel}
                     aria-haspopup="dialog"
                     aria-expanded={Boolean(quick)}
                     disabled={
                         contexts.length === 0 ||
                         (isMockMode && Boolean(account && !account.school))
+                    }
+                    onMouseEnter={(event) =>
+                        showRailTip(event.currentTarget, workspaceLabel)
+                    }
+                    onFocus={(event) =>
+                        showRailTip(event.currentTarget, workspaceLabel)
                     }
                     onClick={(event) => openQuick(event.currentTarget)}
                 >
@@ -333,57 +377,94 @@ export function AppLayout() {
                     <Icon name="down" />
                 </button>
                 <div className="nav-label">{roleDef.space}</div>
-                <nav className="nav" aria-label={roleDef.space}>
-                    {roleDef.nav.map((item) => (
-                        <Fragment key={item.path}>
-                            {item.group && (
-                                <div className="mvp-nav-group">
-                                    {item.group}
-                                </div>
-                            )}
-                            <button
-                                type="button"
-                                aria-label={item.label}
-                                title={item.label}
-                                className={
-                                    pathname === item.path ? 'active' : ''
-                                }
-                                aria-current={
-                                    pathname === item.path ? 'page' : undefined
-                                }
-                                disabled={
-                                    isMockMode &&
-                                    Boolean(account && !account.school)
-                                }
-                                onClick={() => go(item.path)}
-                            >
-                                <Icon name={item.icon} />
-                                <span>{item.label}</span>
-                                {role === 'manager' &&
-                                    hasSchoolScope &&
-                                    item.count === 'unassigned' &&
-                                    unassigned > 0 && (
+                <nav
+                    className="nav"
+                    aria-label={roleDef.space}
+                    onScroll={() => setRailTip(null)}
+                >
+                    {roleDef.nav.map((item, index) => {
+                        const itemCount =
+                            role === 'manager' && hasSchoolScope
+                                ? item.count === 'unassigned' && unassigned > 0
+                                    ? unassigned
+                                    : item.count === 'feedback' &&
+                                        context?.feedback
+                                      ? context.feedback
+                                      : undefined
+                                : undefined;
+                        return (
+                            <Fragment key={item.path}>
+                                {item.group && (
+                                    <div className="mvp-nav-group">
+                                        <span>{item.group}</span>
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    aria-label={item.label}
+                                    title={
+                                        sidebarCollapsed
+                                            ? undefined
+                                            : item.label
+                                    }
+                                    style={
+                                        { '--nav-i': index } as CSSProperties
+                                    }
+                                    className={
+                                        pathname === item.path ? 'active' : ''
+                                    }
+                                    aria-current={
+                                        pathname === item.path
+                                            ? 'page'
+                                            : undefined
+                                    }
+                                    disabled={
+                                        isMockMode &&
+                                        Boolean(account && !account.school)
+                                    }
+                                    onMouseEnter={(event) =>
+                                        showRailTip(
+                                            event.currentTarget,
+                                            item.label,
+                                            itemCount,
+                                        )
+                                    }
+                                    onFocus={(event) =>
+                                        showRailTip(
+                                            event.currentTarget,
+                                            item.label,
+                                            itemCount,
+                                        )
+                                    }
+                                    onClick={() => go(item.path)}
+                                >
+                                    <Icon name={item.icon} />
+                                    <span>{item.label}</span>
+                                    {itemCount !== undefined && (
                                         <span className="count">
-                                            {unassigned}
+                                            {itemCount}
                                         </span>
                                     )}
-                                {role === 'manager' &&
-                                    hasSchoolScope &&
-                                    item.count === 'feedback' &&
-                                    Boolean(context?.feedback) && (
-                                        <span className="count">
-                                            {context?.feedback}
-                                        </span>
-                                    )}
-                            </button>
-                        </Fragment>
-                    ))}
+                                </button>
+                            </Fragment>
+                        );
+                    })}
                 </nav>
                 <div className="sidebar-bottom">
                     {role === 'manager' && hasSchoolScope && context ? (
                         <div
                             className="semester-box"
-                            title={`${context.round} · Tiến độ phân công ${progress}%`}
+                            title={
+                                sidebarCollapsed
+                                    ? undefined
+                                    : `${context.round} · Tiến độ phân công ${progress}%`
+                            }
+                            onMouseEnter={(event) =>
+                                showRailTip(
+                                    event.currentTarget,
+                                    `${context.round} · Tiến độ phân công ${progress}%`,
+                                )
+                            }
                         >
                             <div className="between">
                                 <strong>
@@ -420,10 +501,17 @@ export function AppLayout() {
                         aria-haspopup="dialog"
                         title={
                             sidebarCollapsed
-                                ? `${account?.name ?? 'Nguyễn Minh Khoa'} · ${roleDef.label}`
+                                ? undefined
                                 : 'Hồ sơ, cài đặt và vai trò'
                         }
+                        onMouseEnter={(event) =>
+                            showRailTip(event.currentTarget, accountLabel)
+                        }
+                        onFocus={(event) =>
+                            showRailTip(event.currentTarget, accountLabel)
+                        }
                         onClick={() => {
+                            setRailTip(null);
                             setMobileOpen(false);
                             if (isMockMode && !isAuthenticated) {
                                 navigate('/login');
@@ -454,6 +542,20 @@ export function AppLayout() {
                     </button>
                 </div>
             </aside>
+            {railTip && sidebarCollapsed && !quick && !modal && (
+                <div
+                    className="rail-tooltip"
+                    role="tooltip"
+                    style={{ top: railTip.top, left: railTip.left }}
+                >
+                    <span>{railTip.label}</span>
+                    {railTip.count !== undefined && (
+                        <span className="rail-tooltip-count">
+                            {railTip.count}
+                        </span>
+                    )}
+                </div>
+            )}
             <button
                 type="button"
                 className="nav-backdrop"

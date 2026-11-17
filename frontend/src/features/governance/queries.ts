@@ -1,3 +1,4 @@
+import { keepPreviousData } from '@tanstack/react-query';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { governanceApi } from './api';
 import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
@@ -229,6 +230,7 @@ export function useGovernanceAuditQuery(
     enabled = true,
 ) {
     return useQuery({
+        placeholderData: keepPreviousData,
         queryKey: governanceKeys.audit(filters),
         queryFn: ({ signal }) => governanceApi.audit(filters, signal),
         enabled,

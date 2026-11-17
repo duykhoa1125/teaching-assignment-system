@@ -1,3 +1,4 @@
+import { Skeleton } from '@/shared/ui/skeleton';
 import type { ReactNode } from 'react';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import { Icon } from '@/shared/ui/icon';
@@ -165,16 +166,20 @@ export function RoleStateCard({
     detail: string;
     actions?: ReactNode;
 }) {
+    if (kind === 'loading') {
+        return (
+            <div role="status" aria-busy="true" style={{ padding: '20px' }}>
+                <span className="sr-only">
+                    {title} {detail}
+                </span>
+                <Skeleton />
+            </div>
+        );
+    }
     return (
         <div
             className={`state-card state-${kind}`}
-            role={
-                kind === 'error'
-                    ? 'alert'
-                    : kind === 'loading'
-                      ? 'status'
-                      : undefined
-            }
+            role={kind === 'error' ? 'alert' : undefined}
         >
             <span className="state-symbol">
                 <Icon name={STATE_SYMBOLS[kind]} />

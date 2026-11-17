@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { Dialog } from '@/shared/ui/dialog';
 import {
     OPTIMIZATION_CONFIG_OPTIONS,
@@ -140,7 +141,7 @@ export function WorkspaceDialogs({
                 >
                     <label className="field full">
                         Cấu hình tối ưu
-                        <select
+                        <Select
                             aria-label="Cấu hình tối ưu cho snapshot"
                             value={configuration?.config ?? 1}
                             disabled={busy}
@@ -157,11 +158,11 @@ export function WorkspaceDialogs({
                                     {option.code} · {option.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     <label className="field full">
                         Bộ quy tắc
-                        <select
+                        <Select
                             aria-label="Bộ quy tắc cho snapshot"
                             value={configuration?.rule ?? 1}
                             disabled={busy}
@@ -178,7 +179,7 @@ export function WorkspaceDialogs({
                                     {option.code} · {option.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     {checking && (
                         <p className="muted full">Đang đọc tiền kiểm nguồn…</p>

@@ -1,3 +1,4 @@
+import { retainScopedList } from '@/shared/query/retain-scoped-list';
 import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { catalogsApi } from './api';
@@ -37,6 +38,11 @@ export const catalogKeys = {
 
 export function useAcademicYearsQuery(filters: AcademicYearFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.academicYears(filters),
         queryFn: ({ signal }) => catalogsApi.listAcademicYears(filters, signal),
     });
@@ -44,6 +50,11 @@ export function useAcademicYearsQuery(filters: AcademicYearFilters = {}) {
 
 export function useSemestersQuery(filters: SemesterFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.semesters(filters),
         queryFn: ({ signal }) => catalogsApi.listSemesters(filters, signal),
     });
@@ -53,6 +64,11 @@ export function useEducationLevelsQuery(
     filters: { limit?: number; offset?: number } = { limit: 50, offset: 0 },
 ) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.educationLevels(filters),
         queryFn: ({ signal }) =>
             catalogsApi.listEducationLevels(filters, signal),
@@ -61,6 +77,11 @@ export function useEducationLevelsQuery(
 
 export function useGradesQuery(filters: GradeFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.grades(filters),
         queryFn: ({ signal }) => catalogsApi.listGrades(filters, signal),
     });
@@ -68,6 +89,11 @@ export function useGradesQuery(filters: GradeFilters = {}) {
 
 export function useClassesQuery(filters: SchoolClassFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.classes(filters),
         queryFn: ({ signal }) => catalogsApi.listClasses(filters, signal),
     });
@@ -75,6 +101,11 @@ export function useClassesQuery(filters: SchoolClassFilters = {}) {
 
 export function useSubjectsQuery(filters: SubjectFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.subjects(filters),
         queryFn: ({ signal }) => catalogsApi.listSubjects(filters, signal),
     });
@@ -82,6 +113,11 @@ export function useSubjectsQuery(filters: SubjectFilters = {}) {
 
 export function useAssignmentRoundsQuery(filters: AssignmentRoundFilters = {}) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'school_id',
+            'academic_year_id',
+            'semester_id',
+        ]),
         queryKey: catalogKeys.rounds(filters),
         queryFn: ({ signal }) => catalogsApi.listRounds(filters, signal),
     });

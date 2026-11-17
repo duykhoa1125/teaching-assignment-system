@@ -1,3 +1,4 @@
+import { Skeleton } from '@/shared/ui/skeleton';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import {
     lazy,
@@ -149,7 +150,7 @@ export function UiPreviewPage() {
                                 notify({
                                     title: 'Không thể hoàn tất thao tác mẫu',
                                     description:
-                                        'Thông báo lỗi được giữ đến khi bạn đóng.',
+                                        'Thông báo lỗi tự đóng sau 8 giây; tạm dừng khi rê chuột hoặc focus.',
                                     tone: 'error',
                                 })
                             }
@@ -261,12 +262,51 @@ export function UiPreviewPage() {
                         onChange={(event) => setState(event.target.value)}
                     >
                         <option value="loading">Đang tải</option>
+                        <option value="table">Skeleton bảng</option>
+                        <option value="dashboard">Skeleton tổng quan</option>
+                        <option value="teachers">Skeleton giáo viên</option>
+                        <option value="detail">Skeleton chi tiết</option>
+                        <option value="refresh">Cập nhật dữ liệu cũ</option>
                         <option value="empty">Trống</option>
                         <option value="error">Lỗi</option>
                     </SelectField>
                 </div>
                 {state === 'loading' ? (
                     <LoadingState />
+                ) : ['table', 'refresh'].includes(state) ? (
+                    <DataTable
+                        caption="Bảng xem thử trạng thái tải"
+                        loading={state === 'table'}
+                        updating={state === 'refresh'}
+                        rows={examples}
+                        rowKey={(row) => row.id}
+                        columns={[
+                            {
+                                key: 'name',
+                                title: 'Thành phần',
+                                render: (row) => row.name,
+                            },
+                            {
+                                key: 'usage',
+                                title: 'Cách dùng',
+                                render: (row) => row.usage,
+                            },
+                            {
+                                key: 'state',
+                                title: 'Trạng thái',
+                                render: (row) => row.state,
+                            },
+                        ]}
+                    />
+                ) : ['dashboard', 'teachers', 'detail'].includes(state) ? (
+                    <div role="status" aria-busy="true">
+                        <span className="sr-only">Đang tải dữ liệu…</span>
+                        <Skeleton
+                            variant={
+                                state as 'dashboard' | 'teachers' | 'detail'
+                            }
+                        />
+                    </div>
                 ) : state === 'empty' ? (
                     <EmptyState title="Chưa có dữ liệu">
                         <p>Nội dung sẽ xuất hiện khi có dữ liệu phù hợp.</p>

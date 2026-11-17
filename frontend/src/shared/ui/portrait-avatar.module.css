@@ -22,3 +22,21 @@
     object-fit: cover;
     pointer-events: none;
 }
+
+/* Requested avatar feedback: decorative portraits stay still. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    :is(a[href], button, [role='button']):not(:disabled):not(
+            [aria-disabled='true']
+        )
+        .avatar {
+        transition: box-shadow 150ms ease-out;
+    }
+
+    :is(a[href], button, [role='button']):not(:disabled):not(
+            [aria-disabled='true']
+        ):hover
+        .avatar {
+        box-shadow: 0 0 0 2px
+            color-mix(in oklch, var(--primary) 18%, transparent);
+    }
+}

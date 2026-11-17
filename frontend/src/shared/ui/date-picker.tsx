@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import {
     useId,
     useEffect,
@@ -194,7 +195,7 @@ export function DatePicker({
                         />
                     </button>
                     <div className="date-picker-month" aria-live="polite">
-                        <select
+                        <Select
                             aria-label="Tháng"
                             value={month}
                             onChange={(e) =>
@@ -213,8 +214,8 @@ export function DatePicker({
                                     Tháng {i + 1}
                                 </option>
                             ))}
-                        </select>
-                        <select
+                        </Select>
+                        <Select
                             aria-label="Năm"
                             value={year}
                             onChange={(e) =>
@@ -241,7 +242,7 @@ export function DatePicker({
                                     {y}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </div>
                     <button
                         className="icon-btn"

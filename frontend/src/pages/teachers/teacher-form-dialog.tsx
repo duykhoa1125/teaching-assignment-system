@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { useId, useState, type FormEvent } from 'react';
 import {
     formatTeacherApiError,
@@ -134,7 +135,7 @@ function TeacherFormBody({
                         *
                     </span>
                 </label>
-                <select
+                <Select
                     id={schoolFieldId}
                     name="school_id"
                     value={schoolId === '' ? '' : String(schoolId)}
@@ -166,7 +167,7 @@ function TeacherFormBody({
                             </option>
                         ))
                     )}
-                </select>
+                </Select>
                 {fieldErrors.school_id ? (
                     <span
                         id={`${schoolFieldId}-error`}

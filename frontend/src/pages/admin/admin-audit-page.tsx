@@ -1,3 +1,5 @@
+import { DataTable } from '@/shared/ui/table';
+import { RefreshStatus } from '@/shared/ui/refresh-status';
 import { DatePicker } from '@/shared/ui/date-picker';
 import '@/pages/results/results.css';
 import './audit-filters.css';
@@ -98,10 +100,23 @@ export function AdminAuditPage() {
 
             {auditQuery.isPending ? (
                 <section className="panel">
-                    <RoleStateCard
-                        kind="loading"
-                        title="Đang tải nhật ký…"
-                        detail="Đang tổng hợp dấu vết thao tác quản trị và phân công."
+                    <DataTable
+                        variant="prototype"
+                        caption="Nhật ký thao tác"
+                        loading
+                        rows={[]}
+                        rowKey={() => 0}
+                        columns={[
+                            'THỜI ĐIỂM',
+                            'NGƯỜI THAO TÁC',
+                            'HÀNH ĐỘNG / ĐỐI TƯỢNG',
+                            'KẾT QUẢ',
+                            'CHI TIẾT',
+                        ].map((title) => ({
+                            key: title,
+                            title,
+                            render: () => null,
+                        }))}
                     />
                 </section>
             ) : auditQuery.isError ? (
@@ -124,7 +139,12 @@ export function AdminAuditPage() {
             ) : (
                 <section className="panel">
                     {rows.length > 0 ? (
-                        <div className="table-scroll">
+                        <div
+                            className="table-scroll"
+                            style={{ position: 'relative' }}
+                            aria-busy={auditQuery.isFetching}
+                        >
+                            <RefreshStatus active={auditQuery.isFetching} />
                             <table className="data-table mvp-table">
                                 <thead>
                                     <tr>

@@ -1,0 +1,33 @@
+.tass-control-tooltip {
+    position: fixed;
+    inset: auto;
+    z-index: 1000;
+    margin: 0;
+    width: max-content;
+    max-width: min(280px, calc(100vw - 16px));
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--surface);
+    font: 500 12px/1.35 var(--font-body);
+    overflow-wrap: anywhere;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgb(34 35 31 / 20%);
+    animation: control-tooltip-in 140ms ease-out both;
+}
+
+@keyframes control-tooltip-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tass-control-tooltip {
+        animation: none;
+    }
+}

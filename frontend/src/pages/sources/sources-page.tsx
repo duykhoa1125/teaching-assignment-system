@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/results/results.css';
 import { useState } from 'react';
 import {
@@ -426,7 +427,7 @@ export function SourcesPage() {
                     </label>
                     <label className="field">
                         Trạng thái
-                        <select
+                        <Select
                             value={statusInput}
                             onChange={(e) =>
                                 setStatusInput(
@@ -436,7 +437,7 @@ export function SourcesPage() {
                         >
                             <option value="PENDING">Chưa xác nhận</option>
                             <option value="CONFIRMED">Đã đối soát</option>
-                        </select>
+                        </Select>
                     </label>
                     <label className="field full">
                         Giá trị gốc
@@ -500,7 +501,7 @@ export function SourcesPage() {
                 <div className="mvp-form">
                     <label className="field">
                         Loại đối tượng
-                        <select
+                        <Select
                             value={aliasKind}
                             onChange={(e) => {
                                 const nextKind = e.target.value as AliasKind;
@@ -517,7 +518,7 @@ export function SourcesPage() {
                             <option value="TEACHER">Giáo viên</option>
                             <option value="CLASS">Lớp</option>
                             <option value="SUBJECT">Môn</option>
-                        </select>
+                        </Select>
                     </label>
                     <label className="field">
                         Bí danh trong nguồn
@@ -529,7 +530,7 @@ export function SourcesPage() {
                     </label>
                     <label className="field full">
                         Mã / tên chuẩn trong danh mục
-                        <select
+                        <Select
                             value={aliasCanonical}
                             onChange={(e) => setAliasCanonical(e.target.value)}
                         >
@@ -538,7 +539,7 @@ export function SourcesPage() {
                                     {opt.label}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     <label className="field full">
                         Nguồn chứng cứ

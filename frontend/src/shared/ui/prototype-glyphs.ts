@@ -35,8 +35,11 @@ export const prototypeGlyphs = {
     close: '<path d="m6 6 12 12M6 18 18 6"/>',
     lock: '<rect class="duo" x="5" y="10" width="14" height="11" rx="3"/><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V6a4 4 0 0 1 8 0v4m-4 5v2"/>',
     unlock: '<rect class="duo" x="5" y="10" width="14" height="11" rx="3"/><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V6a4 4 0 0 1 7.5-2m-3.5 11v2"/>',
+    // User-approved rounded Tabler alert-triangle (17/11/2026).
+    // Keep the project's stroke/currentColor and internal duotone treatment.
+    // Attribution: public/licenses/tabler-icons.txt.
     warning:
-        '<path class="duo" d="m12 3 10 18H2Z"/><path d="m12 3 10 18H2Zm0 6v5m0 3h.01"/>',
+        '<path class="duo" d="M10.363 3.591 2.257 17.125a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0Z"/><path d="M12 9v4m-1.637-9.409L2.257 17.125a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0M12 16h.01"/>',
     filter: '<path d="M3 5h18l-7 8v6l-4 2v-8ZM7 5v-2m10 2v-2"/>',
     clock: '<path class="duo" d="M12 3a9 9 0 0 1 9 9h-9Z"/><circle cx="12" cy="12" r="9"/><path d="M12 7v5l4 2"/>',
     leaf: '<path class="duo" d="M20 3C7 2 1 9 7 17c8 6 15 0 13-14Z"/><path d="M20 3C7 2 1 9 7 17c8 6 15 0 13-14ZM4 21 16 9m-6 6h6m-6 0V9"/>',

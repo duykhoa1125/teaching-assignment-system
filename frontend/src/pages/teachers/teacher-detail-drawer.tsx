@@ -1,3 +1,4 @@
+import { Skeleton } from '@/shared/ui/skeleton';
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { formatTeacherApiError } from '@/features/teachers/model';
@@ -122,17 +123,11 @@ export function TeacherDetailDrawer({
 
                 <div className={`${styles.drawerBody} modal-body`}>
                     {detailQuery.isPending && !teacher ? (
-                        <div
-                            className={`${styles.stateCard} ${styles.stateLoading}`}
-                            role="status"
-                        >
-                            <span
-                                className={`${styles.stateSymbol} icon-surface`}
-                            >
-                                <Icon name="teachers" />
+                        <div role="status" aria-busy="true">
+                            <span className="sr-only">
+                                Đang tải chi tiết giáo viên…
                             </span>
-                            <h3>Đang tải chi tiết giáo viên</h3>
-                            <p>Đang đọc bản ghi từ máy chủ…</p>
+                            <Skeleton variant="detail" />
                         </div>
                     ) : null}
 

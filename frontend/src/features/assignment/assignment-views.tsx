@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import type { KeyboardEvent } from 'react';
 import { Link } from 'react-router';
 import { Icon } from '@/shared/ui/icon';
@@ -128,7 +129,7 @@ export function AssignmentMatrix({
                     <label htmlFor="matrix-teacher-focus">
                         Theo dõi giáo viên
                     </label>
-                    <select
+                    <Select
                         id="matrix-teacher-focus"
                         value={focus}
                         onChange={(event) => setFocus(event.target.value)}
@@ -143,7 +144,7 @@ export function AssignmentMatrix({
                                 tiết
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
                 <div className="matrix-focus-summary" aria-live="polite">
                     {person ? (

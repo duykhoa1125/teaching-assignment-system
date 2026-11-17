@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/preparation/preparation-ui.css';
 import './catalog-actions.css';
 import { useSchoolsQuery } from '@/features/teachers/queries';
@@ -834,7 +835,7 @@ export function AdminCatalogsPage() {
 
             {tab === 'classes' ? (
                 <div className="mvp-filter section-gap">
-                    <select
+                    <Select
                         aria-label="Lọc theo năm học"
                         value={classYearFilter}
                         onChange={(e) => {
@@ -848,8 +849,8 @@ export function AdminCatalogsPage() {
                                 {yearLabel(y.id)}
                             </option>
                         ))}
-                    </select>
-                    <select
+                    </Select>
+                    <Select
                         aria-label="Lọc theo khối"
                         value={classGradeFilter}
                         onChange={(e) => {
@@ -863,8 +864,8 @@ export function AdminCatalogsPage() {
                                 {g.name}
                             </option>
                         ))}
-                    </select>
-                    <select
+                    </Select>
+                    <Select
                         aria-label="Lọc theo trạng thái lớp"
                         value={classStatusFilter}
                         onChange={(e) => {
@@ -877,13 +878,13 @@ export function AdminCatalogsPage() {
                         <option value="">Tất cả trạng thái</option>
                         <option value="ACTIVE">Đang hoạt động</option>
                         <option value="INACTIVE">Ngưng sử dụng</option>
-                    </select>
+                    </Select>
                 </div>
             ) : null}
 
             {tab === 'grades' ? (
                 <div className="mvp-filter section-gap">
-                    <select
+                    <Select
                         aria-label="Lọc theo cấp học"
                         value={gradeLevelFilter}
                         onChange={(e) => {
@@ -897,7 +898,7 @@ export function AdminCatalogsPage() {
                                 {l.name}
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
             ) : null}
 
@@ -920,17 +921,24 @@ export function AdminCatalogsPage() {
                 <section className="panel">
                     {tab === 'subjects' ? (
                         <>
-                            {subjectsQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh mục môn học…"
-                                    detail="Đang đồng bộ danh sách môn học theo bộ lọc."
+                            {subjectsQuery.isLoading ||
+                            (subjectsQuery.isPlaceholderData &&
+                                subjectsPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh mục môn học"
+                                    columns={subjectColumns}
+                                    updating={subjectsQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : subjectsPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh mục môn học"
                                     columns={subjectColumns}
+                                    updating={subjectsQuery.isFetching}
                                     rows={subjectsPage.items}
                                     rowKey={(row) => row.id}
                                 />
@@ -960,17 +968,24 @@ export function AdminCatalogsPage() {
 
                     {tab === 'classes' ? (
                         <>
-                            {classesQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách lớp học…"
-                                    detail="Đang đồng bộ lớp theo năm học và khối."
+                            {classesQuery.isLoading ||
+                            (classesQuery.isPlaceholderData &&
+                                classesPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách lớp học"
+                                    columns={classColumns}
+                                    updating={classesQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : classesPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách lớp học"
                                     columns={classColumns}
+                                    updating={classesQuery.isFetching}
                                     rows={classesPage.items}
                                     rowKey={(row) => row.id}
                                 />
@@ -994,17 +1009,24 @@ export function AdminCatalogsPage() {
 
                     {tab === 'grades' ? (
                         <>
-                            {gradesQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách khối lớp…"
-                                    detail="Đang đồng bộ khối lớp theo cấp học."
+                            {gradesQuery.isLoading ||
+                            (gradesQuery.isPlaceholderData &&
+                                gradesPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách khối lớp"
+                                    columns={gradeColumns}
+                                    updating={gradesQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : gradesPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách khối lớp"
                                     columns={gradeColumns}
+                                    updating={gradesQuery.isFetching}
                                     rows={gradesPage.items}
                                     rowKey={(row) => row.id}
                                 />
@@ -1028,17 +1050,24 @@ export function AdminCatalogsPage() {
 
                     {tab === 'levels' ? (
                         <>
-                            {levelsPageQuery.isLoading ? (
-                                <RoleStateCard
-                                    kind="loading"
-                                    title="Đang tải danh sách cấp học…"
-                                    detail="Đang đọc dữ liệu cấp học."
+                            {levelsPageQuery.isLoading ||
+                            (levelsPageQuery.isPlaceholderData &&
+                                levelsPage.items.length === 0) ? (
+                                <DataTable
+                                    variant="prototype"
+                                    caption="Danh sách cấp học"
+                                    columns={levelColumns}
+                                    updating={levelsPageQuery.isFetching}
+                                    rows={[]}
+                                    rowKey={() => 0}
+                                    loading
                                 />
                             ) : levelsPage.items.length > 0 ? (
                                 <DataTable
                                     variant="prototype"
                                     caption="Danh sách cấp học"
                                     columns={levelColumns}
+                                    updating={levelsPageQuery.isFetching}
                                     rows={levelsPage.items}
                                     rowKey={(row) => row.id}
                                 />

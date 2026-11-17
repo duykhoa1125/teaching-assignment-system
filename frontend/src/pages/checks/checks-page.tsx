@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import '@/pages/preparation/preparation-ui.css';
 import '../results/results.css';
@@ -249,7 +250,7 @@ export function ChecksPage() {
                             Tiền kiểm nguồn ({issues.length})
                         </button>
                     </div>
-                    <select
+                    <Select
                         id="checks-round-select"
                         name="round_id"
                         aria-label="Chọn đợt phân công"
@@ -264,7 +265,7 @@ export function ChecksPage() {
                                 {r.round_code} ({r.status})
                             </option>
                         ))}
-                    </select>
+                    </Select>
                 </div>
             </div>
 
@@ -646,7 +647,7 @@ export function ChecksPage() {
                         </div>
                         <div className="panel-body">
                             <div className="mvp-filter">
-                                <select
+                                <Select
                                     id="checks-config-select"
                                     name="optimization_config_id"
                                     aria-label="Chọn cấu hình tối ưu"
@@ -663,8 +664,8 @@ export function ChecksPage() {
                                             {opt.code} · {opt.name}
                                         </option>
                                     ))}
-                                </select>
-                                <select
+                                </Select>
+                                <Select
                                     id="checks-rule-select"
                                     name="rule_set_version_id"
                                     aria-label="Chọn bộ quy tắc"
@@ -681,7 +682,7 @@ export function ChecksPage() {
                                             {opt.code} · {opt.name}
                                         </option>
                                     ))}
-                                </select>
+                                </Select>
                             </div>
 
                             {!isPairedValid ? (

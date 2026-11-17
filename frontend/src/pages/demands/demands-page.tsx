@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/admin/catalog-actions.css';
 import '@/pages/preparation/preparation-ui.css';
 import { useMemo, useState, type FormEvent } from 'react';
@@ -556,7 +557,7 @@ export function DemandsPage() {
                                 : ''}
                         </strong>
                     </div>
-                    <select
+                    <Select
                         aria-label="Chọn đợt / học kỳ xem nhu cầu"
                         value={activeRound?.id ?? ''}
                         onChange={(e) => {
@@ -572,36 +573,29 @@ export function DemandsPage() {
                                 {r.round_code}
                             </option>
                         ))}
-                    </select>
-                </div>
-            </div>
-
-            <div className="mvp-toolbar">
-                <div className="mvp-filter">
-                    <select
-                        aria-label="Lọc loại nhu cầu"
-                        value={demandTypeFilter}
-                        onChange={(event) => {
-                            setDemandTypeFilter(
-                                event.target.value as DemandType | '',
-                            );
-                            setOffset(0);
-                        }}
-                    >
-                        <option value="">Tất cả thành phần</option>
-                        <option value="STANDARD">Giảng dạy chuẩn</option>
-                        <option value="SPECIALIZED_TOPIC">
-                            Chuyên đề lựa chọn
-                        </option>
-                        <option value="ENRICHMENT">
-                            Tăng cường / hoạt động
-                        </option>
-                    </select>
+                    </Select>
                 </div>
             </div>
 
             <div className="mvp-filter section-gap demand-filters">
-                <select
+                <Select
+                    aria-label="Lọc loại nhu cầu"
+                    value={demandTypeFilter}
+                    onChange={(event) => {
+                        setDemandTypeFilter(
+                            event.target.value as DemandType | '',
+                        );
+                        setOffset(0);
+                    }}
+                >
+                    <option value="">Tất cả thành phần</option>
+                    <option value="STANDARD">Giảng dạy chuẩn</option>
+                    <option value="SPECIALIZED_TOPIC">
+                        Chuyên đề lựa chọn
+                    </option>
+                    <option value="ENRICHMENT">Tăng cường / hoạt động</option>
+                </Select>
+                <Select
                     aria-label="Lọc theo lớp học"
                     value={classFilter}
                     onChange={(e) => {
@@ -615,8 +609,8 @@ export function DemandsPage() {
                             {c.class_code}
                         </option>
                     ))}
-                </select>
-                <select
+                </Select>
+                <Select
                     aria-label="Lọc theo môn học"
                     value={subjectFilter}
                     onChange={(e) => {
@@ -630,8 +624,8 @@ export function DemandsPage() {
                             {s.name}
                         </option>
                     ))}
-                </select>
-                <select
+                </Select>
+                <Select
                     aria-label="Lọc theo trạng thái nhu cầu"
                     value={statusFilter}
                     onChange={(e) => {
@@ -642,7 +636,7 @@ export function DemandsPage() {
                     <option value="">Tất cả trạng thái</option>
                     <option value="ACTIVE">Hiệu lực (ACTIVE)</option>
                     <option value="INACTIVE">Tạm ngưng (INACTIVE)</option>
-                </select>
+                </Select>
                 <input
                     type="date"
                     aria-label="Lọc theo ngày hiệu lực as_of"
@@ -691,17 +685,24 @@ export function DemandsPage() {
                 />
             ) : (
                 <section className="panel">
-                    {demandsQuery.isLoading ? (
-                        <RoleStateCard
-                            kind="loading"
-                            title="Đang tải nhu cầu giảng dạy…"
-                            detail="Đang đọc danh sách nhu cầu của học kỳ."
+                    {demandsQuery.isLoading ||
+                    (demandsQuery.isPlaceholderData &&
+                        demandsPage.items.length === 0) ? (
+                        <DataTable
+                            variant="prototype"
+                            caption="Danh sách nhu cầu giảng dạy"
+                            columns={columns}
+                            updating={demandsQuery.isFetching}
+                            rows={[]}
+                            rowKey={() => 0}
+                            loading
                         />
                     ) : demandsPage.items.length > 0 ? (
                         <DataTable
                             variant="prototype"
                             caption="Danh sách nhu cầu giảng dạy"
                             columns={columns}
+                            updating={demandsQuery.isFetching}
                             rows={demandsPage.items}
                             rowKey={(row) => row.id}
                         />

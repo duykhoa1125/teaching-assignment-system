@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 import {
@@ -56,7 +57,7 @@ function ReleaseVersionSelect({
     return (
         <div className="mvp-release-select">
             <span>Phiên bản được phép xem</span>
-            <select
+            <Select
                 name="release_id"
                 aria-label="Phiên bản phân công cá nhân"
                 value={
@@ -76,7 +77,7 @@ function ReleaseVersionSelect({
                             {formatGovernanceDateTime(item.at)}
                         </option>
                     ))}
-            </select>
+            </Select>
             <PillBadge label="Chỉ dữ liệu cá nhân" tone="gray" />
         </div>
     );
@@ -791,7 +792,7 @@ export function TeacherFeedbackPage() {
                             <div className="mvp-form">
                                 <label className="field">
                                     Loại phản hồi
-                                    <select
+                                    <Select
                                         name="type"
                                         value={type}
                                         onChange={(e) =>
@@ -809,7 +810,7 @@ export function TeacherFeedbackPage() {
                                         <option value="REQUEST_SUBJECT_TOTAL">
                                             Đề nghị nhận thêm tiết
                                         </option>
-                                    </select>
+                                    </Select>
                                 </label>
                                 <label className="field">
                                     Tiêu đề
@@ -824,7 +825,7 @@ export function TeacherFeedbackPage() {
                                 </label>
                                 <label className="field">
                                     Phân công liên quan (nếu cần)
-                                    <select
+                                    <Select
                                         name="demand_id"
                                         value={demandId}
                                         onChange={(e) =>
@@ -843,11 +844,11 @@ export function TeacherFeedbackPage() {
                                                 )}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </label>
                                 <label className="field">
                                     Môn đề nghị nhận thêm
-                                    <select
+                                    <Select
                                         name="subject"
                                         value={subject}
                                         onChange={(e) =>
@@ -862,7 +863,7 @@ export function TeacherFeedbackPage() {
                                                 {sub}
                                             </option>
                                         ))}
-                                    </select>
+                                    </Select>
                                 </label>
                                 <label className="field full">
                                     Tổng tiết môn mong muốn (không phải phần

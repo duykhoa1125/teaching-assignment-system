@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import { Fragment, useState } from 'react';
 import { Link } from 'react-router';
@@ -239,7 +240,7 @@ export function WorkloadPage() {
                 <div className="results-round-strip">
                     <label>
                         Đợt phân công
-                        <select
+                        <Select
                             id="workload-round-select"
                             name="round_id"
                             aria-label="Chọn đợt phân công xem tải"
@@ -253,7 +254,7 @@ export function WorkloadPage() {
                                     {item.round_code} ({item.status})
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                 </div>
             </div>

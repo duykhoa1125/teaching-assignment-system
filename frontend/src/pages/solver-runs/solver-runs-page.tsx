@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
@@ -361,7 +362,7 @@ export function SolverRunsPage() {
                 <div className="results-round-strip">
                     <label>
                         Đợt phân công
-                        <select
+                        <Select
                             id="solver-round-select"
                             name="round_id"
                             aria-label="Chọn đợt phân công chạy solver"
@@ -378,11 +379,11 @@ export function SolverRunsPage() {
                                     {item.round_code} ({item.status})
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     <label>
                         Cấu hình tối ưu
-                        <select
+                        <Select
                             id="solver-config-select"
                             name="optimization_config_id"
                             aria-label="Chọn cấu hình tối ưu để chạy"
@@ -396,11 +397,11 @@ export function SolverRunsPage() {
                                     {item.code} · {item.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                     <label>
                         Bộ quy tắc tải
-                        <select
+                        <Select
                             id="solver-rule-select"
                             name="rule_set_version_id"
                             aria-label="Chọn bộ quy tắc để chạy"
@@ -414,7 +415,7 @@ export function SolverRunsPage() {
                                     {item.code} · {item.name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </label>
                 </div>
             </div>

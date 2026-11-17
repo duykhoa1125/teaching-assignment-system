@@ -1,203 +1,968 @@
-/* Desktop rail is a user-requested addition; the mobile drawer stays full width. */
-@property --sidebar-current-width {
+/* Desktop rail & mobile drawer motion — aligned vertical spine, zero layout snaps,
+   interruptible staggered choreography, and single-property layout synchronization. */
+@property --sidebar-w {
     syntax: '<length>';
     inherits: false;
-    initial-value: 246px;
+    initial-value: 248px;
 }
 
-.tass-shell .sidebar-toggle {
+.tass-shell {
+    --sidebar-collapsed-width: 72px;
+    --sidebar-ease-open: cubic-bezier(0.16, 1, 0.3, 1);
+    --sidebar-ease-close: cubic-bezier(0.22, 1, 0.36, 1);
+    --sidebar-ease-flip: cubic-bezier(0.34, 1.45, 0.64, 1);
+}
+
+.tass-shell .sidebar-toggle,
+.tass-shell .sidebar-mobile-close,
+.tass-shell .rail-tooltip {
     display: none;
+}
+
+/* Keep the left active indicator inside .nav's padding box so overflow-x never clips it. */
+.tass-shell .sidebar > nav.nav {
+    margin-left: -6px;
+    padding-left: 6px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+.tass-shell .sidebar > nav.nav:hover,
+.tass-shell .sidebar > nav.nav:focus-within {
+    scrollbar-color: var(--scroll-thumb) transparent;
+}
+
+.tass-shell .sidebar > nav.nav::-webkit-scrollbar {
+    width: 5px;
+}
+
+.tass-shell .sidebar > nav.nav::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tass-shell .sidebar > nav.nav::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: 0;
+    border-radius: 999px;
+}
+
+.tass-shell .sidebar > nav.nav:hover::-webkit-scrollbar-thumb,
+.tass-shell .sidebar > nav.nav:focus-within::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+}
+
+.tass-shell .sidebar .nav button.active::before {
+    left: -6px;
+    top: 50%;
+    width: 3px;
+    height: 16px;
+    border-radius: 0 3px 3px 0;
+    transform: translateY(-50%) scaleY(1);
+    transform-origin: center;
 }
 
 @media (min-width: 701px) {
     .tass-shell {
-        --sidebar-current-width: var(--sidebar);
-        transition: --sidebar-current-width 280ms var(--spring);
+        --sidebar-w: var(--sidebar);
     }
+
+    .tass-shell[data-sidebar-ready='true'] {
+        transition: --sidebar-w 380ms var(--sidebar-ease-open);
+    }
+
+    .tass-shell.sidebar-collapsed {
+        --sidebar: var(--sidebar-collapsed-width);
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true'] {
+        transition: --sidebar-w 300ms var(--sidebar-ease-close);
+    }
+
     .tass-shell .sidebar {
-        --sidebar-current-width: inherit;
-        /* A single animated length drives every edge; no separate tracks. */
-        width: var(--sidebar-current-width);
-        transition: none;
-        border-right: 0;
+        --sidebar-w: inherit;
+        width: var(--sidebar-w);
+        padding: 20px 12px 16px;
+        border-right: 1px solid var(--line);
         box-shadow: none;
-        overflow: hidden;
-    }
-    .tass-shell .app {
-        /* Layout the page once, then slide its cached layer in React/WAAPI. */
-        margin-left: var(--sidebar);
+        overflow: visible;
         transition: none;
     }
-    .tass-shell .sidebar::after {
-        --sidebar-current-width: inherit;
-        content: '';
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: calc(var(--sidebar-current-width) - 1px);
-        width: 1px;
-        background: var(--line);
-        pointer-events: none;
+
+    .tass-shell .app {
+        --sidebar-w: inherit;
+        margin-left: var(--sidebar-w);
+        min-width: 0;
+        transition: none;
     }
-    .tass-shell .sidebar .nav {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        align-content: start;
+
+    .tass-shell[data-sidebar-ready='true'] .bulk-bar {
+        transition: left 380ms var(--sidebar-ease-open);
     }
-    .tass-shell .sidebar-bottom {
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true'] .bulk-bar {
+        transition: left 300ms var(--sidebar-ease-close);
+    }
+
+    /* Constant padding keeps BrandMark, School, Nav Icons & Avatar locked on x = 36px. */
+    .tass-shell .sidebar .brand {
+        padding: 0 6px 18px;
+        overflow: hidden;
         flex-shrink: 0;
     }
-    .tass-shell .sidebar-toggle {
-        --sidebar-current-width: inherit;
+
+    .tass-shell .sidebar:has(.mvp-nav-group) .brand {
+        padding-bottom: 14px;
+    }
+
+    .tass-shell .sidebar .brandmark {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+    }
+
+    .tass-shell .sidebar .brand-copy {
+        min-width: 0;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* Floating border-mounted toggle pill: rides the divider seamlessly in both states. */
+    .tass-shell .sidebar > .sidebar-toggle {
         display: inline-grid;
+        place-items: center;
         position: absolute;
-        top: 0;
-        right: -8px;
-        width: 28px;
-        min-width: 28px;
-        height: 28px;
-        min-height: 28px;
+        top: 25px;
+        right: -13px;
+        z-index: 5;
+        width: 26px;
+        min-width: 26px;
+        height: 26px;
+        min-height: 26px;
         padding: 0;
+        border-radius: 999px;
+        background: var(--surface) !important;
+        border: 1px solid var(--line) !important;
+        color: var(--muted);
+        box-shadow:
+            0 1px 3px rgba(34, 35, 31, 0.08),
+            0 4px 10px rgba(34, 35, 31, 0.04);
+        transition:
+            transform 180ms var(--sidebar-ease-open),
+            border-color 180ms ease,
+            color 180ms ease,
+            box-shadow 180ms ease;
     }
-    .tass-shell .sidebar .brand {
-        --sidebar-current-width: inherit;
-        position: relative;
+
+    .tass-shell .sidebar > .sidebar-toggle:hover {
+        color: var(--primary);
+        border-color: color-mix(
+            in oklch,
+            var(--primary) 42%,
+            var(--line)
+        ) !important;
+        box-shadow: 0 2px 10px rgba(209, 52, 21, 0.14);
+        transform: scale(1.08);
     }
-    .tass-shell .sidebar-toggle > .icon {
-        transition: transform 160ms ease;
+
+    .tass-shell .sidebar > .sidebar-toggle:active {
+        transform: scale(0.92);
     }
-    .tass-shell .sidebar-toggle[aria-expanded='true'] > .icon {
+
+    .tass-shell .sidebar > .sidebar-toggle svg.icon {
+        width: 14px;
+        height: 14px;
+        translate: none !important;
+        scale: 1 !important;
+        transition: transform 360ms var(--sidebar-ease-flip);
+    }
+
+    .tass-shell .sidebar > .sidebar-toggle[aria-expanded='true'] svg.icon {
         transform: rotate(180deg);
     }
-    .tass-shell.sidebar-collapsed {
-        --sidebar: 68px;
-    }
-    .tass-shell.sidebar-collapsed .sidebar {
-        padding-inline: 8px;
+
+    /* Workspace card: constant geometry, smooth surface morph. */
+    .tass-shell .sidebar .workspace {
+        padding: 9px 10px 9px 6px;
+        min-height: 54px;
+        margin-bottom: 12px;
         overflow: hidden;
-    }
-    .tass-shell.sidebar-collapsed .brand {
-        justify-content: flex-start;
-        margin-inline: 0;
-        padding-inline: 10px 0;
-    }
-    .tass-shell.sidebar-collapsed .sidebar-toggle {
-        position: fixed;
-        top: 24px;
-        left: calc(var(--sidebar-current-width) - 14px);
-        right: auto;
-        width: 28px;
-        min-width: 28px;
-        height: 28px;
-        min-height: 28px;
-        z-index: 1;
-    }
-    .tass-shell.sidebar-collapsed .brandmark {
         flex-shrink: 0;
-        width: 32px;
-        height: 32px;
+        border: 1px solid var(--line);
+        border-radius: 11px;
     }
-    .tass-shell.sidebar-collapsed .brand-copy,
-    .tass-shell.sidebar-collapsed .nav-label,
-    .tass-shell.sidebar-collapsed .nav button > span:not(.count),
-    .tass-shell.sidebar-collapsed .workspace > .grow,
-    .tass-shell.sidebar-collapsed .workspace > .icon,
-    .tass-shell.sidebar-collapsed .semester-box .between,
-    .tass-shell.sidebar-collapsed .role-boundary,
-    .tass-shell.sidebar-collapsed .account-identity,
-    .tass-shell.sidebar-collapsed .account-control > .icon {
-        display: none;
+
+    .tass-shell .sidebar:has(.mvp-nav-group) .workspace {
+        margin-bottom: 10px;
     }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .workspace {
+        transition:
+            background 240ms ease,
+            border-color 240ms ease,
+            box-shadow 240ms ease;
+    }
+
+    .tass-shell .sidebar .workspace > .grow {
+        min-width: 0;
+        white-space: nowrap;
+    }
+
+    .tass-shell .sidebar .workspace > .grow strong,
+    .tass-shell .sidebar .workspace > .grow small {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .tass-shell.sidebar-collapsed .workspace {
-        justify-content: flex-start;
-        min-height: 44px;
-        padding: 0 0 0 8px;
-        border-color: transparent;
         background: transparent;
+        border-color: transparent;
         box-shadow: none;
     }
-    .tass-shell.sidebar-collapsed .workspace:hover .school-symbol {
+
+    .tass-shell.sidebar-collapsed .workspace:hover:not(:disabled) {
+        background: var(--soft);
+        border-color: var(--line);
+    }
+
+    .tass-shell.sidebar-collapsed
+        .workspace:hover:not(:disabled)
+        .school-symbol {
         color: var(--primary);
     }
-    .tass-shell.sidebar-collapsed .mvp-nav-group {
-        height: 1px;
-        margin: 12px 8px;
-        padding: 0;
+
+    /* Space heading smoothly tucks away in collapsed rail. */
+    .tass-shell .sidebar .nav-label {
+        height: 20px;
+        margin: 0 10px 6px;
+        white-space: nowrap;
         overflow: hidden;
-        font-size: 0;
-        background: var(--line);
-    }
-    .tass-shell.sidebar-collapsed .nav button {
-        justify-content: flex-start;
-        min-height: 44px;
-        padding: 10px 0 10px 16px;
-    }
-    .tass-shell.sidebar-collapsed .nav {
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        overflow-x: hidden;
-        align-content: start;
-        scrollbar-width: none;
-    }
-    .tass-shell.sidebar-collapsed .nav button.active::before {
-        display: none;
-    }
-    .tass-shell.sidebar-collapsed .sidebar-bottom {
         flex-shrink: 0;
     }
-    .tass-shell.sidebar-collapsed .nav button .count {
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .nav-label {
+        transition:
+            height 280ms var(--sidebar-ease-open),
+            margin-bottom 280ms var(--sidebar-ease-open),
+            opacity 200ms ease 60ms,
+            transform 240ms var(--sidebar-ease-open) 60ms,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell.sidebar-collapsed .nav-label {
+        height: 0;
+        margin-bottom: 0;
+        opacity: 0;
+        transform: translateX(-8px);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true'] .nav-label {
+        transition:
+            height 260ms var(--sidebar-ease-close),
+            margin-bottom 260ms var(--sidebar-ease-close),
+            opacity 130ms ease,
+            transform 160ms var(--sidebar-ease-close),
+            visibility 0ms linear 130ms;
+    }
+
+    /* Group header morphs smoothly between uppercase label and centered 1px hairline. */
+    .tass-shell .sidebar .mvp-nav-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 25px;
+        padding: 8px 10px 2px;
+        margin: 0;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .tass-shell .sidebar .mvp-nav-group > span {
+        display: block;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .tass-shell .sidebar .mvp-nav-group::after {
+        content: '';
         position: absolute;
-        top: 2px;
-        right: 2px;
-        min-width: 15px;
-        padding: 0 3px;
-        font-size: 9px;
-        line-height: 15px;
+        left: 10px;
+        right: 10px;
+        top: 50%;
+        height: 1px;
+        background: var(--line);
+        opacity: 0;
+        transform: scaleX(0.35);
+        transform-origin: center;
+        pointer-events: none;
     }
-    .tass-shell.sidebar-collapsed .semester-box {
-        padding-inline: 0;
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .mvp-nav-group {
+        transition:
+            height 300ms var(--sidebar-ease-open),
+            padding 300ms var(--sidebar-ease-open);
     }
-    .tass-shell.sidebar-collapsed .account-control {
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .mvp-nav-group > span {
+        transition:
+            opacity 200ms ease 75ms,
+            transform 240ms var(--sidebar-ease-open) 75ms;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .mvp-nav-group::after {
+        transition:
+            opacity 140ms ease,
+            transform 180ms ease;
+    }
+
+    .tass-shell.sidebar-collapsed .mvp-nav-group {
+        height: 17px;
+        padding: 0 6px;
+    }
+
+    .tass-shell.sidebar-collapsed .mvp-nav-group > span {
+        opacity: 0;
+        transform: translateX(-8px);
+    }
+
+    .tass-shell.sidebar-collapsed .mvp-nav-group::after {
+        opacity: 1;
+        transform: scaleX(1);
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true'] .mvp-nav-group {
+        transition:
+            height 280ms var(--sidebar-ease-close),
+            padding 280ms var(--sidebar-ease-close);
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .mvp-nav-group
+        > span {
+        transition:
+            opacity 120ms ease,
+            transform 150ms ease;
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .mvp-nav-group::after {
+        transition:
+            opacity 200ms ease 90ms,
+            transform 240ms var(--sidebar-ease-open) 90ms;
+    }
+
+    /* Nav items: constant left padding keeps every icon anchored at x = 36px. */
+    .tass-shell .sidebar > nav.nav {
+        gap: 3px;
+    }
+
+    .tass-shell .sidebar .nav button {
         justify-content: flex-start;
-        padding-inline: 10px 0;
+        min-height: 35px;
+        padding: 7px 10px 7px 14.5px;
+        border-radius: 9px;
+        overflow: hidden;
+        transition:
+            background 200ms ease,
+            color 200ms ease,
+            box-shadow 200ms ease;
     }
-    .tass-shell:not(.sidebar-collapsed)
-        :is(.brand-copy, .nav button > span:not(.count), .account-identity) {
-        animation: sidebar-label-in 180ms ease-out both;
+
+    .tass-shell .sidebar .nav button:has(.count) {
+        padding-right: 38px;
+    }
+
+    .tass-shell.sidebar-collapsed .nav button:has(.count) {
+        padding-right: 10px;
+    }
+
+    .tass-shell .sidebar .nav button > span:not(.count) {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .nav button.active::before {
+        transition:
+            opacity 200ms ease 80ms,
+            transform 260ms var(--sidebar-ease-open) 80ms;
+    }
+
+    .tass-shell.sidebar-collapsed .nav button.active::before {
+        opacity: 0;
+        transform: translateY(-50%) scaleY(0.2);
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .nav
+        button.active::before {
+        transition:
+            opacity 120ms ease,
+            transform 150ms ease;
+    }
+
+    .tass-shell.sidebar-collapsed .sidebar > nav.nav,
+    .tass-shell.sidebar-collapsed .sidebar > nav.nav:hover,
+    .tass-shell.sidebar-collapsed .sidebar > nav.nav:focus-within {
+        scrollbar-width: none;
+        scrollbar-color: transparent transparent;
+    }
+
+    .tass-shell.sidebar-collapsed .sidebar > nav.nav::-webkit-scrollbar,
+    .tass-shell.sidebar-collapsed .sidebar > nav.nav:hover::-webkit-scrollbar,
+    .tass-shell.sidebar-collapsed
+        .sidebar
+        > nav.nav:focus-within::-webkit-scrollbar {
+        display: none;
+        width: 0;
+    }
+
+    .tass-shell.sidebar-collapsed
+        .sidebar
+        > nav.nav:hover::-webkit-scrollbar-thumb,
+    .tass-shell.sidebar-collapsed
+        .sidebar
+        > nav.nav:focus-within::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+
+    /* Count badges glide smoothly from row right edge onto icon corner. */
+    .tass-shell .sidebar .nav button .count {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%) scale(1);
+        transform-origin: center;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0;
+        min-width: 20px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 5px;
+        border: 1.5px solid transparent;
+        font-size: 11px;
+        line-height: 1;
+        pointer-events: none;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .nav button .count {
+        transition:
+            top 340ms var(--sidebar-ease-open),
+            right 340ms var(--sidebar-ease-open),
+            transform 340ms var(--sidebar-ease-open),
+            border-radius 240ms ease,
+            border-color 240ms ease,
+            background 200ms ease,
+            color 200ms ease;
+    }
+
+    .tass-shell.sidebar-collapsed .nav button .count {
+        top: 3px;
+        right: 3px;
+        transform: translateY(0) scale(0.84);
+        min-width: 17px;
+        height: 17px;
+        padding: 0 4px;
+        border-radius: 999px;
+        border-color: var(--surface2);
+        font-size: 10px;
+        font-weight: 600;
+    }
+
+    .tass-shell.sidebar-collapsed .nav button.active .count {
+        border-color: var(--surface);
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .nav
+        button
+        .count {
+        transition:
+            top 280ms var(--sidebar-ease-close),
+            right 280ms var(--sidebar-ease-close),
+            transform 280ms var(--sidebar-ease-close),
+            border-radius 220ms ease,
+            border-color 220ms ease,
+            background 200ms ease,
+            color 200ms ease;
+    }
+
+    /* Sidebar bottom: smooth progress & account transitions, fixed avatar axis. */
+    .tass-shell .sidebar-bottom {
+        flex-shrink: 0;
+        overflow: hidden;
+        padding-top: 14px;
+    }
+
+    .tass-shell .sidebar .semester-box {
+        padding: 14px 10px 8px;
+        overflow: hidden;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .semester-box {
+        transition: padding 280ms var(--sidebar-ease-open);
+    }
+
+    .tass-shell.sidebar-collapsed .semester-box {
+        padding: 12px 6px 6px;
+    }
+
+    .tass-shell .sidebar .semester-box .between {
+        max-height: 26px;
+        margin-bottom: 9px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .semester-box .between {
+        transition:
+            max-height 280ms var(--sidebar-ease-open),
+            margin-bottom 280ms var(--sidebar-ease-open),
+            opacity 200ms ease 80ms,
+            transform 240ms var(--sidebar-ease-open) 80ms,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell.sidebar-collapsed .semester-box .between {
+        max-height: 0;
+        margin-bottom: 0;
+        opacity: 0;
+        transform: translateX(-8px);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .semester-box
+        .between {
+        transition:
+            max-height 240ms var(--sidebar-ease-close),
+            margin-bottom 240ms var(--sidebar-ease-close),
+            opacity 130ms ease,
+            transform 150ms ease,
+            visibility 0ms linear 130ms;
+    }
+
+    .tass-shell .sidebar .role-boundary {
+        max-height: 60px;
+        padding: 14px 9px 4px;
+        overflow: hidden;
+        white-space: nowrap;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar .role-boundary {
+        transition:
+            max-height 280ms var(--sidebar-ease-open),
+            padding 280ms var(--sidebar-ease-open),
+            border-color 240ms ease,
+            opacity 200ms ease 75ms,
+            transform 240ms var(--sidebar-ease-open) 75ms,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell.sidebar-collapsed .role-boundary {
+        max-height: 0;
+        padding-block: 0;
+        border-top-color: transparent;
+        opacity: 0;
+        transform: translateX(-8px);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true'] .role-boundary {
+        transition:
+            max-height 240ms var(--sidebar-ease-close),
+            padding 240ms var(--sidebar-ease-close),
+            border-color 150ms ease,
+            opacity 130ms ease,
+            transform 150ms ease,
+            visibility 0ms linear 130ms;
+    }
+
+    .tass-shell .sidebar .account-control {
+        padding: 10px 9px 10px 6px;
+        min-height: 56px;
+        margin-top: 10px;
+        overflow: hidden;
+    }
+
+    .tass-shell .sidebar .account-identity {
+        white-space: nowrap;
+    }
+
+    /* Unified label reveal & exit choreography (100% interruptible). */
+    .tass-shell
+        .sidebar
+        :is(
+            .brand-copy,
+            .workspace > .grow,
+            .workspace > .icon,
+            .nav button > span:not(.count),
+            .account-identity,
+            .account-control > .icon
+        ) {
+        opacity: 1;
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    .tass-shell[data-sidebar-ready='true']
+        .sidebar
+        :is(
+            .brand-copy,
+            .workspace > .grow,
+            .workspace > .icon,
+            .account-identity,
+            .account-control > .icon
+        ) {
+        transition:
+            opacity 220ms ease 70ms,
+            transform 260ms var(--sidebar-ease-open) 70ms,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell[data-sidebar-ready='true']
+        .sidebar
+        .nav
+        button
+        > span:not(.count) {
+        transition:
+            opacity 210ms ease calc(60ms + min(var(--nav-i, 0), 8) * 12ms),
+            transform 260ms var(--sidebar-ease-open)
+                calc(60ms + min(var(--nav-i, 0), 8) * 12ms),
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell.sidebar-collapsed
+        .sidebar
+        :is(
+            .brand-copy,
+            .workspace > .grow,
+            .workspace > .icon,
+            .nav button > span:not(.count),
+            .account-identity,
+            .account-control > .icon
+        ) {
+        opacity: 0;
+        transform: translateX(-8px);
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .tass-shell.sidebar-collapsed[data-sidebar-ready='true']
+        .sidebar
+        :is(
+            .brand-copy,
+            .workspace > .grow,
+            .workspace > .icon,
+            .nav button > span:not(.count),
+            .account-identity,
+            .account-control > .icon
+        ) {
+        transition:
+            opacity 130ms ease,
+            transform 160ms var(--sidebar-ease-close),
+            visibility 0ms linear 130ms;
+    }
+
+    /* Sleek floating tooltip for collapsed desktop rail. */
+    .tass-shell .rail-tooltip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        position: fixed;
+        z-index: 90;
+        transform: translateY(-50%);
+        padding: 6px 10px;
+        border-radius: 8px;
+        background: var(--ink);
+        color: var(--surface);
+        font: 500 12px/1.35 var(--body);
+        white-space: nowrap;
+        pointer-events: none;
+        box-shadow: 0 8px 24px rgba(34, 35, 31, 0.2);
+        animation: rail-tip-in 140ms var(--sidebar-ease-open) both;
+    }
+
+    .tass-shell .rail-tooltip-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 5px;
+        background: rgba(255, 255, 255, 0.16);
+        font-size: 10.5px;
+        font-weight: 600;
     }
 }
 
-@keyframes sidebar-label-in {
+/* Preserve x = 36px spine & centered toggle alignment on compact laptop heights. */
+@media (max-height: 820px) and (min-width: 701px) {
+    .tass-shell .sidebar {
+        padding: 18px 12px 14px;
+    }
+    .tass-shell .sidebar .brand,
+    .tass-shell .sidebar:has(.mvp-nav-group) .brand {
+        padding: 0 6px 12px;
+    }
+    .tass-shell .sidebar > .sidebar-toggle {
+        top: 23px;
+    }
+    .tass-shell .sidebar .workspace,
+    .tass-shell .sidebar:has(.mvp-nav-group) .workspace {
+        padding: 7px 10px 7px 6px;
+        min-height: 50px;
+        margin-bottom: 8px;
+    }
+    .tass-shell .sidebar .nav button {
+        min-height: 33px;
+        padding: 6px 10px 6px 14.5px;
+    }
+    .tass-shell .sidebar .mvp-nav-group {
+        height: 24px;
+        padding-top: 8px;
+    }
+    .tass-shell .sidebar-bottom {
+        padding-top: 10px;
+    }
+    .tass-shell .sidebar .semester-box {
+        padding-block: 11px 4px;
+    }
+    .tass-shell .sidebar .account-control {
+        padding: 8px 9px 8px 6px;
+        min-height: 46px;
+        margin-top: 8px;
+    }
+}
+
+@media (max-height: 700px) and (min-width: 701px) {
+    .tass-shell .sidebar {
+        padding: 12px 12px 10px;
+    }
+    .tass-shell .sidebar .brand,
+    .tass-shell .sidebar:has(.mvp-nav-group) .brand {
+        padding: 0 7px 9px;
+    }
+    .tass-shell .sidebar .brandmark {
+        width: 34px;
+        height: 34px;
+    }
+    .tass-shell .sidebar > .sidebar-toggle {
+        top: 16px;
+    }
+    .tass-shell .sidebar .workspace,
+    .tass-shell .sidebar:has(.mvp-nav-group) .workspace {
+        padding: 6px 10px 6px 6px;
+        min-height: 46px;
+        margin-bottom: 6px;
+    }
+    .tass-shell .sidebar .nav button {
+        min-height: 30px;
+        padding: 5px 10px 5px 14.5px;
+    }
+    .tass-shell .sidebar .mvp-nav-group {
+        height: 22px;
+        padding-top: 6px;
+    }
+    .tass-shell .sidebar-bottom {
+        padding-top: 8px;
+    }
+    .tass-shell .sidebar .semester-box {
+        padding-block: 8px 3px;
+    }
+    .tass-shell .sidebar .account-control {
+        padding: 7px 9px 7px 6px;
+        min-height: 42px;
+        margin-top: 6px;
+    }
+}
+
+/* Mobile drawer: crisp asymmetric glide, close control & staggered content reveal. */
+@media (max-width: 700px) {
+    .tass-shell .sidebar {
+        width: min(286px, calc(100vw - 52px));
+        padding: 20px 16px 16px;
+        transform: translate3d(calc(-100% - 24px), 0, 0);
+        visibility: hidden;
+        box-shadow: none;
+        will-change: transform;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar {
+        transition:
+            transform 260ms cubic-bezier(0.32, 0.72, 0, 1),
+            box-shadow 220ms ease-in,
+            visibility 0ms linear 260ms;
+    }
+
+    .tass-shell .sidebar.open {
+        transform: translate3d(0, 0, 0);
+        visibility: visible;
+        box-shadow: 16px 0 64px rgba(20, 24, 16, 0.22);
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open {
+        transition:
+            transform 380ms var(--sidebar-ease-open),
+            box-shadow 360ms ease-out,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell .nav-backdrop {
+        background: rgba(16, 21, 14, 0.38);
+        backdrop-filter: blur(4px) saturate(110%);
+        opacity: 0;
+        visibility: hidden;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .nav-backdrop {
+        transition:
+            opacity 240ms ease-in,
+            visibility 0ms linear 240ms;
+    }
+
+    .tass-shell.mobile-nav-open .nav-backdrop {
+        opacity: 1;
+        visibility: visible;
+    }
+
+    .tass-shell.mobile-nav-open[data-sidebar-ready='true'] .nav-backdrop {
+        transition:
+            opacity 320ms ease-out,
+            visibility 0ms linear 0ms;
+    }
+
+    .tass-shell .sidebar .brand {
+        padding: 0 0 16px;
+        gap: 11px;
+    }
+
+    .tass-shell .sidebar-mobile-close {
+        display: inline-grid;
+        margin-left: auto;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        border-radius: 9px;
+        color: var(--muted);
+    }
+
+    .tass-shell .sidebar-mobile-close:hover {
+        color: var(--ink);
+        background: var(--soft);
+    }
+
+    .tass-shell .sidebar .mvp-nav-group > span {
+        display: block;
+    }
+
+    .tass-shell
+        .sidebar:not(.open)
+        :is(.brand, .workspace, .nav-label, .nav button, .sidebar-bottom) {
+        opacity: 0;
+        transform: translate3d(-12px, 0, 0);
+    }
+
+    .tass-shell[data-sidebar-ready='true']
+        .sidebar:not(.open)
+        :is(.brand, .workspace, .nav-label, .nav button, .sidebar-bottom) {
+        transition:
+            opacity 140ms ease,
+            transform 160ms ease;
+    }
+
+    .tass-shell
+        .sidebar.open
+        :is(.brand, .workspace, .nav-label, .nav button, .sidebar-bottom) {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open .brand {
+        transition:
+            opacity 220ms ease 40ms,
+            transform 280ms var(--sidebar-ease-open) 40ms;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open .workspace {
+        transition:
+            opacity 220ms ease 65ms,
+            transform 280ms var(--sidebar-ease-open) 65ms;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open .nav-label {
+        transition:
+            opacity 200ms ease 80ms,
+            transform 260ms var(--sidebar-ease-open) 80ms;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open .nav button {
+        transition:
+            opacity 220ms ease calc(85ms + min(var(--nav-i, 0), 8) * 18ms),
+            transform 280ms var(--sidebar-ease-open)
+                calc(85ms + min(var(--nav-i, 0), 8) * 18ms),
+            background 200ms ease,
+            color 200ms ease;
+    }
+
+    .tass-shell[data-sidebar-ready='true'] .sidebar.open .sidebar-bottom {
+        transition:
+            opacity 240ms ease 140ms,
+            transform 300ms var(--sidebar-ease-open) 140ms;
+    }
+
+    .tass-shell .mobile-menu {
+        transition:
+            transform 160ms var(--sidebar-ease-open),
+            background 160ms ease,
+            color 160ms ease;
+    }
+
+    .tass-shell .mobile-menu:active {
+        transform: scale(0.92);
+    }
+}
+
+@keyframes rail-tip-in {
     from {
         opacity: 0;
-        transform: translateX(-5px);
+        transform: translate(-5px, -50%);
     }
     to {
         opacity: 1;
-        transform: none;
+        transform: translate(0, -50%);
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .tass-shell {
-        transition: none;
-    }
+    .tass-shell,
+    .tass-shell[data-sidebar-ready='true'],
     .tass-shell .sidebar,
-    .tass-shell .app,
-    .tass-shell .sidebar-toggle > .icon {
-        transition: none;
-    }
-    .tass-shell
-        :is(.brand-copy, .nav button > span:not(.count), .account-identity) {
+    .tass-shell .sidebar *,
+    .tass-shell .sidebar *::before,
+    .tass-shell .sidebar *::after,
+    .tass-shell .nav-backdrop,
+    .tass-shell .bulk-bar,
+    .tass-shell .mobile-menu,
+    .tass-shell .rail-tooltip {
+        transition: none !important;
         animation: none !important;
     }
 }
 
 @media print {
-    .tass-shell .sidebar-toggle {
-        display: none;
+    .tass-shell .sidebar-toggle,
+    .tass-shell .sidebar-mobile-close,
+    .tass-shell .rail-tooltip {
+        display: none !important;
     }
 }

@@ -1,5 +1,7 @@
 /* The arrow uses the original prototype `down` glyph. */
 .tass-shell select:not([multiple]):not([size]) {
+    min-inline-size: 0;
+    max-inline-size: 100%;
     appearance: none;
     font-family: var(--body);
     color: var(--text);
@@ -12,6 +14,9 @@
     border-color: var(--line);
     border-radius: var(--control-radius, 7px);
     cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .tass-shell select:not([multiple]):not([size]):hover:not(:disabled) {
     border-color: color-mix(in oklch, var(--ink) 30%, var(--line));
@@ -27,6 +32,26 @@
 /* Retain native form, keyboard and accessibility behavior; older browsers
    keep their native picker with the same styled control above. */
 @supports (appearance: base-select) {
+    .tass-shell select > .select-value-button {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: start;
+    }
+    .tass-shell .select-value-button selectedcontent {
+        display: block;
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
     .tass-shell select:not([multiple]):not([size]),
     .tass-shell select:not([multiple]):not([size])::picker(select) {
         appearance: base-select;

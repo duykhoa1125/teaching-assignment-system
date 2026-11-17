@@ -14,17 +14,29 @@
     background: var(--surface);
     color: var(--text);
     border: 1px solid var(--line);
-    border-left: 3px solid var(--muted);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-popover);
     padding: 16px;
     font-size: var(--text-sm);
+    overflow-wrap: anywhere;
 }
-.success {
-    border-left-color: var(--success);
+.toast > div {
+    min-width: 0;
 }
-.error {
-    border-left-color: var(--danger);
+@media (prefers-reduced-motion: no-preference) {
+    .toast {
+        animation: toast-enter 180ms ease-out both;
+    }
+}
+@keyframes toast-enter {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 .toast > svg {
     flex-shrink: 0;

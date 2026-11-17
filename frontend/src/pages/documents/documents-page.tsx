@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/results/results.css';
 import { useState } from 'react';
 import { SnapshotDocumentMarkup } from '@/features/governance/document-markup';
@@ -283,7 +284,7 @@ export function DocumentsPage() {
                 <div className="mvp-filter" style={{ marginBottom: 16 }}>
                     <label>
                         Góc nhìn{' '}
-                        <select
+                        <Select
                             name="export_mode"
                             value={exportMode}
                             onChange={(e) =>
@@ -294,7 +295,7 @@ export function DocumentsPage() {
                         >
                             <option value="teachers">Theo giáo viên</option>
                             <option value="classes">Theo lớp</option>
-                        </select>
+                        </Select>
                     </label>
                     <span
                         className={`mvp-status ${canIssue ? 'PASS' : 'INSUFFICIENT_DATA'}`}

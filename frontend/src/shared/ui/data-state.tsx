@@ -9,7 +9,7 @@ export function LoadingState({
     label?: string;
 }) {
     return (
-        <div className={styles.dataState} role="status">
+        <div className={styles.dataState} role="status" aria-busy="true">
             <Icon glyph={LoaderCircle} size={24} className={styles.spinner} />
             <p>{label}</p>
         </div>

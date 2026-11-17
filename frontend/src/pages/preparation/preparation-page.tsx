@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import '@/pages/admin/catalog-actions.css';
 import { ReadinessIssue } from '@/features/preparation/readiness-issue';
 import '@/pages/preparation/preparation-ui.css';
@@ -896,7 +897,7 @@ export function PreparationPage() {
                         </div>
                     ) : null}
                 </div>
-                <select
+                <Select
                     aria-label="Chọn đợt phân công chuẩn bị"
                     value={activeRound?.id ?? ''}
                     onChange={(e) => {
@@ -909,7 +910,7 @@ export function PreparationPage() {
                             {r.round_code} ({r.status})
                         </option>
                     ))}
-                </select>
+                </Select>
                 {activeRound ? (
                     <PillBadge
                         tone={activeRound.scope_confirmed_at ? '' : 'amber'}
@@ -1051,7 +1052,7 @@ export function PreparationPage() {
                     </div>
                     <div className="panel-body">
                         <div className="mvp-filter">
-                            <select
+                            <Select
                                 aria-label="Lọc phạm vi theo khối"
                                 value={scopeGradeFilter}
                                 onChange={(e) =>
@@ -1064,19 +1065,24 @@ export function PreparationPage() {
                                         {g.name}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                         </div>
                         {scopesQuery.isLoading ? (
-                            <RoleStateCard
-                                kind="loading"
-                                title="Đang tải phạm vi khối–môn…"
-                                detail="Đang đọc dữ liệu phạm vi của đợt."
+                            <DataTable
+                                variant="prototype"
+                                caption="Phạm vi khối–môn của đợt"
+                                columns={scopeColumns}
+                                updating={scopesQuery.isFetching}
+                                rows={[]}
+                                rowKey={() => 0}
+                                loading
                             />
                         ) : filteredScopes.length > 0 ? (
                             <DataTable
                                 variant="prototype"
                                 caption="Phạm vi khối–môn của đợt"
                                 columns={scopeColumns}
+                                updating={scopesQuery.isFetching}
                                 rows={filteredScopes}
                                 rowKey={(row) => row.id}
                             />
@@ -1138,7 +1144,7 @@ export function PreparationPage() {
                     </div>
                     <div className="panel-body">
                         <div className="mvp-filter">
-                            <select
+                            <Select
                                 aria-label="Lọc theo phạm vi khối–môn"
                                 value={appScopeFilter}
                                 onChange={(e) =>
@@ -1153,8 +1159,8 @@ export function PreparationPage() {
                                         {formatScopeLabel(s)}
                                     </option>
                                 ))}
-                            </select>
-                            <select
+                            </Select>
+                            <Select
                                 aria-label="Lọc theo trạng thái áp dụng"
                                 value={appStatusFilter}
                                 onChange={(e) =>
@@ -1172,19 +1178,24 @@ export function PreparationPage() {
                                 <option value="UNDETERMINED">
                                     Chưa xác định
                                 </option>
-                            </select>
+                            </Select>
                         </div>
                         {allAppsQuery.isLoading ? (
-                            <RoleStateCard
-                                kind="loading"
-                                title="Đang tải cặp lớp–môn…"
-                                detail="Đang đọc trạng thái áp dụng của từng lớp."
+                            <DataTable
+                                variant="prototype"
+                                caption="Phân loại áp dụng lớp–môn"
+                                columns={appColumns}
+                                updating={allAppsQuery.isFetching}
+                                rows={[]}
+                                rowKey={() => 0}
+                                loading
                             />
                         ) : filteredApps.length > 0 ? (
                             <DataTable
                                 variant="prototype"
                                 caption="Phân loại áp dụng lớp–môn"
                                 columns={appColumns}
+                                updating={allAppsQuery.isFetching}
                                 rows={filteredApps}
                                 rowKey={(row) => row.id}
                             />
@@ -1253,7 +1264,7 @@ export function PreparationPage() {
                             lại.
                         </div>
                         <div className="mvp-filter">
-                            <select
+                            <Select
                                 aria-label="Lọc theo cặp lớp–môn áp dụng"
                                 value={componentAppFilter}
                                 onChange={(e) =>
@@ -1271,7 +1282,7 @@ export function PreparationPage() {
                                             : ' (Chưa chốt)'}
                                     </option>
                                 ))}
-                            </select>
+                            </Select>
                             {componentAppFilter ? (
                                 <button
                                     type="button"
@@ -1292,16 +1303,21 @@ export function PreparationPage() {
                             ) : null}
                         </div>
                         {allComponentsQuery.isLoading ? (
-                            <RoleStateCard
-                                kind="loading"
-                                title="Đang tải thành phần bắt buộc…"
-                                detail="Đang đọc tập thành phần bắt buộc."
+                            <DataTable
+                                variant="prototype"
+                                caption="Tập thành phần bắt buộc"
+                                columns={componentColumns}
+                                updating={allComponentsQuery.isFetching}
+                                rows={[]}
+                                rowKey={() => 0}
+                                loading
                             />
                         ) : filteredComponents.length > 0 ? (
                             <DataTable
                                 variant="prototype"
                                 caption="Tập thành phần bắt buộc"
                                 columns={componentColumns}
+                                updating={allComponentsQuery.isFetching}
                                 rows={filteredComponents}
                                 rowKey={(row) => row.id}
                             />

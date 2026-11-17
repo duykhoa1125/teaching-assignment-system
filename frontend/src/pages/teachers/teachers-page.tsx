@@ -1,3 +1,5 @@
+import { Select } from '@/shared/ui/select';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import '@/pages/admin/catalog-actions.css';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -163,11 +165,13 @@ export function TeachersPage() {
             <div className={styles.mvpToolbar}>
                 <div className={styles.toolbarMeta}>
                     <span>
-                        {teachersQuery.isPending
-                            ? 'Đang tải danh sách giáo viên…'
-                            : rows.length > 0
-                              ? `Hiển thị ${rangeStart}–${rangeEnd} · ${selectedSchool ? selectedSchool.name : 'Tất cả trường'}`
-                              : `0 hồ sơ khớp điều kiện · ${selectedSchool ? selectedSchool.name : 'Tất cả trường'}`}
+                        {teachersQuery.isPlaceholderData
+                            ? 'Đang cập nhật kết quả…'
+                            : teachersQuery.isPending
+                              ? 'Đang tải danh sách giáo viên…'
+                              : rows.length > 0
+                                ? `Hiển thị ${rangeStart}–${rangeEnd} · ${selectedSchool ? selectedSchool.name : 'Tất cả trường'}`
+                                : `0 hồ sơ khớp điều kiện · ${selectedSchool ? selectedSchool.name : 'Tất cả trường'}`}
                     </span>
                     {teachersQuery.isFetching && !teachersQuery.isPending ? (
                         <span className={styles.syncBadge} role="status">
@@ -177,7 +181,7 @@ export function TeachersPage() {
                 </div>
 
                 <div className={styles.mvpFilter}>
-                    <select
+                    <Select
                         id={schoolFilterId}
                         name="school_id"
                         aria-label="Lọc theo trường"
@@ -200,7 +204,7 @@ export function TeachersPage() {
                                 {school.name}
                             </option>
                         ))}
-                    </select>
+                    </Select>
 
                     <div className={styles.inputWrap}>
                         <Icon name="search" />
@@ -232,6 +236,15 @@ export function TeachersPage() {
                         }}
                     />
 
+                    {hasActiveFilter ? (
+                        <button
+                            type="button"
+                            className="btn small"
+                            onClick={clearAllFilters}
+                        >
+                            Xóa lọc
+                        </button>
+                    ) : null}
                     <div className={styles.headingActions}>
                         <button
                             ref={addButtonRef}
@@ -245,32 +258,20 @@ export function TeachersPage() {
                             Thêm giáo viên
                         </button>
                     </div>
-                    {hasActiveFilter ? (
-                        <button
-                            type="button"
-                            className="btn small"
-                            onClick={clearAllFilters}
-                        >
-                            Xóa lọc
-                        </button>
-                    ) : null}
                 </div>
             </div>
 
             {teachersQuery.isPending ? (
                 <section className={styles.panel}>
-                    <div
-                        className={`${styles.stateCard} ${styles.stateLoading}`}
-                        role="status"
-                    >
-                        <span className={`${styles.stateSymbol} icon-surface`}>
-                            <Icon name="teachers" />
+                    <div role="status" aria-busy="true">
+                        <span className="sr-only">
+                            Đang tải danh sách giáo viên…
                         </span>
-                        <h3>Đang tải danh sách giáo viên</h3>
-                        <p>
-                            Đang đọc dữ liệu đội ngũ và danh mục trường từ hệ
-                            thống…
-                        </p>
+                        <Skeleton
+                            variant="teachers"
+                            tableClassName={styles.mvpTable}
+                            scrollClassName={styles.tableScroll}
+                        />
                     </div>
                 </section>
             ) : teachersQuery.isError ? (
@@ -307,6 +308,8 @@ export function TeachersPage() {
                         className={styles.tableScroll}
                         role="region"
                         aria-label="Danh sách giáo viên"
+                        aria-busy={teachersQuery.isFetching}
+                        inert={teachersQuery.isPlaceholderData || undefined}
                         tabIndex={0}
                     >
                         <table className={styles.mvpTable}>
@@ -547,10 +550,16 @@ export function TeachersPage() {
 
                     <nav className={styles.tableBottom} aria-label="Phân trang">
                         <span aria-live="polite">
-                            Trang {currentPage}
-                            {rows.length > 0
-                                ? ` · Dòng ${rangeStart}–${rangeEnd}`
-                                : ' · Không có dữ liệu'}
+                            {teachersQuery.isPlaceholderData ? (
+                                'Đang cập nhật kết quả…'
+                            ) : (
+                                <>
+                                    Trang {currentPage}
+                                    {rows.length > 0
+                                        ? ` · Dòng ${rangeStart}–${rangeEnd}`
+                                        : ' · Không có dữ liệu'}
+                                </>
+                            )}
                         </span>
                         <div className={styles.paginationControls}>
                             <button

@@ -1,3 +1,4 @@
+import { retainScopedList } from '@/shared/query/retain-scoped-list';
 import { invalidatePlanQueries } from '../workspace/invalidate-plan-queries';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { catalogKeys } from '@/features/catalogs/queries';
@@ -33,6 +34,12 @@ export function useScopesQuery(
     enabled = true,
 ) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'round_id',
+            'scope_id',
+            'applicability_id',
+            'semester_id',
+        ]),
         queryKey: preparationKeys.scopes(filters),
         queryFn: ({ signal }) => preparationApi.listScopes(filters, signal),
         enabled,
@@ -44,6 +51,12 @@ export function useApplicabilitiesQuery(
     enabled = true,
 ) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'round_id',
+            'scope_id',
+            'applicability_id',
+            'semester_id',
+        ]),
         queryKey: preparationKeys.applicabilities(filters),
         queryFn: ({ signal }) =>
             preparationApi.listApplicabilities(filters, signal),
@@ -56,6 +69,12 @@ export function useRequiredComponentsQuery(
     enabled = true,
 ) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'round_id',
+            'scope_id',
+            'applicability_id',
+            'semester_id',
+        ]),
         queryKey: preparationKeys.requiredComponents(filters),
         queryFn: ({ signal }) =>
             preparationApi.listRequiredComponents(filters, signal),
@@ -68,6 +87,12 @@ export function useDemandsQuery(
     enabled = true,
 ) {
     return useQuery({
+        placeholderData: retainScopedList(filters, [
+            'round_id',
+            'scope_id',
+            'applicability_id',
+            'semester_id',
+        ]),
         queryKey: preparationKeys.demands(filters),
         queryFn: ({ signal }) => preparationApi.listDemands(filters, signal),
         enabled,

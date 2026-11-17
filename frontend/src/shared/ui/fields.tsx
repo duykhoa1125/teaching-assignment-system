@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import {
     useId,
     type ReactNode,
@@ -101,7 +102,7 @@ export function SelectField({
     const id = suppliedId ?? generated;
     return (
         <FieldFrame {...{ id, label, hint, error }} required={props.required}>
-            <select
+            <Select
                 {...props}
                 id={id}
                 className={`${styles.input} ${className}`}
@@ -114,7 +115,7 @@ export function SelectField({
                 )}
             >
                 {children}
-            </select>
+            </Select>
         </FieldFrame>
     );
 }

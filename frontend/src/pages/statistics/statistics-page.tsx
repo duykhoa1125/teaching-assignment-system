@@ -1,3 +1,4 @@
+import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
@@ -348,7 +349,7 @@ export function StatisticsPage() {
 
                 <div className="mvp-toolbar">
                     <div className="mvp-filter">
-                        <select
+                        <Select
                             id="stats-round-select"
                             name="round_id"
                             aria-label="Chọn đợt phân công thống kê"
@@ -362,8 +363,8 @@ export function StatisticsPage() {
                                     {item.round_code}
                                 </option>
                             ))}
-                        </select>
-                        <select
+                        </Select>
+                        <Select
                             id="stats-group-select"
                             name="group_by"
                             aria-label="Nhóm thống kê"
@@ -377,8 +378,8 @@ export function StatisticsPage() {
                             <option value="grade">Theo khối</option>
                             <option value="class">Theo lớp</option>
                             <option value="teacher">Theo giáo viên</option>
-                        </select>
-                        <select
+                        </Select>
+                        <Select
                             id="stats-value-select"
                             name="group_filter"
                             aria-label="Lọc nhóm thống kê"
@@ -393,7 +394,7 @@ export function StatisticsPage() {
                                         : name}
                                 </option>
                             ))}
-                        </select>
+                        </Select>
                     </div>
                     <span className="mvp-code">
                         Snapshot #{plan.input_snapshot_id} ·{' '}

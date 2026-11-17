@@ -1,3 +1,5 @@
+import { RefreshStatus } from '@/shared/ui/refresh-status';
+import { Skeleton } from '@/shared/ui/skeleton';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router';
@@ -152,21 +154,10 @@ export function OverviewPage() {
         return (
             <div className={styles.overviewRoot}>
                 {renderPageHeader()}
-                <section className={styles.panel}>
-                    <div
-                        className={`${styles.stateCard} ${styles.stateLoading}`}
-                        role="status"
-                    >
-                        <span className={`${styles.stateSymbol} icon-surface`}>
-                            <Icon name="spark" />
-                        </span>
-                        <h3>Đang tải dữ liệu tổng quan</h3>
-                        <p>
-                            Đang tổng hợp nhịp tải đội ngũ, tiến độ phân công và
-                            các mục cần xử lý…
-                        </p>
-                    </div>
-                </section>
+                <div role="status" aria-busy="true">
+                    <span className="sr-only">Đang tải tổng quan…</span>
+                    <Skeleton variant="dashboard" />
+                </div>
             </div>
         );
     }
@@ -236,7 +227,8 @@ export function OverviewPage() {
     const modalConfig = modalKind ? MODAL_CONTENT[modalKind] : null;
 
     return (
-        <div className={styles.overviewRoot}>
+        <div className={styles.overviewRoot} style={{ position: 'relative' }}>
+            <RefreshStatus active={query.isFetching} />
             <CompletionBanner
                 phase={dashboard.phase}
                 onOpenExport={() => setModalKind('export')}
