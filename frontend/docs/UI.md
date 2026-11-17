@@ -235,3 +235,7 @@ Theo phương án người dùng đã duyệt: `styles/focus.css` ghi đè CSS f
 Theo phương án người dùng duyệt: trước có viền trái 3px theo trạng thái; sau bỏ vạch màu ở tất cả toast, giữ nền/viền trung tính, bo góc/bóng/vị trí hiện tại và icon đỏ/xanh không ô nền. Chữ dài được ngắt trong khung. Hiện bằng fade + translateY(6px), 180ms ease-out, chỉ khi no-preference. Lỗi có mô tả mặc định 8 giây, thông báo khác 4,2 giây; durationMs tùy chỉnh/null/không dương giữ semantics. Hover hoặc focus tạm dừng và tiếp tục thời gian còn lại khi rời cả hai. Timer thuộc từng toast, được dọn khi đóng/clear/unmount hoặc bị đẩy khỏi stack tối đa 4 mục. Cập nhật mô tả mẫu /dev/ui theo hành vi mới; không sửa prototype.
 
 QA Chrome desktop: đã xem toast lỗi không vạch màu, icon/viền/nội dung/nút đóng; thử đóng, focus giữ quá thời hạn và blur tự đóng tiếp. Chưa QA mobile, hover, reduced motion hoặc mọi duration tùy chỉnh. Build/lint đạt; 95/96 tests đạt, test SVG đối chiếu demo thất bại do override icon warning đã có từ lượt trước, ngoài phạm vi toast.
+
+### FE-08 — sửa responsive giáo viên, 17/11/2026
+
+Lỗi cụ thể: ở 390px, personal-greeting đặt avatar/tên/badge trên một hàng, ép tên đầy đủ thành cột rất hẹp. CSS riêng pages/teacher/teacher-pages.css chuyển thành grid avatar + tên và đưa badge xuống hàng dưới ở ≤700px. Giữ font/màu/ảnh/kích thước desktop, không sửa prototype hoặc CSS sinh. Đã xem trước/sau mobile 390×844 và desktop 1440×900. Phạm vi QA, reduced motion và các giới hạn được ghi tại [QA FE-08](FE08_QA.md).

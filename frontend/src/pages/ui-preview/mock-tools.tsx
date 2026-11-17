@@ -51,7 +51,7 @@ export function MockTools() {
             </div>
             <p className={styles.help}>
                 Công cụ phát triển gọi qua API client và TanStack Query. Dữ liệu
-                chỉ nằm trong bộ nhớ; tải lại trang sẽ về fixture gốc. Reset áp
+                được giữ qua reload bằng sessionStorage khi khả dụng. Reset áp
                 dụng toàn bộ mock store và query cache.
             </p>
             <div className={styles.mockToolbar}>

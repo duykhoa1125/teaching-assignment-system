@@ -2,23 +2,25 @@
 
 **Quy tắc giao diện:** copy y chang demo về màu sắc, font, icon, họa tiết và bố cục; chỉ thay đổi có lý do cụ thể về lỗi thiết kế, tối ưu kỹ thuật cần thiết hoặc backend. Chi tiết và tiêu chí đối chiếu tại [quy trình frontend](../docs/FRONTEND_DEVELOPMENT.md). Không coi bộ khung hiện tại là giao diện đã khớp hoàn chỉnh.
 
-Ứng dụng React/TypeScript/Vite được khởi tạo ngày **15/11/2026**, theo [quy trình phát triển frontend](../docs/FRONTEND_DEVELOPMENT.md). Có router, khung điều phối React theo demo, QueryClient, HTTP client và các trang tổng quan/giáo viên/phân công/không tìm thấy.
+Cập nhật **17/11/2026**. React/TypeScript/Vite với React Router, TanStack Query và MSW. FE-01–07 đã có nền tảng và các luồng nghiệp vụ mô phỏng; FE-08 đã hoàn thành vòng QA mock theo [ma trận kiểm chứng](docs/FE08_QA.md), có giới hạn phạm vi được ghi rõ. Chưa nghiệm thu tích hợp API thật (FE-09–11).
 
-**Đã có nền tảng UI FE-02A và mock MSW FE-02B.** Font Be Vietnam Pro/Manrope và SVG gốc của demo; các component dùng chung được xem thử tại `/dev/ui`. Handler giáo viên hỗ trợ đọc/ghi qua HTTP client; trang giáo viên/phân công vẫn chờ triển khai nghiệp vụ. Chưa có UI CRUD hoàn chỉnh, session hoặc solver mock.
+## Phạm vi hiện có
 
-## Khung giao diện điều phối
+- Session mô phỏng, đăng nhập/đăng xuất, chọn vai trò, phạm vi và ngữ cảnh học kỳ/đợt.
+- Tổng quan, CRUD giáo viên/danh mục/năm học/học kỳ/đợt; chuẩn bị dữ liệu, nhu cầu và readiness.
+- Workspace DRAFT, sửa/khóa, snapshot/revision; submit/poll/cancel solver mô phỏng, validation, tải và thống kê.
+- Phản hồi, lịch sử, phát hành PDF mô phỏng, nguồn/bí danh/quy tắc/nhật ký và cổng giáo viên theo bản phát hành.
+- Component dùng chung, skeleton, dropdown, tooltip, focus và toast tại `/dev/ui`.
 
-Đã chuyển logo, sidebar đủ13 mục/3 nhóm, header/breadcrumb, footer, chọn học kỳ, tìm kiếm nhanh, thông báo và hộp tài khoản sang React. CSS, font và ảnh đại diện trích từ demo bằng `npm run assets:shell`; giữ nguyên prototype. Menu mobile, hover/active/focus và View Transition dùng thông số gốc. Chi tiết đối chiếu và phần còn thiếu tại [UI](docs/UI.md).
+Font, SVG và tài nguyên gốc được giữ từ demo; các ngoại lệ giao diện đã duyệt được ghi tại [UI](docs/UI.md). Prototype nguyên byte. Build/test đạt không có nghĩa mọi màn hình, responsive và hiệu ứng đã khớp hoặc được nghiệm thu.
 
-Các route nghiệp vụ còn là trang chờ, tổng quan hiện chưa phải dashboard của demo. Đây là khung cho vai trò điều phối; chưa chuyển giao diện quản trị/giáo viên, đăng nhập hoặc nghiệp vụ tài khoản. Nội dung khung lấy qua MSW GET `/api/mock/layout`, chỉ chạy mock mode; API mode không gọi endpoint xem thử này.
+## Mock và bước tiếp theo
 
-## Hướng phát triển tiếp theo: UI với mock data
+Dev mặc định mock; MSW chặn request qua HTTP client. Dữ liệu nguồn/danh bạ/phương án/governance lưu trong sessionStorage có phiên bản; reload giữ dữ liệu trong cùng tab, Reset mock khôi phục fixture. Nếu storage bị chặn thì chỉ lưu bộ nhớ; chưa đồng bộ hai tab.
 
-Ưu tiên **hoàn thiện nền tảng UI và giao diện với mock data trước, tích hợp API thật sau**. Các mốc FE-02–08 xây bộ UI, mock dùng chung, session/vai trò mô phỏng và các màn hình; FE-09–11 mới chuẩn bị/nối/nghiệm thu backend.
+Auth, solver, validation và phát hành PDF hiện là mô phỏng. Các hợp đồng `/api/mock/*` không đại diện endpoint backend đã có. API mode không tự bật mock khi request lỗi. Backend/PostgreSQL không cần cho phát triển UI mock.
 
-MSW đã chặn request ở lớp HTTP, dùng fixtures/handlers/scenarios/store tập trung; có reset, nhãn dữ liệu mẫu và lựa chọn `VITE_DATA_SOURCE=mock|api`. Dev mặc định mock; build thông thường mặc định API và loại worker. Mock không tự bật khi API thật lỗi. Xem [hướng dẫn mock](docs/MOCKS.md) và [cách dùng UI/font/icon](docs/UI.md).
-
-Auth thật, backend và PostgreSQL không phải điều kiện để hoàn thiện hoặc nghiệm thu UI mock. Tích hợp thật sẽ dùng lại các màn hình/hooks, rà các hợp đồng đã mock và kiểm chứng lại với backend; session/solver mô phỏng không chứng minh xác thực hoặc tối ưu thật đã hoạt động.
+Bước tiếp theo: hoàn tất QA FE-08, sau đó FE-09 đối chiếu DTO/endpoint, chốt auth, ID/config/quyền và dataset; FE-10 nối từng feature; FE-11 nghiệm thu tích hợp. Xem [quy trình](../docs/FRONTEND_DEVELOPMENT.md), [mock](docs/MOCKS.md) và [QA FE-08](docs/FE08_QA.md).
 
 ## Môi trường
 
@@ -38,7 +40,7 @@ if (!(Test-Path .env)) { Copy-Item .env.example .env }
 npm run dev
 ```
 
-Mở [Vite local](http://127.0.0.1:5173/) hoặc [thư viện UI và công cụ mock](http://127.0.0.1:5173/dev/ui). Worker khởi động trước React, không cần backend. Port5173 cố định, Vite báo lỗi nếu đã có tiến trình khác sử dụng. Store mock ở bộ nhớ; reload về dữ liệu ban đầu, Reset mock đặt lại store và query cache ngay trong phiên.
+Mở [Vite local](http://127.0.0.1:5173/) hoặc [thư viện UI và công cụ mock](http://127.0.0.1:5173/dev/ui). Worker khởi động trước React, không cần backend. Port5173 cố định, Vite báo lỗi nếu đã có tiến trình khác sử dụng. Store mock lưu trong sessionStorage khi khả dụng; Reset mock đặt lại dữ liệu, phiên và query cache.
 
 ### Khi chủ đích kiểm tra API thật
 
@@ -74,7 +76,7 @@ npm run build
 src/
   app/       # Providers, router, error boundary và layout
   pages/     # Các màn hình; ghép feature khi nghiệp vụ được triển khai
-  features/  # API/types giáo viên làm tài nguyên mẫu
+  features/  # API/types/queries và nghiệp vụ theo tính năng
   mocks/     # MSW browser/Node, handlers, fixtures, scenarios và store/reset
   shared/    # HTTP client, lỗi API và UI dùng chung
   styles/    # Design tokens và style toàn cục
@@ -82,9 +84,7 @@ test/        # Kiểm thử HTTP client, mock và cấu hình
 prototype/   # Demo gốc, không đưa vào production build
 ```
 
-Alias `@/` trỏ đến `src/` trong TypeScript và Vite. `features/teachers/` hiện có API/types, chưa có UI CRUD; các feature sau tiếp tục theo cấu trúc API/types/queries/components trong tài liệu quy trình.
-
-`src/mocks/` đã có. Component/feature không import fixture trực tiếp; chỉ panel công cụ phát triển truy cập scenario/reset. Các API mock hiện hỗ trợ giáo viên và danh sách trường; dữ liệu lớp/môn/học kỳ mới là fixture. Xem [hướng dẫn mock](docs/MOCKS.md).
+Alias `@/` trỏ đến `src/` trong TypeScript và Vite. Feature giữ API/types/queries và logic nghiệp vụ; page ghép giao diện. Component không import fixture trực tiếp. Các handler/store/scenario dùng chung được mô tả tại [mock](docs/MOCKS.md).
 
 `apiRequest<T>(path, options)` nhận đường dẫn như `/teachers`, tự thêm `/api`, và hỗ trợ `query`, `json`, headers, method, `AbortSignal`. Client xử lý JSON, `204`, lỗi có `code/message`, non-JSON và lỗi mạng/hủy; **kiểu T không thay kiểm tra dữ liệu runtime**. Không tự retry request ghi. QueryClient chỉ retry đọc một lần với lỗi mạng/5xx; các feature phải phân biệt 400/401/403/409/422 theo hợp đồng backend.
 

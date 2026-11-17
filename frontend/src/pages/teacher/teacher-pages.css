@@ -1,0 +1,16 @@
+/* Avoid squeezing a full teacher name between the portrait and release badge. */
+@media (max-width: 700px) {
+    .tass-shell .personal-greeting {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .tass-shell .personal-greeting > .grow {
+        min-width: 0;
+    }
+
+    .tass-shell .personal-greeting > :last-child {
+        grid-column: 2;
+        justify-self: start;
+    }
+}

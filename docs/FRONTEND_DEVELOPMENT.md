@@ -1,8 +1,10 @@
 # Quy trình phát triển frontend TASS
 
-Cập nhật: **15/11/2026**. Trạng thái: **đã có FE-01, nền tảng UI FE-02A và mock MSW FE-02B; chưa có UI nghiệp vụ/auth/solver hoàn chỉnh**.
+Cập nhật: **17/11/2026**. Trạng thái: **FE-01–07 đã có nền tảng và luồng mock; FE-08 đã hoàn thành vòng QA mock theo ma trận kiểm chứng; FE-09–11 chưa nghiệm thu tích hợp thật**.
 
-Hướng phát triển: **hoàn thiện nền tảng và giao diện với mock data trước, tích hợp API thật sau**. React/TypeScript/Vite, React Router, TanStack Query và HTTP client đã có; đã có font Be Vietnam Pro/Manrope, SVG gốc của demo, component dùng chung, MSW và khung điều phối React. Mock giáo viên/danh sách trường đã hoạt động qua HTTP client; session và solver mô phỏng, UI CRUD nghiệp vụ còn ở mốc sau. Xem [README frontend](../frontend/README.md), [UI](../frontend/docs/UI.md) và [mock](../frontend/docs/MOCKS.md).
+React/TypeScript/Vite, React Router, TanStack Query và MSW đã phục vụ session/vai trò, giáo viên, danh mục/đợt, chuẩn bị/nhu cầu/readiness, phân công/snapshot/revision, solver/validation/tải/thống kê, feedback/lịch sử/PDF và cổng giáo viên mô phỏng. Không coi auth/solver/PDF mock là tích hợp thật. Xem [README frontend](../frontend/README.md), [UI](../frontend/docs/UI.md), [mock](../frontend/docs/MOCKS.md) và [QA FE-08](../frontend/docs/FE08_QA.md).
+
+Các phần ghi ngày 15/11 bên dưới là lịch sử triển khai; không dùng các nhận xét “chưa có” ở mốc cũ làm trạng thái hiện hành.
 
 ## 1. Hiện trạng và mục tiêu
 
@@ -16,9 +18,9 @@ Bộ khung hiện có vẫn cần tiếp tục đối chiếu và hoàn thiện;
 
 | Khu vực | Hiện trạng | Hướng phát triển |
 | --- | --- | --- |
-| Frontend | React, font/icon, component dùng chung và MSW; prototype nguyên bản tại `frontend/prototype/index.html` | Dùng nền tảng này để hoàn thiện từng màn hình nghiệp vụ với mock |
+| Frontend | Các luồng nghiệp vụ mock FE-03–07, font/icon/component/MSW; prototype nguyên bản | Chốt QA FE-08 rồi rà hợp đồng API FE-09 |
 | Backend | Có CRUD, plan/current DRAFT, readiness, async solver, kết quả/validation và sửa/khóa phân công | Tái sử dụng hợp đồng hiện hành |
-| Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Làm session/vai trò mô phỏng cho UI trước; auth thật thuộc giai đoạn tích hợp |
+| Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Session/vai trò mock đã có; auth thật thuộc FE-09/10 |
 | Docker | Đã build frontend bằng Node24, Nginx phục vụ `dist`, proxy API và SPA fallback | Giữ quy trình này khi bổ sung feature |
 | Nghiệp vụ còn thiếu | Hồ sơ giáo viên tổng hợp, API xác nhận nguồn tải, lifecycle/feedback và các phần khác trong backlog | Theo dõi phụ thuộc, không coi là API đã có |
 
