@@ -1,0 +1,1153 @@
+<!doctype html>
+<html lang="vi">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+        <title>Hướng dẫn kiểm thử toàn bộ frontend · TASS</title>
+        <style>
+            :root {
+                font-family:
+                    system-ui,
+                    -apple-system,
+                    'Segoe UI',
+                    sans-serif;
+                color: #213d35;
+                background: #f3f5f0;
+                line-height: 1.65;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            body {
+                margin: 0;
+            }
+            header {
+                background: #173f35;
+                color: #fff;
+                padding: 40px max(24px, calc((100vw - 1160px) / 2));
+            }
+            header p {
+                max-width: 850px;
+                color: #d6e6de;
+            }
+            h1 {
+                font-size: clamp(26px, 4vw, 40px);
+                line-height: 1.2;
+                margin: 10px 0;
+            }
+            h2 {
+                line-height: 1.3;
+            }
+            main {
+                max-width: 1208px;
+                margin: auto;
+                padding: 24px;
+            }
+            a {
+                color: #18654e;
+            }
+            code {
+                background: #eaf0ea;
+                padding: 2px 6px;
+                border-radius: 4px;
+                overflow-wrap: anywhere;
+            }
+            pre {
+                background: #eaf0ea;
+                padding: 16px;
+                overflow: auto;
+            }
+            button,
+            input,
+            select,
+            textarea {
+                font: inherit;
+            }
+            button,
+            select,
+            input {
+                padding: 8px 12px;
+                border: 1px solid #bccdc2;
+                border-radius: 7px;
+                background: white;
+                color: #213d35;
+            }
+            button {
+                cursor: pointer;
+            }
+            button:hover {
+                background: #e9f0e9;
+            }
+            :focus-visible {
+                outline: 3px solid #ae7424;
+                outline-offset: 3px;
+            }
+            .toolbar {
+                position: sticky;
+                top: 0;
+                z-index: 2;
+                background: #f3f5f0f5;
+                padding: 12px 0;
+                border-bottom: 1px solid #cad6cc;
+                display: flex;
+                gap: 8px;
+                flex-wrap: wrap;
+                align-items: center;
+            }
+            .toolbar input {
+                flex: 1;
+                min-width: 180px;
+            }
+            .box,
+            section.group {
+                background: white;
+                border: 1px solid #d4dfd5;
+                border-radius: 12px;
+                padding: 24px;
+                margin: 20px 0;
+            }
+            .notice {
+                border-left: 4px solid #b68130;
+                background: #fff8e9;
+                padding: 15px 20px;
+            }
+            .summary {
+                display: flex;
+                gap: 18px;
+                flex-wrap: wrap;
+                margin: 12px 0;
+            }
+            progress {
+                width: 100%;
+                accent-color: #267653;
+            }
+            nav {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px 18px;
+            }
+            nav a {
+                text-decoration: none;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            td,
+            th {
+                text-align: left;
+                padding: 10px;
+                border-bottom: 1px solid #dbe4dc;
+                vertical-align: top;
+            }
+            .table-wrap {
+                overflow: auto;
+            }
+            .case {
+                border-top: 1px solid #dde5dd;
+                padding: 20px 0;
+                scroll-margin-top: 100px;
+            }
+            .case h3 {
+                margin: 0 0 8px;
+                font-size: 18px;
+            }
+            .meta {
+                font-size: 13px;
+                color: #61746a;
+            }
+            .checks {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 24px;
+            }
+            .checks p {
+                margin: 6px 0;
+            }
+            .result {
+                display: flex;
+                gap: 12px;
+                align-items: flex-start;
+                margin-top: 12px;
+            }
+            .result textarea {
+                width: 100%;
+                min-height: 62px;
+                border: 1px solid #c3d1c6;
+                border-radius: 6px;
+                padding: 8px;
+            }
+            .result label {
+                min-width: 130px;
+            }
+            .result select {
+                width: 100%;
+            }
+            .tag {
+                border-radius: 20px;
+                padding: 2px 10px;
+                background: #edf2eb;
+                font-size: 13px;
+            }
+            .case[data-status='fail'] {
+                border-left: 4px solid #b54232;
+                padding-left: 14px;
+            }
+            .case[data-status='pass'] h3 {
+                color: #23714c;
+            }
+            .case[data-status='blocked'] h3 {
+                color: #926013;
+            }
+            footer {
+                color: #65776b;
+                padding: 20px 0;
+            }
+            #saveHint {
+                font-size: 13px;
+            }
+            .empty {
+                padding: 20px;
+            }
+            section {
+                scroll-margin-top: 100px;
+            }
+            @media (max-width: 700px) {
+                main {
+                    padding: 12px;
+                }
+                .box,
+                section.group {
+                    padding: 16px;
+                }
+                .checks {
+                    grid-template-columns: 1fr;
+                    gap: 8px;
+                }
+                .result {
+                    flex-direction: column;
+                }
+                .result label {
+                    width: 100%;
+                }
+                .toolbar {
+                    position: static;
+                }
+                header {
+                    padding: 28px 20px;
+                }
+            }
+            @media print {
+                header {
+                    background: white;
+                    color: black;
+                    padding: 0;
+                }
+                header p {
+                    color: black;
+                }
+                .toolbar,
+                nav,
+                .result select,
+                button,
+                #saveHint {
+                    display: none;
+                }
+                body {
+                    background: white;
+                }
+                main {
+                    padding: 0;
+                }
+                .box,
+                section.group {
+                    border: 0;
+                    padding: 0;
+                }
+                .case {
+                    break-inside: avoid;
+                }
+                .result textarea {
+                    border: 0;
+                    min-height: 20px;
+                }
+                a {
+                    color: black;
+                }
+                header h1 {
+                    font-size: 26px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <header>
+            <span>FRONTEND · MANUAL QA · 17/11/2026</span>
+            <h1>Kiểm thử toàn bộ luồng TASS</h1>
+            <p>
+                Đi theo luồng nghiệp vụ trước, sau đó kiểm tra các nhánh lỗi và
+                chất lượng giao diện. Tài liệu này là kịch bản để bạn thực hiện;
+                các ca chưa được đánh dấu đều chưa có kết quả kiểm thử.
+            </p>
+        </header>
+        <main>
+            <div class="notice">
+                <b>Phạm vi: frontend chạy mock.</b> Không cần backend hay DB.
+                Kết quả đạt ở đây không chứng minh auth, solver, PDF hoặc nghiệp
+                vụ backend thật đã hoạt động. CRUD tài khoản và thay avatar cá
+                nhân chưa được triển khai.
+            </div>
+            <div class="box" id="setup">
+                <h2>1. Chuẩn bị một phiên kiểm thử riêng</h2>
+                <ol>
+                    <li>
+                        Mở terminal tại thư mục <code>frontend</code>. Nếu chưa
+                        cài thư viện, chạy <code>npm ci</code>. Dự án khai báo
+                        Node 24.22.2 trở lên trong nhánh 24 và npm 11.19.1 trở
+                        lên trong nhánh 11.
+                    </li>
+                    <li>
+                        Chạy <code>npm run dev -- --port 5174</code>. Dùng cổng
+                        riêng 5174 để tránh reset dữ liệu đang làm ở origin
+                        5173. Nếu cổng bị chiếm, chọn cổng trống khác và sửa địa
+                        chỉ bên dưới. Không dùng <code>dev:api</code> cho
+                        checklist này.
+                    </li>
+                    <li>
+                        Mở app và checklist trong hai tab của cùng trình duyệt.
+                        Trong app, vào <code>/dev/ui</code>, chọn
+                        <b>Bình thường</b>, bấm <b>Reset mock</b> để bắt đầu
+                        trên bộ dữ liệu mẫu sạch. Sau đó đăng nhập.
+                    </li>
+                    <li>
+                        Giữ cùng tab app khi chuyển giữa các tài khoản; dùng
+                        Đăng xuất rồi đăng nhập lại. Không dùng tab app thứ hai
+                        để so dữ liệu vì mock chưa đồng bộ giữa các tab.
+                    </li>
+                    <li>
+                        Ghi lại trình duyệt, viewport, scenario, tài khoản, đợt,
+                        phiên bản/revision và lỗi Console/Network nếu có.
+                    </li>
+                </ol>
+                <p>
+                    <b>Địa chỉ app:</b>
+                    <input
+                        id="origin"
+                        aria-label="Địa chỉ app"
+                        value="http://127.0.0.1:5174"
+                        type="url"
+                    />
+                    <button id="openApp">Mở app</button>
+                </p>
+                <p class="notice">
+                    <b>Reset mock xóa dữ liệu và phiên mô phỏng.</b> Đổi
+                    scenario cũng đặt lại phần phương án/governance, có thể làm
+                    mất phân công, lịch sử và phản hồi vừa tạo. Không reset/đổi
+                    scenario giữa các ca của cùng một luồng xuyên suốt. Reload
+                    thông thường giữ dữ liệu qua sessionStorage khi trình duyệt
+                    cho phép.
+                </p>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tài khoản</th>
+                                <th>Mục đích</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>quantri@tass.demo</code></td>
+                                <td>Quản trị dữ liệu nền</td>
+                            </tr>
+                            <tr>
+                                <td><code>quanly@tass.demo</code></td>
+                                <td>
+                                    Chuẩn bị, phân công, kiểm tra, phát hành
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><code>giaovien@tass.demo</code></td>
+                                <td>Xem bản mở/phát hành, gửi phản hồi</td>
+                            </tr>
+                            <tr>
+                                <td><code>kiemnhiem@tass.demo</code></td>
+                                <td>Chuyển giữa các vai trò được cấp</td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <code>tamkhoa@tass.demo</code> /
+                                    <code>chuaphamvi@tass.demo</code>
+                                </td>
+                                <td>Tài khoản khóa / thiếu phạm vi</td>
+                            </tr>
+                            <tr>
+                                <td><code>gvthcs@tass.demo</code></td>
+                                <td>Kiểm tra phạm vi THCS</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p>
+                    Mật khẩu demo chung: <code>demo2026</code>. Trang đăng nhập
+                    có lựa chọn tài khoản nhanh.
+                </p>
+                <p>
+                    <b>Cách đánh giá:</b> Đạt = kết quả đúng sau khi thao tác;
+                    Lỗi = có sai lệch và tái hiện được; Bị chặn = chưa đủ điều
+                    kiện để thực hiện (ghi nguyên nhân, không tính là đạt). Khi
+                    có lỗi, tiếp tục các ca độc lập.
+                </p>
+            </div>
+            <div class="box">
+                <h2>2. Thứ tự chạy</h2>
+                <p>
+                    <b>A → B → C → D → E → F</b> cho hành trình thực tế. Giữ
+                    nguyên trường/năm/học kỳ/đợt giữa các trang. Sau đó chạy
+                    <b>G → H → I</b> cho các nhánh riêng và chất lượng UI.
+                </p>
+                <p>
+                    Fixture Bình thường có thể thiếu nhu cầu cho thành phần bắt
+                    buộc (ví dụ Ngữ văn 10A2). Nếu bị chặn, sửa đúng issue tại
+                    Chuẩn bị/Nhu cầu rồi chạy lại. Không coi gán hết các dòng
+                    nhu cầu đang có là đã phủ đủ toàn bộ thành phần bắt buộc.
+                </p>
+                <p>
+                    Nếu cần test nhanh lấy ý kiến/phát hành: sau khi hoàn tất
+                    các ca chuẩn bị/phân công, chuyển <code>/dev/ui</code> sang
+                    <code>validationPass</code> rồi chạy lại kiểm tra ở D và
+                    tiếp tục E–F. Đây là nhánh dùng fixture sẵn sàng, phải ghi
+                    rõ vào báo cáo, không gọi là hoàn tất luồng nhập liệu từ
+                    đầu.
+                </p>
+                <nav id="nav" aria-label="Các nhóm kiểm thử"></nav>
+            </div>
+            <div class="toolbar">
+                <input
+                    id="search"
+                    type="search"
+                    aria-label="Tìm ca kiểm thử"
+                    placeholder="Tìm ID, thao tác, route hoặc scenario…"
+                /><select id="filter" aria-label="Lọc trạng thái">
+                    <option value="all">Tất cả trạng thái</option>
+                    <option value="todo">Chưa test</option>
+                    <option value="pass">Đạt</option>
+                    <option value="fail">Lỗi</option>
+                    <option value="blocked">Bị chặn</option></select
+                ><button id="export">Xuất báo cáo JSON</button
+                ><button id="print">In / lưu PDF</button
+                ><button id="clear">Xóa kết quả checklist</button>
+            </div>
+            <div class="summary" id="summary" aria-live="polite"></div>
+            <progress
+                id="progress"
+                aria-label="Tiến độ kiểm thử"
+                max="100"
+                value="0"
+            ></progress>
+            <p id="saveHint"></p>
+            <div id="cases"></div>
+            <footer>
+                Checklist theo mã frontend ngày 17/11/2026. Tiêu chí trực quan
+                là giao diện hiện tại và các thay đổi đã được duyệt; prototype
+                chỉ là tài liệu tham khảo. Báo cáo JSON chỉ chứa kết quả bạn đã
+                nhập.
+            </footer>
+        </main>
+        <script>
+            const groups = [
+                [
+                    'A',
+                    'Phiên làm việc và điều hướng',
+                    [
+                        [
+                            'A01',
+                            'Đăng nhập hợp lệ',
+                            '/login',
+                            'Bình thường · tài khoản quản lý',
+                            'Nhập quanly@tass.demo và demo2026; đăng nhập. Reload trang.',
+                            'Vào đúng không gian điều phối; phiên được khôi phục, không nháy dữ liệu của vai trò khác.',
+                        ],
+                        [
+                            'A02',
+                            'Đăng nhập sai và đăng xuất',
+                            '/login',
+                            'Bình thường',
+                            'Đăng xuất; thử để trống, sai mật khẩu; sau đó đăng nhập đúng. Đăng xuất và mở lại /assignment.',
+                            'Thông báo lỗi rõ; không tạo phiên khi sai; route nghiệp vụ yêu cầu đăng nhập sau đăng xuất.',
+                        ],
+                        [
+                            'A03',
+                            'Chuyển vai trò và phạm vi',
+                            '/',
+                            'kiemnhiem@tass.demo',
+                            'Chuyển lần lượt các vai trò được tài khoản cấp. Thử đổi ngữ cảnh trường/học kỳ rồi mở trang nghiệp vụ.',
+                            'Menu/trang chủ đổi đúng vai trò; tiêu đề, trường và dữ liệu phù hợp phạm vi; không còn dữ liệu scope trước.',
+                        ],
+                        [
+                            'A04',
+                            'Layout và liên kết trực tiếp',
+                            '/assignment',
+                            'Quản lý',
+                            'Thu gọn sidebar desktop rồi reload; mở lại. Đi qua menu, Back/Forward; mở liên kết kèm round_id/context_id đang có.',
+                            'Lưu lựa chọn rail; mục active đúng, có tooltip/nhãn truy cập; giữ đúng đợt, không tự rơi về đợt mặc định.',
+                        ],
+                        [
+                            'A05',
+                            'Tổng quan và cài đặt',
+                            '/ · /settings',
+                            'Quản lý',
+                            'Xem KPI, liên kết công việc, tìm kiếm của shell và hồ sơ/cài đặt. Đối chiếu số phản hồi/chưa phân công sau các bước sau.',
+                            'Liên kết tới đúng trang, số liệu đồng bộ sau thay đổi; chức năng chưa triển khai không báo lưu thành công giả.',
+                        ],
+                    ],
+                ],
+                [
+                    'B',
+                    'Dữ liệu nền của quản trị viên',
+                    [
+                        [
+                            'B01',
+                            'Danh mục môn, lớp, khối',
+                            '/admin/catalogs',
+                            'Quản trị',
+                            'Tạo bản ghi thử có mã QA riêng theo quan hệ khối → lớp và môn. Sửa tên; tìm/lọc; thử trùng mã và xóa bản ghi không tham chiếu.',
+                            'Danh sách cập nhật đúng; dữ liệu sai/trùng bị từ chối; hủy dialog không ghi; xóa đúng bản ghi.',
+                        ],
+                        [
+                            'B02',
+                            'Năm học, học kỳ và đợt',
+                            '/admin/periods',
+                            'Quản trị',
+                            'Tạo/sửa dữ liệu QA theo thứ tự năm → kỳ → đợt; thử ngày kết thúc trước ngày bắt đầu. Giữ đợt mẫu cho luồng C–F.',
+                            'Quan hệ và ngày được kiểm tra; chọn kỳ/năm không lẫn đợt; dữ liệu hợp lệ lưu và giữ qua reload.',
+                        ],
+                        [
+                            'B03',
+                            'Hồ sơ giáo viên',
+                            '/admin/teachers',
+                            'Quản trị',
+                            'Thêm giáo viên QA; sửa các trường form hiện có; tìm theo tên/mã, lọc và phân trang. Thử mã trùng rồi xóa giáo viên QA chưa được dùng.',
+                            'CRUD đúng; kiểm tra mã trùng/quan hệ; trang và bộ lọc hoạt động; reload giữ thay đổi.',
+                        ],
+                        [
+                            'B04',
+                            'Tài khoản và quyền chỉ đọc',
+                            '/admin/accounts · /admin/access',
+                            'Quản trị',
+                            'Xem/tìm tài khoản, vai trò, trạng thái và ma trận phạm vi quyền.',
+                            'Thông tin khớp tài khoản demo; không yêu cầu thêm/sửa/xóa tài khoản vì hiện chưa có CRUD.',
+                        ],
+                        [
+                            'B05',
+                            'Nguồn, bí danh và quy tắc',
+                            '/admin/sources · /admin/rules',
+                            'Quản trị',
+                            'Mở chi tiết; dùng thao tác thêm/sửa/xác nhận mà màn hình cung cấp, tạo dữ liệu QA nếu có; thử thiếu trường bắt buộc và hủy trước khi lưu.',
+                            'Thông tin nguồn/bí danh/quy tắc nhất quán; báo lỗi đúng; thao tác chỉ đọc được thể hiện rõ, không giả định mọi trường đều sửa được.',
+                        ],
+                        [
+                            'B06',
+                            'Nhật ký quản trị',
+                            '/admin/audit',
+                            'Quản trị',
+                            'Tìm hành động vừa làm bằng từ khóa; thử tiếng Việt không dấu, lọc ngày và khoảng không có kết quả.',
+                            'Có actor/thời điểm/đối tượng phù hợp; lọc đúng; trạng thái rỗng rõ ràng.',
+                        ],
+                    ],
+                ],
+                [
+                    'C',
+                    'Chuẩn bị → nhu cầu → phân công',
+                    [
+                        [
+                            'C01',
+                            'Xem cổng giáo viên trước khi mở',
+                            '/teacher',
+                            'Giáo viên · trước khi mở lấy ý kiến',
+                            'Đăng nhập giáo viên trên cùng tab app và xem cả ba trang cá nhân; sau đó đăng xuất, vào quản lý.',
+                            'Chưa có bản mở thì không lộ phân công nháp; hiển thị hướng dẫn/trạng thái phù hợp.',
+                        ],
+                        [
+                            'C02',
+                            'Bước 1: phạm vi khối–môn',
+                            '/preparation?step=1',
+                            'Quản lý · Bình thường',
+                            'Chọn đợt mẫu. Thêm hoặc rà các cặp khối–môn; xác nhận phạm vi. Thử gỡ/xác nhận lại một mục thử.',
+                            'Không trùng cặp; xác nhận được lưu; thay nguồn làm trạng thái xác nhận/readiness thay đổi phù hợp.',
+                        ],
+                        [
+                            'C03',
+                            'Bước 2: áp dụng lớp–môn',
+                            '/preparation?step=2',
+                            'C02',
+                            'Chọn phạm vi; rà lớp–môn, trạng thái áp dụng và lý do. Sửa một bản ghi thử; hủy một lần rồi lưu lại.',
+                            'Chỉ chọn quan hệ phù hợp; hủy không ghi; trạng thái/lý do được giữ đúng sau lưu.',
+                        ],
+                        [
+                            'C04',
+                            'Bước 3: thành phần bắt buộc',
+                            '/preparation?step=3',
+                            'C03',
+                            'Rà loại thành phần, ngày hiệu lực; thêm phần còn thiếu và xác nhận tập thành phần của từng cặp lớp–môn.',
+                            'Thành phần đúng lớp–môn; ngày sai bị chặn; xác nhận chỉ đúng với tập hiện tại.',
+                        ],
+                        [
+                            'C05',
+                            'Nhu cầu và nhập nhiều lớp',
+                            '/demands',
+                            'C04',
+                            'Tạo/sửa nhu cầu cho thành phần còn thiếu. Thử nhập nhiều lớp: xem trước rồi hủy; thực hiện lại và lưu. Thử số tiết 0, âm, ngày sai, nhu cầu trùng/giao nhau.',
+                            'Preview không ghi; lưu phản ánh từng kết quả, không giả transaction; dữ liệu vi phạm bị chặn, không nhân bản nhu cầu.',
+                        ],
+                        [
+                            'C06',
+                            'Tiền kiểm đầu vào',
+                            '/preparation?step=4',
+                            'C05',
+                            'Chạy/xem readiness; đi theo từng liên kết sửa issue rồi quay lại đúng đợt. Xử lý thiếu nhu cầu, phạm vi/tập chưa xác nhận.',
+                            'Đọc được nguyên nhân chặn; đủ điều kiện thì cho chạy solver. Nếu còn chặn, ghi issue cụ thể, không đánh dấu đạt bằng số dòng đã gán.',
+                        ],
+                        [
+                            'C07',
+                            'Tạo/mở phương án nháp',
+                            '/assignment',
+                            'C06',
+                            'Mở phương án hiện hành; nếu chưa có thì tạo bằng form cấu hình. Ghi round_id, version, revision và snapshot.',
+                            'Phương án thuộc đúng đợt; trạng thái nháp và dữ liệu snapshot rõ; lỗi cấu hình không tạo bản lỗi.',
+                        ],
+                        [
+                            'C08',
+                            'Gán và đổi giáo viên',
+                            '/assignment',
+                            'C07',
+                            'Gán một dòng chưa có giáo viên; đổi sang ứng viên phù hợp; thử ứng viên không phù hợp nếu UI cho phép chọn. Đối chiếu tải trước/sau.',
+                            'Lưu đúng dòng, revision tăng khi thay đổi; chuyên môn/trần tải được kiểm tra; lỗi không để dữ liệu nửa chừng.',
+                        ],
+                        [
+                            'C09',
+                            'Khóa dòng/nhóm và các kiểu xem',
+                            '/assignment',
+                            'C08',
+                            'Khóa/mở khóa một dòng và nhóm được chọn; chuyển các kiểu xem/bộ lọc có sẵn; reload.',
+                            'Khóa và phân công được giữ; không đổi nhầm dòng bị lọc; các kiểu xem phản ánh cùng dữ liệu.',
+                        ],
+                        [
+                            'C10',
+                            'Nguồn thay đổi và snapshot cũ',
+                            '/demands → /assignment',
+                            'C09 · giữ cùng đợt',
+                            'Sửa số tiết một nhu cầu nguồn rồi quay workspace; thử sửa phân công; cập nhật snapshot theo UI. Nếu có xung đột khóa, xử lý rồi thử lại.',
+                            'Nhận biết nguồn cũ; chặn ghi khi không hợp lệ; refresh không âm thầm phá khóa; snapshot mới và tải được cập nhật.',
+                        ],
+                    ],
+                ],
+                [
+                    'D',
+                    'Sinh đề xuất → tải → kiểm tra',
+                    [
+                        [
+                            'D01',
+                            'Chạy và áp dụng đề xuất',
+                            '/solver-runs',
+                            'Nháp, nguồn mới, readiness đủ',
+                            'Chọn cấu hình hợp lệ; chạy, quan sát trạng thái chờ/đang chạy/kết thúc; mở chi tiết và diff.',
+                            'Trạng thái và kết quả rõ; không tạo hai lượt đang chạy; áp dụng chỉ cho revision/snapshot phù hợp, tôn trọng khóa. Mock không chứng minh tối ưu toán học thật.',
+                        ],
+                        [
+                            'D02',
+                            'Hủy và khôi phục lượt chạy',
+                            '/solver-runs',
+                            'Nháp đủ điều kiện',
+                            'Tạo lượt mới; khi còn hoạt động bấm hủy. Nếu kết thúc quá nhanh, dùng scenario solverActiveRun trong vòng G. Reload URL có run_id.',
+                            'Phân biệt yêu cầu hủy và đã hủy; trạng thái cuối ổn định; reload mở đúng lượt, không chạy lại ngoài ý muốn.',
+                        ],
+                        [
+                            'D03',
+                            'Tải và thống kê đồng bộ',
+                            '/workload · /statistics · /',
+                            'Sau sửa/solver',
+                            'Lọc giáo viên; đối chiếu tải ở workspace, trang tải, thống kê và tổng quan. Xem cảnh báo năm và các thành phần tải.',
+                            'Cùng phương án/revision; T=A+F+C+R, W=T−R; thiếu dữ liệu năm được nêu rõ, không hiển thị thành kết luận đạt.',
+                        ],
+                        [
+                            'D04',
+                            'Chạy kiểm tra phương án',
+                            '/checks',
+                            'Sau D01; hoặc nhánh validationPass',
+                            'Chạy kiểm tra; xem báo cáo và nguồn/revision. Xử lý issue rồi chạy lại. Muốn tiếp E cần báo cáo hiện hành đủ điều kiện mở ý kiến.',
+                            'Hiển thị đạt/vi phạm/thiếu dữ liệu; coverage tính cả thành phần bắt buộc chưa có demand. Có thể vẫn cảnh báo tải năm trên fixture validationPass.',
+                        ],
+                        [
+                            'D05',
+                            'Báo cáo trở nên cũ sau chỉnh sửa',
+                            '/assignment → /checks',
+                            'Có báo cáo hiện hành',
+                            'Sửa một phân công hoặc nguồn; quay lại kiểm tra; thử mở lấy ý kiến trước khi chạy lại; sau đó refresh/kiểm tra lại cho đủ điều kiện.',
+                            'Không dùng báo cáo cũ để mở/phát hành; chỉ cho đi tiếp khi nguồn mới và validation hiện hành hợp lệ.',
+                        ],
+                    ],
+                ],
+                [
+                    'E',
+                    'Lấy ý kiến và vòng điều chỉnh',
+                    [
+                        [
+                            'E01',
+                            'Mở lấy ý kiến',
+                            '/feedback',
+                            'D04/D05 đạt điều kiện · quản lý',
+                            'Bấm Mở lấy ý kiến, chọn hạn tương lai và xác nhận. Ghi số bản/revision được mở.',
+                            'Chuyển Đang lấy ý kiến; dữ liệu được đóng băng cho giáo viên, bản nguồn rõ ràng.',
+                        ],
+                        [
+                            'E02',
+                            'Giáo viên xem và phản hồi',
+                            '/teacher · /teacher/load · /teacher/feedback',
+                            'Cùng tab, đăng xuất quản lý rồi vào giaovien@tass.demo',
+                            'Đối chiếu phân công/tải với bản vừa mở. Gửi phản hồi có nội dung QA và dòng nhu cầu của chính mình; reload.',
+                            'Chỉ thấy dữ liệu cá nhân của bản được mở; phản hồi lưu đúng bản/dòng, giữ qua reload; không gửi vào nhu cầu người khác.',
+                        ],
+                        [
+                            'E03',
+                            'Quản lý tiếp nhận và đóng nhận',
+                            '/feedback',
+                            'Cùng tab, trở lại quản lý',
+                            'Tìm phản hồi QA; đối chiếu badge/sidebar. Bấm Đóng nhận phản hồi. Trở lại giáo viên thử gửi sau khi đóng rồi quay quản lý.',
+                            'Số phản hồi đồng bộ; đóng đúng vòng; giáo viên không gửi mới vào vòng đã đóng.',
+                        ],
+                        [
+                            'E04',
+                            'Xử lý toàn bộ phản hồi',
+                            '/feedback',
+                            'Đang xử lý phản hồi',
+                            'Mở từng phản hồi đang chờ, chọn quyết định và nhập giải trình theo form. Thử thiếu nội dung bắt buộc trước khi lưu hợp lệ.',
+                            'Giữ nội dung gốc của giáo viên; quyết định được ghi riêng; pending giảm đúng và reload vẫn giữ.',
+                        ],
+                        [
+                            'E05',
+                            'Tạo nháp tiếp và mở lại ý kiến',
+                            '/feedback → /assignment',
+                            'Sau xử lý nếu cần chỉnh phương án',
+                            'Tạo bản nháp tiếp theo; sửa phân công; refresh nếu cần và chạy validation mới. Mở lại lấy ý kiến. Vào giáo viên chọn bản cũ/bản mới.',
+                            'Version mới kế thừa đúng; bản cũ không đổi theo nháp mới; giáo viên thấy đúng snapshot theo bản chọn, không phản hồi bản cũ.',
+                        ],
+                        [
+                            'E06',
+                            'Chốt phương án sẵn sàng xuất',
+                            '/feedback',
+                            'Đóng vòng hiện hành, xử lý hết pending, validation mới hợp lệ',
+                            'Chốt bằng hành động sẵn sàng xuất của UI. Nếu nhánh bỏ qua mở lại ý kiến xuất hiện, thử thiếu lý do rồi nhập lý do ít nhất 8 ký tự.',
+                            'Chỉ chốt khi đủ điều kiện; thiếu lý do/báo cáo cũ/pending bị chặn; chuyển Sẵn sàng xuất.',
+                        ],
+                    ],
+                ],
+                [
+                    'F',
+                    'Lịch sử và phát hành tài liệu',
+                    [
+                        [
+                            'F01',
+                            'Lưu và xem snapshot',
+                            '/history',
+                            'Quản lý · phương án đã có',
+                            'Lưu snapshot theo form; mở chi tiết và đối chiếu version/revision/dòng phân công.',
+                            'Bản lưu đúng thời điểm; nội dung và nguồn không tự đổi theo chỉnh sửa sau đó.',
+                        ],
+                        [
+                            'F02',
+                            'Xem trước và tải PDF nháp',
+                            '/documents',
+                            'Trước hoặc sau chốt',
+                            'Mở xem trước; tạo/tải bản nháp nếu UI cho phép. Mở file tải về và xem tên, dấu tiếng Việt, số liệu, ngắt trang.',
+                            'PDF mở được; bản nháp có nhãn/cảnh báo phù hợp, không đổi trạng thái thành đã phát hành.',
+                        ],
+                        [
+                            'F03',
+                            'Phát hành PDF',
+                            '/documents',
+                            'E06 · Sẵn sàng xuất',
+                            'Xem trước rồi phát hành; thử bấm lặp khi đang xử lý; xem danh sách và tải lại tài liệu vừa phát hành.',
+                            'Chỉ phát hành một lần; chuyển Đã xuất báo cáo; metadata version/revision/nguồn và SHA-256 nếu hiển thị khớp; file tải lại mở được.',
+                        ],
+                        [
+                            'F04',
+                            'Kiểm tra sau phát hành',
+                            '/assignment · /teacher · /documents',
+                            'F03',
+                            'Reload; xem trạng thái chỉnh sửa phương án, cổng giáo viên, tài liệu và lịch sử.',
+                            'Bản đã chốt không sửa trực tiếp trái vòng đời; dữ liệu cá nhân và tài liệu giữ đúng bản phát hành.',
+                        ],
+                        [
+                            'F05',
+                            'Khôi phục bản lưu thành nháp mới',
+                            '/history',
+                            'Chạy sau F03/F04 vì sẽ đổi phương án hiện hành',
+                            'Chọn snapshot đầy đủ vừa lưu ở F01, xem trước và khôi phục theo UI. Nếu fixture legacy thiếu dữ liệu, kiểm tra thông báo thay vì ép khôi phục.',
+                            'Tạo nháp mới từ bản đầy đủ; bản nguồn/tài liệu cũ còn nguyên; cần kiểm tra mới trước vòng phát hành tiếp.',
+                        ],
+                    ],
+                ],
+                [
+                    'G',
+                    'Các scenario độc lập — chạy sau luồng chính',
+                    [
+                        [
+                            'G01',
+                            'Quy trình chọn scenario',
+                            '/dev/ui',
+                            'Đã ghi/xuất kết quả luồng A–F',
+                            'Với từng ca G02–G07: vào /dev/ui, chọn đúng nhãn scenario; dùng menu nội bộ tới trang đích và đăng nhập lại nếu cần. Không reset sau khi chọn vì reset đưa về Bình thường.',
+                            'Tên scenario khớp; không dùng kết quả từ ca cũ. Kết thúc nhóm trở về Bình thường; reset chỉ khi muốn bỏ dữ liệu mock.',
+                        ],
+                        [
+                            'G02',
+                            'Readiness đủ, thiếu và bị chặn',
+                            '/preparation?step=4',
+                            'readinessReady / readinessMissing / readinessBlocked',
+                            'Chạy từng scenario riêng, xem issue và liên kết sửa.',
+                            'Ba trạng thái phân biệt; thiếu/chặn có nguyên nhân rõ, không báo sẵn sàng giả.',
+                        ],
+                        [
+                            'G03',
+                            'Phương án rỗng, cũ và chỉ đọc',
+                            '/assignment',
+                            'planEmpty / planStale / planReadOnly',
+                            'Từng scenario: mở workspace, quan sát empty state; thử tạo, cập nhật snapshot hoặc sửa theo trạng thái.',
+                            'Rỗng có đường tạo; stale có hướng xử lý; read-only không cho mutation trái phép.',
+                        ],
+                        [
+                            'G04',
+                            'Xung đột khóa và revision',
+                            '/assignment',
+                            'planLockConflict / planRevisionConflict',
+                            'Thử refresh snapshot với khóa xung đột; ở revision conflict thử một mutation, tải lại theo gợi ý và thử lại.',
+                            'Không mất khóa/ghi đè âm thầm; xung đột có giải thích; revision conflict được tiêm một lần, có thể khôi phục bằng tải lại.',
+                        ],
+                        [
+                            'G05',
+                            'Các kết quả solver',
+                            '/solver-runs',
+                            'solverApplied / solverStale / solverInfeasible / solverFailed',
+                            'Từng scenario: chạy/đọc lượt theo trạng thái được cung cấp, xem chi tiết kết quả.',
+                            'Phân biệt áp dụng, kết quả cũ không áp dụng, vô nghiệm và lỗi; trường hợp thất bại không báo áp dụng thành công.',
+                        ],
+                        [
+                            'G06',
+                            'Solver đang chạy và hàng đợi đầy',
+                            '/solver-runs',
+                            'solverActiveRun / solverQueueFull',
+                            'Thử tạo lượt khi đã có lượt hoạt động; đi tới lượt đang có và hủy nếu được. Với queue full, thử chạy mới.',
+                            '409 có đường tới lượt đang chạy; 503 báo hàng đợi đầy, không tạo lượt giả và có thể thử lại.',
+                        ],
+                        [
+                            'G07',
+                            'Validation đạt và vi phạm',
+                            '/checks → /feedback',
+                            'validationPass / validationViolation',
+                            'Chạy kiểm tra từng scenario; thử mở lấy ý kiến.',
+                            'Pass tuần có thể kèm cảnh báo năm; violation hiển thị vấn đề và chặn bước không đủ điều kiện.',
+                        ],
+                        [
+                            'G08',
+                            'Loading, rỗng và lỗi HTTP',
+                            '/dev/ui → /teachers',
+                            'slow / empty / badRequest / unauthorized / forbidden / conflict / invalid / unavailable',
+                            'Từng scenario: mở danh sách có request; quan sát loading/lỗi; khôi phục Bình thường rồi thử tải lại. Với 401 đăng nhập lại nếu app yêu cầu.',
+                            'Không treo màn hình, không lộ dữ liệu scope cũ; lỗi có thông điệp phù hợp; khôi phục và retry hoạt động. Không phải mọi scenario áp dụng mọi endpoint.',
+                        ],
+                        [
+                            'G09',
+                            'Xóa bản ghi có tham chiếu',
+                            '/teachers',
+                            'reference',
+                            'Thử xóa giáo viên theo scenario; sau đó trở về Bình thường.',
+                            'Báo xung đột tham chiếu; không xóa dòng khỏi UI như đã thành công.',
+                        ],
+                    ],
+                ],
+                [
+                    'H',
+                    'Quyền, phạm vi và tính bền dữ liệu',
+                    [
+                        [
+                            'H01',
+                            'Tài khoản khóa và thiếu phạm vi',
+                            '/login',
+                            'tamkhoa@tass.demo / chuaphamvi@tass.demo',
+                            'Thử đăng nhập lần lượt; với thiếu phạm vi mở URL nghiệp vụ trực tiếp.',
+                            'Khóa không vào được phiên nghiệp vụ; thiếu phạm vi thấy thông báo phù hợp, không thấy dữ liệu trường mặc định.',
+                        ],
+                        [
+                            'H02',
+                            'Chặn truy cập sai vai trò',
+                            '/assignment · /admin/accounts',
+                            'Giáo viên; sau đó quản lý',
+                            'Giáo viên nhập thẳng URL /assignment và /admin/accounts; quản lý thử /admin/accounts.',
+                            'Hiển thị không đủ quyền; không render nội dung nhạy cảm trước khi chặn. Đây là kiểm tra guard mock, không chứng minh quyền backend.',
+                        ],
+                        [
+                            'H03',
+                            'Phạm vi THCS và URL sai',
+                            '/teacher · /assignment',
+                            'gvthcs@tass.demo; sau đó quản lý',
+                            'Xem dữ liệu THCS; trở lại quản lý, giữ URL scope qua các trang rồi thử round_id không tồn tại và đường dẫn không có.',
+                            'Không lẫn THPT/THCS; đợt sai không rơi về PC-01; route không tồn tại có trạng thái rõ.',
+                        ],
+                        [
+                            'H04',
+                            'Reload và giới hạn lưu trữ',
+                            'Các trang đã thay đổi',
+                            'Bình thường',
+                            'Tạo/sửa một bản ghi QA và reload cùng tab; đóng/mở dialog; Back/Forward; quan sát ID/revision/token.',
+                            'Giữ thay đổi/revision trong cùng session khi storage hoạt động. Không đòi đồng bộ hai tab hoặc lưu vĩnh viễn sau khi đóng phiên trình duyệt.',
+                        ],
+                    ],
+                ],
+                [
+                    'I',
+                    'Giao diện, mobile và khả năng truy cập',
+                    [
+                        [
+                            'I01',
+                            'Desktop toàn bộ route',
+                            'Tất cả menu của 3 vai trò',
+                            'Viewport 1440×900',
+                            'Đi qua mọi route; kiểm tra header/KPI, filter → bảng → pagination, dropdown, selected/hover/focus, logo/avatar/icon; chụp màn hình lỗi.',
+                            'Giữ giao diện hiện tại; icon nghiệp vụ không có ô nền/viền/bóng màu bao quanh; không lỗi font, sát mép, che nội dung hay nhảy layout.',
+                        ],
+                        [
+                            'I02',
+                            'Mobile và tablet',
+                            'Tất cả menu; ưu tiên Chuẩn bị/Nhu cầu/Phân công/Phản hồi',
+                            '390×844; 768×1024',
+                            'Mở/đóng menu, cuộn bảng, lọc, đổi trang; mở form và xem PDF. Thử cả nội dung dài.',
+                            'Không tràn ngang toàn trang; bảng rộng cuộn trong panel; menu mobile đầy đủ; dropdown/dialog/nút không bị cắt; thẻ giáo viên không ép tên thành cột hẹp.',
+                        ],
+                        [
+                            'I03',
+                            'Bàn phím và focus',
+                            'Form Nhu cầu, sửa danh mục, date picker, dialog',
+                            'Desktop không dùng chuột',
+                            'Tab/Shift+Tab, Enter/Space; mở dialog, đi vòng focus, Escape đóng; thử chọn ngày bằng phím; xem tooltip khi focus.',
+                            'Focus nhìn rõ; dialog giữ focus và trả về nút mở; control có nhãn; không kẹt bàn phím, không kích hoạt nhầm.',
+                        ],
+                        [
+                            'I04',
+                            'Toast, lỗi và chuyển động',
+                            '/dev/ui và sidebar',
+                            'Desktop + mobile',
+                            'Tạo toast lỗi có retry; focus nút trong toast quá 8 giây rồi rời focus. Bật prefers-reduced-motion bằng DevTools Rendering và thử sidebar/toast.',
+                            'Thông báo đọc được, không tự biến mất khi đang focus; retry hoạt động; reduced motion loại chuyển động không cần thiết.',
+                        ],
+                        [
+                            'I05',
+                            'Lọc/phân trang khi request chậm',
+                            '/demands · /teachers · các bảng',
+                            'slow; sau đó Bình thường',
+                            'Lọc/đổi trang nhanh; chuyển trường/kỳ nếu có; quan sát bảng cũ và trạng thái busy; trở lại Bình thường.',
+                            'Không bấm được dữ liệu cũ trong lúc đang thay; không hiển thị dữ liệu scope trước như dữ liệu mới; thứ tự/số trang/khoảng dòng đúng sau tải.',
+                        ],
+                        [
+                            'I06',
+                            'Kết thúc và ghi nhận',
+                            '/dev/ui',
+                            'Sau tất cả ca',
+                            'Xuất JSON checklist; lưu ảnh lỗi và file PDF đã test. Trả scenario về Bình thường và viewport về desktop; chỉ reset mock khi không cần giữ dữ liệu tái hiện.',
+                            'Báo cáo nêu ca lỗi/bị chặn, môi trường, bước tái hiện, mong đợi/thực tế; không đánh dấu ca chưa chạy là đạt.',
+                        ],
+                    ],
+                ],
+            ];
+            const key = 'tass-fe-full-test-guide-v1';
+            let saved = {};
+            let writable = true;
+            try {
+                saved = JSON.parse(localStorage.getItem(key) || '{}');
+                if (!saved || typeof saved !== 'object' || Array.isArray(saved))
+                    saved = {};
+            } catch {
+                saved = {};
+                writable = false;
+            }
+            const $ = (s) => document.querySelector(s);
+            const records = groups.flatMap((g) => g[2]);
+            const esc = (s) =>
+                String(s).replace(
+                    /[&<>"']/g,
+                    (c) =>
+                        ({
+                            '&': '&amp;',
+                            '<': '&lt;',
+                            '>': '&gt;',
+                            '"': '&quot;',
+                            "'": '&#39;',
+                        })[c],
+                );
+            $('#origin').value =
+                typeof saved.origin === 'string'
+                    ? saved.origin
+                    : 'http://127.0.0.1:5174';
+            function persist() {
+                try {
+                    localStorage.setItem(key, JSON.stringify(saved));
+                } catch {
+                    writable = false;
+                }
+                $('#saveHint').textContent = writable
+                    ? 'Kết quả được lưu cục bộ trong trình duyệt này. Nên xuất JSON trước khi đổi trình duyệt hoặc di chuyển file.'
+                    : 'Không lưu được vào localStorage; hãy xuất JSON trước khi đóng trang.';
+            }
+            $('#nav').innerHTML = groups
+                .map(
+                    (g) => `<a href="#group-${g[0]}">${g[0]}. ${esc(g[1])}</a>`,
+                )
+                .join('');
+            $('#cases').innerHTML = groups
+                .map(
+                    (g) =>
+                        `<section class="group" id="group-${g[0]}"><h2>${g[0]}. ${esc(g[1])}</h2>${g[2]
+                            .map((r) => {
+                                const v = saved[r[0]] || {};
+                                return `<article class="case" id="${r[0]}" data-status="${['pass', 'fail', 'blocked'].includes(v.status) ? v.status : 'todo'}"><h3>${r[0]} · ${esc(r[1])}</h3><p class="meta">Route: <code>${esc(r[2])}</code> · Điều kiện: ${esc(r[3])}</p><div class="checks"><div><b>Thực hiện</b><p>${esc(r[4])}</p></div><div><b>Kết quả mong đợi</b><p>${esc(r[5])}</p></div></div><div class="result"><label>Kết quả<select data-id="${r[0]}" aria-label="Kết quả ${r[0]}">${[
+                                    ['todo', 'Chưa test'],
+                                    ['pass', 'Đạt'],
+                                    ['fail', 'Lỗi'],
+                                    ['blocked', 'Bị chặn'],
+                                ]
+                                    .map(
+                                        (o) =>
+                                            `<option value="${o[0]}" ${v.status === o[0] ? 'selected' : ''}>${o[1]}</option>`,
+                                    )
+                                    .join(
+                                        '',
+                                    )}</select></label><textarea data-id="${r[0]}" aria-label="Ghi chú ${r[0]}" placeholder="Môi trường/scenario · Thực tế · Bước tái hiện · Tên ảnh/file bằng chứng">${esc(v.note || '')}</textarea></div></article>`;
+                            })
+                            .join('')}</section>`,
+                )
+                .join('');
+            function refresh() {
+                const counts = { todo: 0, pass: 0, fail: 0, blocked: 0 };
+                const term = $('#search').value.toLocaleLowerCase('vi');
+                const filter = $('#filter').value;
+                document.querySelectorAll('.case').forEach((el) => {
+                    const st = saved[el.id]?.status;
+                    const status = ['pass', 'fail', 'blocked'].includes(st)
+                        ? st
+                        : 'todo';
+                    el.dataset.status = status;
+                    counts[status]++;
+                    el.hidden = !(
+                        el.textContent.toLocaleLowerCase('vi').includes(term) &&
+                        (filter === 'all' || filter === status)
+                    );
+                });
+                document
+                    .querySelectorAll('section.group')
+                    .forEach(
+                        (el) =>
+                            (el.hidden = ![
+                                ...el.querySelectorAll('.case'),
+                            ].some((c) => !c.hidden)),
+                    );
+                $('#summary').textContent =
+                    `${records.length} ca · Đạt ${counts.pass} · Lỗi ${counts.fail} · Bị chặn ${counts.blocked} · Chưa test ${counts.todo}`;
+                $('#progress').value =
+                    ((counts.pass + counts.fail) / records.length) * 100;
+            }
+            $('#cases').addEventListener('input', (e) => {
+                const id = e.target.dataset.id;
+                if (!id) return;
+                saved[id] ||= {};
+                if (e.target.tagName === 'SELECT')
+                    saved[id].status = e.target.value;
+                else saved[id].note = e.target.value;
+                persist();
+                refresh();
+            });
+            $('#search').addEventListener('input', refresh);
+            $('#filter').addEventListener('change', refresh);
+            $('#origin').addEventListener('change', () => {
+                saved.origin = $('#origin').value.trim();
+                persist();
+            });
+            $('#openApp').onclick = () => {
+                try {
+                    const u = new URL($('#origin').value);
+                    if (!['http:', 'https:'].includes(u.protocol))
+                        throw Error();
+                    window.open(
+                        u.origin + '/login',
+                        '_blank',
+                        'noopener,noreferrer',
+                    );
+                } catch {
+                    alert('Nhập địa chỉ http hoặc https hợp lệ.');
+                }
+            };
+            $('#export').onclick = () => {
+                const report = {
+                    guide: 'TASS FE mock manual QA',
+                    guideDate: '2026-11-17',
+                    exportedAt: new Date().toISOString(),
+                    origin: $('#origin').value,
+                    userAgent: navigator.userAgent,
+                    cases: records.map((r) => ({
+                        id: r[0],
+                        title: r[1],
+                        route: r[2],
+                        precondition: r[3],
+                        steps: r[4],
+                        expected: r[5],
+                        status: saved[r[0]]?.status || 'todo',
+                        note: saved[r[0]]?.note || '',
+                    })),
+                };
+                const url = URL.createObjectURL(
+                    new Blob([JSON.stringify(report, null, 2)], {
+                        type: 'application/json',
+                    }),
+                );
+                const a = document.createElement('a');
+                a.href = url;
+                a.download =
+                    'tass-fe-qa-' +
+                    new Date().toISOString().slice(0, 10) +
+                    '.json';
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+            };
+            $('#print').onclick = () => {
+                const q = $('#search').value,
+                    f = $('#filter').value;
+                $('#search').value = '';
+                $('#filter').value = 'all';
+                refresh();
+                window.print();
+                $('#search').value = q;
+                $('#filter').value = f;
+                refresh();
+            };
+            $('#clear').onclick = () => {
+                if (
+                    !confirm(
+                        'Xóa toàn bộ trạng thái và ghi chú trong checklist này? Dữ liệu mock của app không bị xóa.',
+                    )
+                )
+                    return;
+                const origin = $('#origin').value;
+                saved = { origin };
+                persist();
+                document
+                    .querySelectorAll('.result select')
+                    .forEach((el) => (el.value = 'todo'));
+                document
+                    .querySelectorAll('textarea')
+                    .forEach((el) => (el.value = ''));
+                refresh();
+            };
+            persist();
+            refresh();
+        </script>
+    </body>
+</html>

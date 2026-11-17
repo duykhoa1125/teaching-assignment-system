@@ -32,7 +32,7 @@ Các trang `/admin/catalogs`, `/admin/periods`, `/preparation`, `/demands`, `/ch
 
 **Đối chiếu trình duyệt:** năm trang ở 1280×900 và 390×844; đủ bốn bước chuẩn bị; kiểu bảng/modal/stepper, bộ lọc mobile 2×2, năm học theo trường, metadata nguồn và ba scenario readiness. Đã thử lỗi xung đột nhập nhiều lớp bị chặn lưu, Escape/trả focus, nhập trong drawer và Escape ở hộp xác nhận chỉ đóng hộp xác nhận. Các trang không tràn ngang; bảng có thể cuộn ngang. Kết quả đối chiếu không đồng nghĩa dữ liệu/cột nghiệp vụ đã giống bảng HTML khi hợp đồng khác nhau như các điểm trên.
 
-**Demo là nguồn chuẩn, phải sao chép y chang mọi chi tiết thị giác.** Giữ màu/font/icon/họa tiết/bố cục và các trạng thái. Chỉ đổi khi có lỗi thiết kế cụ thể, tối ưu kỹ thuật cần thiết hoặc cần phù hợp backend; ghi rõ lý do và phạm vi trước/sau. Xem quy tắc bắt buộc trong [quy trình frontend](../../docs/FRONTEND_DEVELOPMENT.md). Nền tảng hiện tại còn cần đối chiếu các màn hình, chưa được nghiệm thu là bản sao hoàn chỉnh.
+**Quyết định người dùng 17/11/2026: không còn yêu cầu khớp hoàn toàn prototype vì giao diện đã được người dùng chỉnh sửa đẹp hơn.** Lấy giao diện hiện tại và các chỉnh sửa đã được duyệt làm chuẩn; demo chỉ là tham khảo gốc, không tự khôi phục giao diện cũ. Quyết định này thay thế yêu cầu sao chép y chang trước đây. Giữ các cải tiến, tính nhất quán, responsive, tương tác, focus và reduced motion; kiểm chứng trực quan theo phạm vi thay đổi. Xem [quy trình frontend](../../docs/FRONTEND_DEVELOPMENT.md).
 
 Xem và thử component tại `/dev/ui` khi chạy `npm run dev`. Route này có trong dev và bản build mock, không có trong bản build API triển khai thật. Trang chỉ phục vụ kiểm tra thành phần, chưa phải màn hình CRUD giáo viên.
 

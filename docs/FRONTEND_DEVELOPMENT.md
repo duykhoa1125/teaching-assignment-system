@@ -8,17 +8,17 @@ Các phần ghi ngày 15/11 bên dưới là lịch sử triển khai; không d�
 
 ## 1. Hiện trạng và mục tiêu
 
-### Quy tắc bắt buộc: sao chép đúng giao diện demo
+### Quy tắc giao diện hiện hành — cập nhật 17/11/2026
 
-**Giao diện phải y chang `frontend/prototype/index.html`**: màu sắc, font và trọng lượng chữ, icon/SVG/logo, họa tiết/minh họa, bố cục, kích thước, khoảng cách và các trạng thái/responsive. Không thay bằng thiết kế hoặc tài nguyên gần giống do sở thích hay sự tiện dụng của thư viện. Tái cấu trúc component/mock không được tự làm đổi diện mạo.
+**Không còn yêu cầu giao diện khớp hoàn toàn `frontend/prototype/index.html`.** Người dùng đã chỉnh sửa giao diện đẹp hơn; lấy giao diện hiện tại cùng các chỉnh sửa đã được duyệt làm chuẩn phát triển. Prototype là tài liệu tham khảo gốc, giữ nguyên byte; không tự khôi phục giao diện cũ để khớp demo. Quyết định này thay thế yêu cầu sao chép y chang trong các ghi nhận lịch sử bên dưới.
 
-Ngoại lệ chỉ gồm lỗi thiết kế đã xác định, tối ưu kỹ thuật/hiệu năng cần thiết, hoặc điều chỉnh cần cho backend. Ưu tiên tối ưu bên trong mà không đổi phần nhìn thấy; nếu buộc thay đổi giao diện, ghi rõ vấn đề, lý do, trước/sau và tác động, giữ phạm vi tối thiểu. Đối chiếu demo và ứng dụng ở cùng viewport/trạng thái trước nghiệm thu; build/test đạt không thay kiểm chứng trực quan.
+Giữ các cải tiến về tài nguyên, component, bố cục, responsive và hiệu ứng hiện tại. Tiếp tục cải thiện theo yêu cầu người dùng, lỗi thiết kế cụ thể, tối ưu kỹ thuật hoặc hợp đồng backend; ghi lý do, trước/sau và tác động khi thay đổi giao diện. Kiểm chứng trực quan theo giao diện hiện tại và yêu cầu được duyệt ở các viewport/trạng thái liên quan; build/test đạt không thay kiểm chứng trực quan. Giữ hỗ trợ bàn phím, focus và prefers-reduced-motion.
 
-Bộ khung hiện có vẫn cần tiếp tục đối chiếu và hoàn thiện; không coi nền tảng đã có là toàn bộ giao diện đã khớp demo.
+Nghiệm thu dựa trên chất lượng giao diện, tính nhất quán, responsive và hành vi thực tế; không dùng mức độ khớp hoàn toàn prototype làm tiêu chí.
 
 | Khu vực | Hiện trạng | Hướng phát triển |
 | --- | --- | --- |
-| Frontend | Các luồng nghiệp vụ mock FE-03–07, font/icon/component/MSW; prototype nguyên bản | Chốt QA FE-08 rồi rà hợp đồng API FE-09 |
+| Frontend | Các luồng nghiệp vụ mock FE-03–07 và vòng QA FE-08 đã có; prototype nguyên bản | FE-09 đã rà source; còn chốt auth/API thiếu/dataset trước FE-10 |
 | Backend | Có CRUD, plan/current DRAFT, readiness, async solver, kết quả/validation và sửa/khóa phân công | Tái sử dụng hợp đồng hiện hành |
 | Authentication | Chưa có login/session/JWT thật; API nghiệp vụ yêu cầu Principal tin cậy | Session/vai trò mock đã có; auth thật thuộc FE-09/10 |
 | Docker | Đã build frontend bằng Node24, Nginx phục vụ `dist`, proxy API và SPA fallback | Giữ quy trình này khi bổ sung feature |
@@ -321,7 +321,7 @@ Giữ nguyên các trạng thái như `INFEASIBLE`, `UNKNOWN`, `STALE`, `NOT_DRA
 | FE-06 | Workspace plan/DRAFT với mock | Tạo/đọc/refresh, sửa/khóa từng dòng/nhóm, no-op và xung đột revision/snapshot được mô phỏng |
 | FE-07 | Solver, tải, validation và dashboard với mock | Submit/poll/cancel/khôi phục, APPLIED/STALE/lỗi, báo cáo còn/cũ; dashboard cùng nguồn fixture với các màn hình |
 | FE-08 | Nghiệm thu giao diện với mock | Các luồng chính tương tác được, desktop/mobile và loading/empty/error đủ; không cần backend/PostgreSQL |
-| FE-09 | Chuẩn bị tích hợp API thật | Chốt auth, rà hợp đồng đang mock, endpoint còn thiếu, dataset DB và mapping ID/config/quyền |
+| FE-09 | Chuẩn bị tích hợp API thật | [Đã rà source và lập ma trận](../frontend/docs/FE09_API_INTEGRATION.md); còn chốt auth, endpoint thiếu, dataset DB và mapping ID/config/quyền |
 | FE-10 | Nối API thật theo từng feature | Chọn API mode, nối CRUD rồi nghiệp vụ; xác minh session, revision, snapshot, run/apply và lỗi từ backend |
 | FE-11 | Nghiệm thu tích hợp và bàn giao | Luồng thật chạy với dataset/tài khoản hợp lệ; checks và Docker/tài liệu được cập nhật |
 
