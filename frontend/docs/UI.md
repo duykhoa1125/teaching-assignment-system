@@ -239,3 +239,19 @@ QA Chrome desktop: đã xem toast lỗi không vạch màu, icon/viền/nội du
 ### FE-08 — sửa responsive giáo viên, 17/11/2026
 
 Lỗi cụ thể: ở 390px, personal-greeting đặt avatar/tên/badge trên một hàng, ép tên đầy đủ thành cột rất hẹp. CSS riêng pages/teacher/teacher-pages.css chuyển thành grid avatar + tên và đưa badge xuống hàng dưới ở ≤700px. Giữ font/màu/ảnh/kích thước desktop, không sửa prototype hoặc CSS sinh. Đã xem trước/sau mobile 390×844 và desktop 1440×900. Phạm vi QA, reduced motion và các giới hạn được ghi tại [QA FE-08](FE08_QA.md).
+
+### Toast tham khảo mới — 17/11/2026
+
+Theo yêu cầu tham khảo mẫu: toast dùng chung chuyển từ một hàng nội dung sang header + mô tả thu gọn/mở rộng (mặc định đóng, ẩn cả footer) + footer đếm giây và thanh thời gian 3px. Giữ token TASS, icon hiện có không ô nền, vị trí góc phải dưới, tối đa 4 mục và thời hạn 4,2/8 giây. Footer cho phép dừng/tiếp tục; hover/focus vẫn tạm dừng. null/không dương vẫn giữ đến khi đóng. Không thêm xác nhận thao tác nguy hiểm vào toast. Mobile co theo viewport, stack cuộn khi cao; reduced motion tắt hiệu ứng chuyển động. Ảnh hưởng toàn bộ nơi dùng useToast, không đổi API gọi hoặc prototype.
+
+Kiểm chứng: build, lint và 97/97 tests đạt. Chưa xác minh trực quan desktop/mobile và tương tác trên trình duyệt: IAB không kết nối được server local 5174 (localhost refused, IP LAN timeout). Cần xem lại /dev/ui trước nghiệm thu trực quan.
+
+Điều chỉnh theo phản hồi tiếp theo 17/11: mặc định chỉ hiện header; nút chevron mở cả mô tả và footer, kể cả toast chỉ có tiêu đề nhưng có thời hạn. Giảm rộng 400 xuống 380px, padding header 12×14px, bo 12px, chữ hành động footer nhỏ/nhẹ hơn. Đã xem trực quan Chrome desktop /dev/ui ở cả trạng thái đóng/mở; chưa kiểm tra lại mobile hoặc reduced motion trong lượt này.
+
+Bổ sung 17/11: thanh thời gian 3px nằm ngoài vùng thu gọn, luôn hiện ở đáy toast có thời hạn trong cả hai trạng thái. Mô tả và chữ đếm giây/dừng vẫn chỉ hiện khi mở rộng; giữ nguyên timer và pause.
+
+Sửa cạnh đáy toast 17/11: clip nội dung bằng overflow:hidden trên khung bo 12px; bỏ bo riêng của footer/track để thanh thời gian bám đúng đường cong khung. Focus nút footer đặt vào trong để không bị cắt.
+
+Toast hết hạn 17/11: trượt ra phải + fade trong 240ms rồi mới gỡ khỏi stack; timer cleanup khi clear/unmount. Reduced motion gỡ ngay, không trượt. Nút đóng thủ công giữ hành vi hiện tại.
+
+Sửa chớp cạnh dưới khi exit 17/11: stack đặt overflow-x:hidden, giữ overflow-y:auto. Trước đó translateX làm vùng cuộn ngang phát sinh trong 240ms, có thể hiện thanh cuộn bên dưới toast. Không đổi thanh thời gian/timer hoặc hướng animation.
