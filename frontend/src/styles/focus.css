@@ -1,0 +1,86 @@
+/* User-approved focus treatment. Keep this outside generated prototype CSS. */
+:root {
+    --focus-ring: var(--primary, #d13415);
+    --focus: var(--focus-ring);
+    --focus-halo: color-mix(in srgb, var(--focus-ring) 14%, transparent);
+}
+
+/* One keyboard ring; remove the prototype's additional focus shadow. */
+:root
+    body
+    :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 3px;
+    box-shadow: none;
+}
+
+:root body :is(button, a, summary, [tabindex]):focus:not(:focus-visible) {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Fields have a border and a soft halo instead of a second outer ring. */
+:root
+    body
+    :is(input, select, textarea):not([type='checkbox']):not([type='radio']):not(
+        [type='range']
+    ):focus {
+    outline: none;
+    border-color: var(--focus-ring);
+    box-shadow: 0 0 0 3px var(--focus-halo);
+}
+
+/* The select owns focus styling, including browsers using base-select. */
+:root body select .select-value-button:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+/* Keep rings inside scrollable navigation, tabs and matrix cells. */
+:root
+    body
+    .tass-shell
+    :is(
+        .sidebar .nav button,
+        .admin-link-row,
+        .search-result,
+        .matrix-assignment,
+        .matrix-viewport,
+        .tabs > button,
+        .mvp-tabs > button
+    ):focus-visible {
+    outline-offset: -2px;
+}
+
+:root body #main-content:focus-visible {
+    outline: none;
+    box-shadow: none;
+}
+
+@media (forced-colors: active) {
+    :root
+        body
+        :is(
+            button,
+            a,
+            input,
+            select,
+            textarea,
+            summary,
+            [tabindex]
+        ):focus-visible {
+        outline: 2px solid Highlight;
+        outline-offset: 3px;
+        box-shadow: none;
+    }
+
+    :root
+        body
+        :is(input, select, textarea):not([type='checkbox']):not(
+            [type='radio']
+        ):not([type='range']):focus {
+        outline: 2px solid Highlight;
+        outline-offset: 2px;
+        box-shadow: none;
+    }
+}

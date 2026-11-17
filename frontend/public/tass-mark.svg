@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+  <title>TASS — Connected in balance</title>
+  <defs>
+    <symbol id="tass-mark" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M4 3h7.2l-3 6H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/>
+      <path d="M13.4 3H20a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-5v4.4l-6 3V9h1.4l3-6Z"/>
+      <path d="m9 18.6 6-3v2.9a3 3 0 0 1-6 0v.1Z"/>
+    </symbol>
+  </defs>
+  <rect width="48" height="48" rx="13" fill="#d13415"/>
+  <use href="#tass-mark" x="8.4" y="8.4" width="31.2" height="31.2" color="#fff"/>
+</svg>

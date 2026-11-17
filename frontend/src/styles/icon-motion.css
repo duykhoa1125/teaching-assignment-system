@@ -1,0 +1,37 @@
+/* User-requested hover motion. Independent transforms preserve directional
+   glyph transforms and the prototype's loading/expanded-state animations. */
+@media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
+    svg.icon {
+        transition:
+            translate 180ms ease-out,
+            scale 180ms ease-out,
+            rotate 220ms ease-out;
+    }
+
+    svg.icon:hover,
+    :is(a, button, [role='button'], .icon-surface):not(:disabled):not(
+            [aria-disabled='true']
+        ):hover
+        svg.icon {
+        translate: 0 -2px;
+        scale: 1.08;
+    }
+
+    svg.brand-glyph:hover,
+    :is(.brand, .auth-brand):hover svg.brand-glyph {
+        translate: 0 -2px;
+        scale: 1.12;
+        rotate: -6deg;
+    }
+
+    :is(button, a):not(:disabled):active svg.icon {
+        translate: 0 0;
+        scale: 0.96;
+    }
+
+    :is(button:disabled, [aria-disabled='true']) svg.icon {
+        translate: none;
+        scale: none;
+        rotate: none;
+    }
+}

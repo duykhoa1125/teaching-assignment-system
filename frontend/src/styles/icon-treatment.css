@@ -1,0 +1,33 @@
+/* User-approved departure from the prototype: color belongs to the glyph,
+   never to a decorative tile around it. Keep the original space and SVGs.
+   These three invariants also override demo state/hover and CSS-module styles.
+   Controls, selected rows, portraits and the brand are separate surfaces. */
+.icon-surface,
+.tass-shell
+    :is(
+        .school-symbol,
+        .subject-symbol,
+        .issue-symbol,
+        .version-icon,
+        .state-symbol,
+        .solver-orbit,
+        .auth-role-symbol,
+        .auth-status-mark,
+        .access-symbol,
+        .admin-feature-icon,
+        .admin-row-icon,
+        .admin-period-mark,
+        .admin-activity-empty > span,
+        .admin-welcome > span,
+        .mvp-kpi-label > i
+    ) {
+    background: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* Keep keyboard focus rings and the full click target on icon-only controls. */
+.tass-shell .icon-btn {
+    background: transparent !important;
+    border-color: transparent !important;
+}

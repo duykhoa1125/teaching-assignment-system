@@ -55,6 +55,8 @@ miktex-*/
 !*.svg
 !*.tex
 !*.md
+/AGENTS.md
+/frontend/docs/HANDOFF.md
 
 # ==========================================
 # Java / Spring Boot / Algorithm Modules
@@ -77,7 +79,9 @@ target/
 # ==========================================
 node_modules/
 dist/
+dist-mock/
 .npm/
+.sites-runtime/
 
 # ==========================================
 # IDE & Editor Settings
@@ -116,6 +120,7 @@ $RECYCLE.BIN/
 !/docs/project.md
 !/docs/git-flow.md
 !/docs/DEVELOPMENT.md
+!/docs/FRONTEND_DEVELOPMENT.md
 !/docs/BACKLOG.md
 !/docs/CLEANUP.md
 !/docs/history/

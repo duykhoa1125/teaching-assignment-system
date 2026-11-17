@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: tass-frontend-demo:dev
+    image: tass-frontend:dev
     build:
       context: .
       dockerfile: frontend/Dockerfile

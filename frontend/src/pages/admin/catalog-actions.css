@@ -1,0 +1,24 @@
+.tass-shell .catalog-row-actions {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    min-width: 80px;
+}
+
+.tass-shell .catalog-delete-action {
+    color: var(--danger);
+}
+
+.tass-shell .round-code-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.tass-shell .round-selected-mark {
+    display: inline-flex;
+    color: var(--aqua);
+}

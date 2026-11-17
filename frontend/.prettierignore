@@ -1,0 +1,9 @@
+node_modules/
+dist/
+dist-mock/
+public/mockServiceWorker.js
+prototype/
+package-lock.json
+.sites-runtime/
+src/app/layouts/prototype-shell.css
+src/assets/demo/

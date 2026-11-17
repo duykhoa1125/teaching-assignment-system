@@ -13,6 +13,6 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
-[frontend/index.html]
+[frontend/prototype/index.html]
 insert_final_newline = false
 trim_trailing_whitespace = false

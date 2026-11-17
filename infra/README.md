@@ -1,6 +1,6 @@
 # Docker dev/demo cho TASS
 
-Phạm vi đã chốt: dev/demo local cho team; không triển khai server và không làm SOL-10. Stack chính ở `compose.yaml` tại **gốc DACN-code**, gồm frontend demo Nginx, Spring Boot/JDK 17 và PostgreSQL 16. Maven/JDK/Node/PostgreSQL không cần cài trên host để build/chạy stack này; host cần Docker Desktop với Linux engine hoạt động và mạng tải image/Maven/Ubuntu packages cho lần build đầu.
+Phạm vi đã chốt: dev/demo local cho team; không triển khai server và không làm SOL-10. Stack chính ở `compose.yaml` tại **gốc repository**, gồm frontend React được build bằng Node24 và phục vụ qua Nginx, Spring Boot/JDK17 và PostgreSQL16. Maven/JDK/Node/PostgreSQL không cần cài trên host để build/chạy stack này; host cần Docker Desktop với Linux engine hoạt động và mạng tải image/npm/Maven/Debian packages cho lần build đầu.
 
 ## Chạy từ PowerShell
 
@@ -16,7 +16,7 @@ Trước khi `up`, helper in cả ba cổng thực tế, đối chiếu containe
 
 | Dịch vụ | Địa chỉ trên máy host | Địa chỉ trong Compose |
 | --- | --- | --- |
-| Giao diện demo | http://127.0.0.1:3000 | frontend:80 |
+| Giao diện frontend | http://127.0.0.1:3000 | frontend:80 |
 | Swagger qua Nginx | http://127.0.0.1:3000/swagger-ui.html | proxy → backend:8080 |
 | OpenAPI qua Nginx | http://127.0.0.1:3000/v3/api-docs | proxy → backend:8080 |
 | Backend trực tiếp | http://127.0.0.1:8080 | backend:8080 |
@@ -24,9 +24,9 @@ Trước khi `up`, helper in cả ba cổng thực tế, đối chiếu containe
 
 Đổi host ports trong `.env` nếu cần. Backend trong container luôn dùng `postgres:5432`, không dùng `localhost` hoặc cổng 5433 của Windows. Vì vậy PostgreSQL 18 cài trực tiếp trên Windows có thể giữ nguyên; không cần dừng/gỡ dịch vụ đó. Docker backend dùng JDK 17 trong image, không phụ thuộc JAVA_HOME của host.
 
-Frontend hiện là prototype tự chứa, chưa nối dữ liệu/auth/solver thật. Proxy đã sẵn sàng và Swagger/API có thể được truy cập, nhưng API plan/solver/kết quả vẫn trả 401 nếu chưa có Principal đáng tin cậy. Xem [các phần cần team chốt](DOCKER_AUDIT.md).
+Frontend hiện là bộ khung React/TypeScript/Vite (FE-01), chưa nối dữ liệu/auth/solver thật trong giao diện. Dockerfile build `dist` và Nginx giữ proxy cùng origin/SPA fallback. Dev bằng Vite trên host ở cổng5173 được mô tả tại [README frontend](../frontend/README.md). API plan/solver/kết quả vẫn trả401 nếu chưa có Principal tin cậy. [Audit demo](DOCKER_AUDIT.md) ghi trạng thái trước khi chuyển frontend; các phụ thuộc nghiệp vụ vẫn cần theo dõi.
 
-POSTGRES_USER/POSTGRES_PASSWORD là tài khoản kết nối database, không phải tài khoản đăng nhập giao diện. Seed user_account hiện DISABLED; tài khoản demo trong HTML là mô phỏng browser riêng.
+POSTGRES_USER/POSTGRES_PASSWORD là tài khoản kết nối database, không phải tài khoản đăng nhập giao diện. Seed user_account hiện DISABLED; prototype cũ được giữ tại `frontend/prototype/index.html`, tài khoản trong đó chỉ là mô phỏng browser riêng.
 
 ## Các lệnh thường dùng
 
@@ -54,7 +54,7 @@ Root project dùng volume `tass-dev_postgres_data` theo project name mặc đị
 
 - PostgreSQL: kiểm tra TCP, đăng nhập đúng user/password/database và các cột schema cần cho SOL-04–08. Schema/credential không khớp khiến DB unhealthy, backend chưa khởi động.
 - Backend: `/internal/health` kiểm tra Boot readiness, kết nối DB và quyền sở hữu coordinator. Bean OR-Tools phải load native thành công trước khi coordinator sẵn sàng. Response chỉ UP/DOWN, không có credentials hoặc dữ liệu; endpoint được ẩn khỏi OpenAPI nghiệp vụ.
-- Frontend: `/healthz` xác nhận Nginx chạy. Nó không xác nhận việc nối business API vốn chưa được triển khai trong HTML demo.
+- Frontend: `/healthz` xác nhận Nginx chạy. Nó không xác nhận việc nối business API/auth trong bộ khung React.
 - Startup theo DB healthy → backend healthy → frontend. Healthy là trạng thái hạ tầng; khác readiness nghiệp vụ của từng round/dataset.
 - Backend bind 0.0.0.0 bên trong container, host chỉ publish loopback. JVM chạy user không phải root, root filesystem read-only, `/tmp` có executable mappings để JNI/JNA extract native libraries. Heap mặc định tối đa 50% của giới hạn 2 GiB để chừa chỗ cho bộ nhớ native solver; đây là cấu hình dev tạm đề xuất.
 
@@ -95,6 +95,6 @@ Build image runtime bỏ bước test có chủ đích; lệnh test là gate ri�
 | Thiếu cột schema | Đúng volume chưa được migrate; backup/migrate có kiểm soát, không reseed |
 | OR-Tools UnsatisfiedLinkError | Linux arch/base glibc/native artifacts và /tmp executable; không chuyển runtime sang Alpine |
 | Backend healthy nhưng API 401 | Auth/Principal chưa nối, không phải lỗi Docker |
-| UI thao tác không đổi DB | HTML vẫn dùng localStorage/demo algorithm, chưa có API client |
+| UI chưa có thao tác nghiệp vụ | Bộ khung React mới có route/layout/HTTP client, các feature CRUD/auth/solver còn triển khai tiếp |
 
 Giới hạn đã kiểm chứng và danh sách dependencies/điểm chốt: [DOCKER_AUDIT.md](DOCKER_AUDIT.md).

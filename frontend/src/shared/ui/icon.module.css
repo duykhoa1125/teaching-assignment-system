@@ -1,0 +1,14 @@
+.icon {
+    flex-shrink: 0;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vertical-align: middle;
+}
+.icon :global(.duo) {
+    fill: currentColor;
+    opacity: 0.12;
+    stroke: none;
+}

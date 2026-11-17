@@ -1,0 +1,48 @@
+/* Text filters need room for their hints; date/select controls stay compact. */
+.tass-shell
+    .mvp-filter
+    > input:not([type='date']):not([type='hidden']):not([type='checkbox']):not(
+        [type='radio']
+    ),
+.tass-shell .mvp-toolbar > input:not([type='date']) {
+    flex: 0 1 320px;
+    width: 320px;
+    min-width: min(280px, 100%);
+    max-width: 400px;
+}
+
+.tass-shell .mvp-filter > input[type='search'] {
+    flex: 0 1 360px;
+    width: 360px;
+    max-width: 440px;
+}
+
+.tass-shell .toolbar .input-wrap {
+    flex: 0 1 320px;
+    width: 320px;
+    min-width: min(280px, 100%);
+    max-width: 100%;
+}
+
+.tass-shell .toolbar .input-wrap > input {
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+}
+
+@media (max-width: 700px) {
+    .tass-shell .toolbar .input-wrap {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+    }
+    .tass-shell
+        .mvp-filter
+        > input:not([type='hidden']):not([type='checkbox']):not([type='radio']),
+    .tass-shell .mvp-toolbar > input:not([type='date']) {
+        flex: 1 1 100%;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+}
