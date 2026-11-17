@@ -1,0 +1,13 @@
+.art {
+    display: block;
+    width: 160px;
+    max-width: 100%;
+    height: auto;
+    flex: 0 0 auto;
+    margin: 0 auto 16px;
+}
+@media (max-width: 600px) {
+    .art {
+        width: 132px;
+    }
+}

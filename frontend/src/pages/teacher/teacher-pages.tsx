@@ -1,3 +1,4 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import './teacher-pages.css';
 import { Select } from '@/shared/ui/select';
 import { useState, type ReactNode } from 'react';
@@ -93,9 +94,7 @@ function PersonalUnreleasedPanel({
 }) {
     return (
         <section className="panel personal-unreleased">
-            <span className="state-symbol">
-                <Icon name="lock" />
-            </span>
+            <StateIllustration kind="waiting" />
             <div>
                 <div className="eyebrow">
                     {contextTitle.toUpperCase()} / {round}

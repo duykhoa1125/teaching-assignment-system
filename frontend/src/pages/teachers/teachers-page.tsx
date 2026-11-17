@@ -1,3 +1,4 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import { Select } from '@/shared/ui/select';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
@@ -468,6 +469,10 @@ export function TeachersPage() {
                                     <tr>
                                         <td colSpan={5}>
                                             <div className={styles.mvpEmpty}>
+                                                {!hasActiveFilter &&
+                                                    offset === 0 && (
+                                                        <StateIllustration kind="teachers" />
+                                                    )}
                                                 <div
                                                     className={
                                                         styles.mvpEmptyHeader

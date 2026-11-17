@@ -717,6 +717,7 @@ export function DemandsPage() {
                                     ? 'search'
                                     : 'empty'
                             }
+                            illustration="plan"
                             title="Chưa có nhu cầu giảng dạy phù hợp"
                             detail="Thử xóa bộ lọc hoặc tạo nhu cầu giảng dạy mới cho học kỳ."
                         />

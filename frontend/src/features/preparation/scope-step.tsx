@@ -196,6 +196,11 @@ export function ScopeStep({
                 ) : (
                     <RoleStateCard
                         kind="empty"
+                        illustration={
+                            scopesQuery.data?.length === 0
+                                ? 'preparation'
+                                : undefined
+                        }
                         title="Chưa có phạm vi khối–môn"
                         detail="Thêm môn học vào phạm vi khối cho đợt phân công này."
                     />

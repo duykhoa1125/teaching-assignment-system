@@ -1,6 +1,6 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import { useNavigate } from 'react-router';
 import { useSession } from '@/features/session/use-session';
-import { Icon } from '@/shared/ui/icon';
 
 export function NoScopePage() {
     const navigate = useNavigate();
@@ -9,9 +9,7 @@ export function NoScopePage() {
     return (
         <section className="access-state">
             <span className="access-code">PHẠM VI / CHƯA ĐƯỢC CẤP</span>
-            <span className="access-symbol">
-                <Icon name="school" />
-            </span>
+            <StateIllustration kind="scope" />
             <h1>
                 Tài khoản đã sẵn sàng. <br />
                 Cần thêm phạm vi làm việc.
