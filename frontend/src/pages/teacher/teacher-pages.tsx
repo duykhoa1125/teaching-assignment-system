@@ -1,3 +1,4 @@
+import './teacher-pages.css';
 import { Select } from '@/shared/ui/select';
 import { useState, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
