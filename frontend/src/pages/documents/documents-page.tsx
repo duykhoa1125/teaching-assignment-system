@@ -1,3 +1,4 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import { Select } from '@/shared/ui/select';
 import '@/pages/results/results.css';
 import { useState } from 'react';
@@ -255,6 +256,7 @@ export function DocumentsPage() {
                     ))
                 ) : (
                     <div className="mvp-empty">
+                        <StateIllustration kind="documents" />
                         Chưa có tài liệu đã phát hành. PDF nháp không được ghi
                         thành ExportRecord.
                     </div>

@@ -11,6 +11,7 @@ export function NotFoundPage() {
                 </div>
             </PageHeadingContent>
             <EmptyState
+                illustration="not-found"
                 title="Đường dẫn không tồn tại"
                 action={
                     <Link className="button" to="/">

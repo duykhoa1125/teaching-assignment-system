@@ -1,3 +1,4 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import { useNavigate } from 'react-router';
 import { useSession } from '@/features/session/use-session';
 import { activeHomePath, roleDefinitions } from '@/features/session/roles';
@@ -25,9 +26,7 @@ export function ForbiddenPage({
     return (
         <section className="access-state">
             <span className="access-code">403 / QUYỀN TRUY CẬP</span>
-            <span className="access-symbol">
-                <Icon name="shield" />
-            </span>
+            <StateIllustration kind="forbidden" />
             <h1>
                 Không gian này chưa thuộc <br />
                 vai trò đang chọn.

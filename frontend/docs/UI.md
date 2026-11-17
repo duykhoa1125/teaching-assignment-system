@@ -255,3 +255,9 @@ Sửa cạnh đáy toast 17/11: clip nội dung bằng overflow:hidden trên khu
 Toast hết hạn 17/11: trượt ra phải + fade trong 240ms rồi mới gỡ khỏi stack; timer cleanup khi clear/unmount. Reduced motion gỡ ngay, không trượt. Nút đóng thủ công giữ hành vi hiện tại.
 
 Sửa chớp cạnh dưới khi exit 17/11: stack đặt overflow-x:hidden, giữ overflow-y:auto. Trước đó translateX làm vùng cuộn ngang phát sinh trong 240ms, có thể hiện thanh cuộn bên dưới toast. Không đổi thanh thời gian/timer hoặc hướng animation.
+
+## Illustration theo trạng thái — 17/11/2026
+
+Theo yêu cầu thêm illustration, bổ sung bộ SVG nội bộ `StateIllustration` dùng token màu hiện hành: lịch/phương án, chờ công bố, hồ sơ giáo viên, tài liệu, chuẩn bị, solver/đã áp dụng và 404/quyền/phạm vi. Trước đây các vùng này dùng icon hoặc chữ; nay có hình trang trí 160px desktop/132px mobile, ẩn khỏi accessibility và không có animation. Giữ nội dung, hành động, bảng, filter, pagination và prototype.
+
+Áp dụng có chọn lọc qua prop cho EmptyState/RoleStateCard; không tự thay toàn bộ trạng thái lỗi/loading. Danh sách giáo viên chỉ hiện hình khi không có filter và ở trang đầu; nhu cầu chỉ hiện khi kind=empty; chuẩn bị chỉ khi nguồn phạm vi trống. Solver hoàn tất chỉ hiện khi apply_outcome=APPLIED. Thư viện `/dev/ui` có đủ 10 mẫu để xem và kiểm tra responsive.

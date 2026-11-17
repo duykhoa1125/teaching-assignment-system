@@ -1,3 +1,7 @@
+import {
+    StateIllustration,
+    type StateIllustrationKind,
+} from '@/shared/ui/state-illustration';
 import { Skeleton } from '@/shared/ui/skeleton';
 import type { ReactNode } from 'react';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
@@ -33,6 +37,7 @@ export function RolePageHeader({
     title: string;
     description: string;
     actions?: ReactNode;
+    illustration?: StateIllustrationKind;
     roundLabel?: string;
     contextLabel?: string;
 }) {
@@ -160,11 +165,13 @@ export function RoleStateCard({
     title,
     detail,
     actions,
+    illustration,
 }: {
     kind: 'empty' | 'search' | 'error' | 'success' | 'loading';
     title: string;
     detail: string;
     actions?: ReactNode;
+    illustration?: StateIllustrationKind;
 }) {
     if (kind === 'loading') {
         return (
@@ -181,9 +188,13 @@ export function RoleStateCard({
             className={`state-card state-${kind}`}
             role={kind === 'error' ? 'alert' : undefined}
         >
-            <span className="state-symbol">
-                <Icon name={STATE_SYMBOLS[kind]} />
-            </span>
+            {illustration && kind === 'empty' ? (
+                <StateIllustration kind={illustration} />
+            ) : (
+                <span className="state-symbol">
+                    <Icon name={STATE_SYMBOLS[kind]} />
+                </span>
+            )}
             <h3>{title}</h3>
             <p>{detail}</p>
             {actions ? <div className="state-actions">{actions}</div> : null}

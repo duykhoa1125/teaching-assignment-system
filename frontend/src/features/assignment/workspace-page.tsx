@@ -491,6 +491,7 @@ function Workspace({
                 <section className="panel">
                     <RoleStateCard
                         kind="empty"
+                        illustration="plan"
                         title="Đợt chưa có phương án"
                         detail="Tạo bản nháp từ dữ liệu nguồn và cặp cấu hình/bộ quy tắc đã chọn."
                         actions={

@@ -1,3 +1,7 @@
+import {
+    StateIllustration,
+    type StateIllustrationKind,
+} from '@/shared/ui/state-illustration';
 import { Skeleton } from '@/shared/ui/skeleton';
 import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import {
@@ -323,6 +327,37 @@ export function UiPreviewPage() {
                         }}
                     />
                 )}
+            </section>
+            <section
+                className={styles.panel}
+                aria-labelledby="illustrations-title"
+            >
+                <div className={styles.sectionHeading}>
+                    <h2 id="illustrations-title">
+                        Illustration theo trạng thái
+                    </h2>
+                </div>
+                <div className={styles.illustrations}>
+                    {(
+                        [
+                            ['plan', 'Chưa có phương án'],
+                            ['waiting', 'Chờ công bố'],
+                            ['teachers', 'Chưa có giáo viên'],
+                            ['documents', 'Chưa có tài liệu'],
+                            ['preparation', 'Chuẩn bị dữ liệu'],
+                            ['solver', 'Chưa chạy đề xuất'],
+                            ['success', 'Đã áp dụng đề xuất'],
+                            ['not-found', 'Không tìm thấy trang'],
+                            ['forbidden', 'Quyền truy cập'],
+                            ['scope', 'Chưa được cấp phạm vi'],
+                        ] satisfies [StateIllustrationKind, string][]
+                    ).map(([kind, label]) => (
+                        <figure key={kind}>
+                            <StateIllustration kind={kind} />
+                            <figcaption>{label}</figcaption>
+                        </figure>
+                    ))}
+                </div>
             </section>
             {MockTools && (
                 <Suspense

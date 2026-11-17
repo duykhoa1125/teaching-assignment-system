@@ -1,3 +1,4 @@
+import { StateIllustration } from '@/shared/ui/state-illustration';
 import { Select } from '@/shared/ui/select';
 import { roundPath } from '@/features/preparation/round-navigation';
 import { useState } from 'react';
@@ -434,6 +435,7 @@ export function SolverRunsPage() {
                             ? 'empty'
                             : 'error'
                     }
+                    illustration="plan"
                     title={
                         planQuery.error instanceof ApiError &&
                         planQuery.error.status === 404
@@ -601,6 +603,10 @@ export function SolverRunsPage() {
 
                     {currentRun && activeInterpretation ? (
                         <section className="panel results-solver-panel">
+                            {currentRun.summary?.apply_outcome ===
+                                'APPLIED' && (
+                                <StateIllustration kind="success" />
+                            )}
                             <div className="results-solver-head">
                                 <div>
                                     <div className="eyebrow">
@@ -940,6 +946,7 @@ export function SolverRunsPage() {
                             </div>
                         ) : (
                             <div className="mvp-empty">
+                                <StateIllustration kind="solver" />
                                 Chưa có lượt chạy đề xuất nào cho phiên bản V
                                 {String(plan.version_no).padStart(2, '0')}. Bấm
                                 “Sinh đề xuất” để chạy thử với cấu hình đang

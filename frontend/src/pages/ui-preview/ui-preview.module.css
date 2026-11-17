@@ -132,3 +132,17 @@
         font-size: 20px;
     }
 }
+
+.illustrations {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+    gap: 24px;
+    text-align: center;
+}
+.illustrations figure {
+    margin: 0;
+}
+.illustrations figcaption {
+    font-size: 12px;
+    color: var(--muted);
+}
