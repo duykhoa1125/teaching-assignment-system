@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import { Icon } from '@/shared/ui/icon';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import type { PrototypeIconName } from '@/shared/ui/prototype-glyphs';
@@ -47,15 +48,19 @@ export function RolePageHeader({
 
     return (
         <div className="page-heading">
-            <div>
-                <div className="eyebrow">
-                    <span className="section-index">{roundLabel ?? round}</span>
-                    <span>/</span>
-                    <span>{contextLabel ?? scopeLabel}</span>
+            <PageHeadingContent>
+                <div>
+                    <div className="eyebrow">
+                        <span className="section-index">
+                            {roundLabel ?? round}
+                        </span>
+                        <span>/</span>
+                        <span>{contextLabel ?? scopeLabel}</span>
+                    </div>
+                    <h1>{title}</h1>
+                    <p className="subtitle">{description}</p>
                 </div>
-                <h1>{title}</h1>
-                <p className="subtitle">{description}</p>
-            </div>
+            </PageHeadingContent>
             {actions ? <div className="flex">{actions}</div> : null}
         </div>
     );

@@ -9,6 +9,7 @@ import { flushSync } from 'react-dom';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
 import { Icon } from '@/shared/ui/icon';
 import { BrandMark } from '@/shared/ui/brand-mark';
+import { PageHeadingTarget } from '@/shared/ui/page-heading-context';
 import { PortraitAvatar } from '@/shared/ui/portrait-avatar';
 import { useToast } from '@/shared/ui/toast-context';
 import { useTeacherPersonalQuery } from '@/features/session/queries';
@@ -25,6 +26,7 @@ import { ShellModal } from './shell-modal';
 import { ShellSearch } from './shell-search';
 import './shell-interactions.css';
 import './sidebar-collapse.css';
+import './compact-page-header.css';
 
 type QuickState = {
     left: number;
@@ -32,6 +34,9 @@ type QuickState = {
 };
 
 export function AppLayout() {
+    const [headingTarget, setHeadingTarget] = useState<HTMLDivElement | null>(
+        null,
+    );
     const navigate = useNavigate();
     const { pathname, search } = useLocation();
     const notify = useToast();
@@ -435,7 +440,7 @@ export function AppLayout() {
             />
             <div className="app" inert={mobileOpen || undefined}>
                 <header className="topbar">
-                    <div className="flex">
+                    <div className="header-page-main">
                         <button
                             ref={menuRef}
                             type="button"
@@ -447,42 +452,12 @@ export function AppLayout() {
                         >
                             <Icon name="menu" />
                         </button>
-                        <nav
-                            className="breadcrumb"
-                            aria-label="Đường dẫn trang"
-                        >
-                            <Link
-                                to={roleDef.home}
-                                aria-label="Trang tổng quan"
-                            >
-                                <Icon name="home" />
-                            </Link>
-                            <span aria-hidden="true">/</span>
-                            <Link to={roleDef.home}>
-                                {role === 'manager'
-                                    ? 'Điều phối'
-                                    : role === 'admin'
-                                      ? 'Quản trị'
-                                      : 'Cổng giáo viên'}
-                            </Link>
-                            {pathname === '/solver-runs' ? (
-                                <>
-                                    <span aria-hidden="true">/</span>
-                                    <Link to={`/assignment${search}`}>
-                                        Phân công
-                                    </Link>
-                                </>
-                            ) : null}
-                            <span aria-hidden="true">/</span>
-                            <b id="breadcrumb" aria-current="page">
-                                {resolveGuardedPageTitle(
-                                    pathname,
-                                    role,
-                                    hasSchoolScope,
-                                    isMockMode,
-                                )}
-                            </b>
-                        </nav>
+                        <div className="header-page-stack">
+                            <div
+                                ref={setHeadingTarget}
+                                className="header-page-title"
+                            />
+                        </div>
                     </div>
                     <div className="top-actions">
                         <button
@@ -510,8 +485,41 @@ export function AppLayout() {
                         </button>
                     </div>
                 </header>
+                <nav
+                    className="breadcrumb header-breadcrumb"
+                    aria-label="Đường dẫn trang"
+                >
+                    <Link to={roleDef.home} aria-label="Trang tổng quan">
+                        <Icon name="home" />
+                    </Link>
+                    <span aria-hidden="true">/</span>
+                    <Link to={roleDef.home}>
+                        {role === 'manager'
+                            ? 'Điều phối'
+                            : role === 'admin'
+                              ? 'Quản trị'
+                              : 'Cổng giáo viên'}
+                    </Link>
+                    {pathname === '/solver-runs' ? (
+                        <>
+                            <span aria-hidden="true">/</span>
+                            <Link to={`/assignment${search}`}>Phân công</Link>
+                        </>
+                    ) : null}
+                    <span aria-hidden="true">/</span>
+                    <b id="breadcrumb" aria-current="page">
+                        {resolveGuardedPageTitle(
+                            pathname,
+                            role,
+                            hasSchoolScope,
+                            isMockMode,
+                        )}
+                    </b>
+                </nav>
                 <main id="main-content" className="main" tabIndex={-1}>
-                    <Outlet context={context} />
+                    <PageHeadingTarget.Provider value={headingTarget}>
+                        <Outlet context={context} />
+                    </PageHeadingTarget.Provider>
                     <footer className="footer role-footer">
                         <span className="flex">
                             <i className="live-dot" />

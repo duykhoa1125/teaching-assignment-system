@@ -1,0 +1,99 @@
+/* User-requested compact page identity above the breadcrumb. */
+.tass-shell .topbar {
+    height: auto;
+    min-height: 76px;
+    padding-block: 12px;
+    align-items: center;
+    gap: 20px;
+}
+
+.tass-shell .header-page-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    flex: 1;
+}
+
+.tass-shell .header-page-stack {
+    min-width: 0;
+    flex: 1;
+}
+
+.tass-shell .header-page-copy h1 {
+    font: 750 20px/1.3 var(--heading);
+    letter-spacing: -0.6px;
+    margin: 0;
+    color: var(--ink);
+}
+
+.tass-shell .header-page-copy > .page-heading {
+    display: block;
+    margin: 0;
+}
+
+.tass-shell .header-page-copy p {
+    font-size: 11px;
+    line-height: 1.5;
+    margin: 3px 0 0;
+    color: var(--muted);
+}
+
+.tass-shell .header-page-copy .eyebrow {
+    display: none;
+}
+
+.tass-shell .header-breadcrumb {
+    display: flex;
+    padding: 8px 32px;
+    font-size: 10px;
+    line-height: 1.5;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.tass-shell .header-breadcrumb .icon {
+    width: 12px;
+    height: 12px;
+}
+
+.tass-shell .main .page-heading {
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+.tass-shell .main .page-heading:empty {
+    display: none;
+}
+
+@media (max-width: 1000px) {
+    .tass-shell .topbar .global-search {
+        width: 36px;
+        min-width: 36px;
+        padding: 0;
+        justify-content: center;
+    }
+    .tass-shell .topbar .global-search :is(span, kbd) {
+        display: none;
+    }
+}
+
+@media (max-width: 700px) {
+    .tass-shell .header-breadcrumb {
+        padding-inline: 18px;
+    }
+    .tass-shell .topbar {
+        gap: 8px;
+        padding-block: 10px;
+    }
+    .tass-shell .header-page-copy h1 {
+        font-size: 17px;
+    }
+    .tass-shell .header-page-copy p {
+        font-size: 10px;
+    }
+    .tass-shell .header-page-main {
+        align-items: flex-start;
+        gap: 8px;
+    }
+}

@@ -1,3 +1,4 @@
+import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router';
 import { useOverviewQuery } from '@/features/overview/queries';
@@ -108,18 +109,22 @@ export function OverviewPage() {
 
     const renderPageHeader = (withActions: boolean) => (
         <div className={`${styles.pageHeading} page-heading`}>
-            <div>
-                <div className={styles.eyebrow}>
-                    <span className={styles.sectionIndex}>{activeRound}</span>
-                    <span className={styles.eyebrowDivider}>/</span>
-                    <span>{`${activeTitle} · ${activeYear}`}</span>
+            <PageHeadingContent>
+                <div>
+                    <div className={`${styles.eyebrow} eyebrow`}>
+                        <span className={styles.sectionIndex}>
+                            {activeRound}
+                        </span>
+                        <span className={styles.eyebrowDivider}>/</span>
+                        <span>{`${activeTitle} · ${activeYear}`}</span>
+                    </div>
+                    <h1>Một góc nhìn. Cả học kỳ.</h1>
+                    <p className={styles.subtitle}>
+                        Những điều quan trọng cho kế hoạch giảng dạy, ở cùng một
+                        nơi.
+                    </p>
                 </div>
-                <h1>Một góc nhìn. Cả học kỳ.</h1>
-                <p className={styles.subtitle}>
-                    Những điều quan trọng cho kế hoạch giảng dạy, ở cùng một
-                    nơi.
-                </p>
-            </div>
+            </PageHeadingContent>
             {withActions ? (
                 <div className={`${styles.headingActions} flex`}>
                     <button
@@ -280,7 +285,7 @@ export function OverviewPage() {
                 <section className={styles.panel}>
                     <div className={styles.panelHead}>
                         <div>
-                            <div className={styles.eyebrow}>
+                            <div className={`${styles.eyebrow} eyebrow`}>
                                 <span className={styles.sectionIndex}>
                                     01 / WORKLOAD
                                 </span>

@@ -1,3 +1,4 @@
+import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import {
     lazy,
     Suspense,
@@ -72,14 +73,16 @@ export function UiPreviewPage() {
     const rows = examples.slice(offset, offset + 2);
     return (
         <>
-            <div className="page-heading">
-                <p className="eyebrow">DÀNH CHO PHÁT TRIỂN</p>
-                <h1>Thư viện giao diện</h1>
-                <p>
-                    Các thành phần dùng chung của TASS. Trang này không xuất
-                    hiện trong bản triển khai API.
-                </p>
-            </div>
+            <PageHeadingContent>
+                <div className="page-heading">
+                    <p className="eyebrow">DÀNH CHO PHÁT TRIỂN</p>
+                    <h1>Thư viện giao diện</h1>
+                    <p>
+                        Các thành phần dùng chung của TASS. Trang này không xuất
+                        hiện trong bản triển khai API.
+                    </p>
+                </div>
+            </PageHeadingContent>
             <section className={styles.panel} aria-labelledby="identity-title">
                 <div className={styles.sectionHeading}>
                     <span>01</span>

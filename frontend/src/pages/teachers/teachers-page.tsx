@@ -1,3 +1,4 @@
+import { PageHeadingContent } from '@/shared/ui/page-heading-content';
 import '@/pages/admin/catalog-actions.css';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { useOutletContext } from 'react-router';
@@ -120,21 +121,23 @@ export function TeachersPage() {
 
     return (
         <div className={styles.teachersRoot}>
-            <div className={styles.pageHeading}>
-                <div>
-                    <div className={styles.eyebrow}>
-                        <span className={styles.sectionIndex}>
-                            {activeRound}
-                        </span>
-                        <span className={styles.eyebrowDivider}>/</span>
-                        <span>{activeSchoolLabel}</span>
+            <div className={`${styles.pageHeading} page-heading`}>
+                <PageHeadingContent>
+                    <div>
+                        <div className={`${styles.eyebrow} eyebrow`}>
+                            <span className={styles.sectionIndex}>
+                                {activeRound}
+                            </span>
+                            <span className={styles.eyebrowDivider}>/</span>
+                            <span>{activeSchoolLabel}</span>
+                        </div>
+                        <h1>Hồ sơ rõ ràng, phân công có căn cứ.</h1>
+                        <p className={styles.subtitle}>
+                            Tra cứu theo trường, mã giáo viên và cập nhật hồ sơ
+                            đội ngũ giảng dạy.
+                        </p>
                     </div>
-                    <h1>Hồ sơ rõ ràng, phân công có căn cứ.</h1>
-                    <p className={styles.subtitle}>
-                        Tra cứu theo trường, mã giáo viên và cập nhật hồ sơ đội
-                        ngũ giảng dạy.
-                    </p>
-                </div>
+                </PageHeadingContent>
                 <div className={styles.headingActions}>
                     <button
                         ref={addButtonRef}

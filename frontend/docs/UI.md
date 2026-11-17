@@ -171,3 +171,12 @@ Phản hồi tiếp 17/11: sidebar thu gọn giảm từ 80px còn 68px, padding
 
 
 Nhật ký — phản hồi tiếp 17/11: bỏ legend nhìn thấy “Thời gian ghi nhận” để không tăng một dòng. Giữ nhóm fieldset qua aria-label; ba nhãn Tìm nhật ký/Từ ngày/Đến ngày cùng một hàng trên desktop. Typecheck/lint đạt.
+
+
+## Header trang gọn và breadcrumb bên dưới — 17/11/2026
+
+Theo yêu cầu mới, chuyển h1/mô tả từ đầu nội dung lên topbar (20px desktop/17px mobile), bỏ dòng đợt/học kỳ trùng sidebar. Breadcrumb là nav riêng ngay sau header, trước main; giữ Link/aria-current và query ngữ cảnh. Các nút thao tác vẫn ở đầu nội dung. Đây là thay đổi bố cục được người dùng chấp thuận, không thay prototype.
+
+`PageHeadingContent` portal tới target của AppLayout qua context, nên nội dung tiêu đề vẫn do trang sở hữu và cập nhật theo trạng thái; không dùng bảng tiêu đề hardcode hay sao chép DOM. RolePageHeader áp dụng cho các trang nghiệp vụ/quản trị/giáo viên; overview và danh sách giáo viên chuyển phần tiêu đề riêng tương ứng, 404/dev UI cũng hỗ trợ. Ngoài AppLayout dùng fallback tại chỗ. CSS ở `app/layouts/compact-page-header.css`; tiêu đề cũ không để lại khối trống, header thu gọn tìm kiếm ở chiều rộng nhỏ.
+
+Đã xem tổng quan desktop 1482×734 và mobile 390×844, bỏ dòng ngữ cảnh và breadcrumb tách khỏi header; đã reset viewport. Typecheck/lint/build/format và 94 tests đạt. Chưa đối chiếu trực quan mọi route/tab hoặc trạng thái lỗi với header mới.
