@@ -1,6 +1,6 @@
-# TASS backend: dữ liệu đầu vào, hồ sơ giáo viên và readiness
+# TASS backend: dữ liệu đầu vào, hồ sơ giáo viên, readiness và phân công (mục 4)
 
-Backend cung cấp REST API cho 20 bảng dữ liệu đầu vào trong `sql/01_schema.sql`, hồ sơ giáo viên theo học kỳ và `GET /api/assignment-rounds/{id}/readiness` để kiểm tra dữ liệu trước khi lập phương án. Schema có 48 bảng; các bảng snapshot, lượt chạy, kiểm tra và nhật ký được quản lý qua luồng nghiệp vụ, không có CRUD trực tiếp.
+Backend cung cấp REST API cho 20 bảng dữ liệu đầu vào trong `sql/01_schema.sql`, hồ sơ giáo viên theo học kỳ, readiness, `GET`/`POST /api/assignment-rounds/{id}/plan`. Schema có 48 bảng; các bảng snapshot, lượt chạy, kiểm tra và nhật ký được quản lý qua luồng nghiệp vụ, không có CRUD trực tiếp.
 
 Tài liệu API đầy đủ, gồm bộ lọc, mã lỗi và ví dụ request/response: [docs/API.md](docs/API.md). Khi chạy backend, mở Swagger UI tại `http://127.0.0.1:8080/swagger-ui.html`; đặc tả OpenAPI ở `/v3/api-docs` (JSON) hoặc `/v3/api-docs.yaml` (YAML).
 
@@ -10,15 +10,15 @@ Mã nguồn nằm tại `src/main/java/vn/edu/tass/backend` và được tổ ch
 
 | Package | Nội dung |
 | --- | --- |
-| `controller` | 20 controller CRUD, 1 controller hồ sơ giáo viên và 1 controller readiness |
+| `controller` | 20 controller CRUD, 1 controller hồ sơ giáo viên, 1 controller readiness và 1 controller phương án |
 | `entity` | 20 JPA entity, mỗi bảng một file |
 | `mapper` | 20 mapper CRUD theo bảng và 1 mapper tổng hợp hồ sơ giáo viên |
 | `exception` | Ngoại lệ và ánh xạ lỗi HTTP |
 | `payload/request` | 20 request class có validation |
-| `payload/dto` | 20 response DTO CRUD, DTO hồ sơ, DTO readiness và DTO lỗi |
+| `payload/dto` | 20 response DTO CRUD, DTO hồ sơ, DTO readiness, DTO phương án và DTO lỗi |
 | `repository` | 20 interface riêng, mỗi interface kế thừa `JpaRepository` |
-| `service` | 20 service CRUD, 1 service hồ sơ và 1 service readiness |
-| `service/impl` | 20 service CRUD, service tổng hợp hồ sơ và service kiểm tra readiness |
+| `service` | 20 service CRUD, 1 service hồ sơ, 1 service readiness và 1 service phương án |
+| `service/impl` | 20 service CRUD, service tổng hợp hồ sơ, service kiểm tra readiness và service phương án |
 | `utils` | Kiểm tra tham số và phân trang theo `limit`/`offset` |
 
 Ví dụ: `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `Teacher`; `TeacherServiceImpl` dùng `TeacherMapper` để ánh xạ thủ công từng trường. Mapper có `toEntity`, `applyRequest` và `toDto`; `applyRequest` dùng cho cả tạo mới và cập nhật. JPA chỉ truy cập schema có sẵn; `spring.jpa.hibernate.ddl-auto=none`, nên ứng dụng không tự tạo hoặc sửa bảng PostgreSQL.
