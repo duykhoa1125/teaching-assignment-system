@@ -19,6 +19,7 @@ Auth/phạm vi dùng cùng `PlanActorResolver` với plan API: principal tin c�
 | Trường | Ý nghĩa |
 | --- | --- |
 | `round_id`, `source_revision_token` | Đợt và token nguồn tại lần đọc nhất quán |
+| `semester_id`, `scope_summaries` | Học kỳ và số liệu theo từng phạm vi môn–khối: lớp áp dụng, không áp dụng, chưa xác định, thiếu trạng thái hoặc thiếu nhu cầu bắt buộc |
 | `optimization_config_id`, `rule_set_version_id` | Lựa chọn đang tiền kiểm; có thể null khi chưa chọn |
 | `starts_on`, `ends_on` | Bao khoảng hiệu lực nhu cầu ACTIVE/APPLICABLE; fallback học kỳ khi không có nhu cầu |
 | `current_version_id`, `revision_no` | Current version/revision, null khi chưa có plan |
@@ -31,6 +32,8 @@ Auth/phạm vi dùng cùng `PlanActorResolver` với plan API: principal tin c�
 Một issue có `code`, `severity` (`ERROR`/`WARNING`/`INFO`), `category`, `entity_type`, `entity_id`, `related_id`, `message`, `suggestion`. `related_id` thường chỉ teacher/demand hoặc kỳ tính liên quan; không trả toàn bộ hồ sơ GV. Kết quả sắp theo mã/đối tượng/ID để UI đối soát ổn định.
 
 `can_run_solver` là tiền kiểm nguồn, không thay thế `InputValidator` sau mapping, bộ tính tải/quy tắc hoặc quyền/lifecycle của POST run. Có thể kiểm tra nguồn trước khi tạo DRAFT. Khi current đã tồn tại và không phải DRAFT, cờ này là false. Snapshot cũ được cảnh báo: run preparation sau này phải refresh dưới khóa và lấy revision mới. Không dùng GET trước đó làm bằng chứng cho phép chạy.
+
+`scope_summaries` đếm các lớp thuộc năm học và khối của từng `round_subject_scope`. `applicable_missing_demand_count` đếm cặp lớp–môn áp dụng nhưng không có tập thành phần bắt buộc đầy đủ, hoặc có thành phần chưa liên kết nhu cầu ACTIVE đúng lớp/môn/học kỳ/loại tiết/hiệu lực và số tiết dương. Danh sách `issues` vẫn là nguồn chi tiết cho các lỗi và cảnh báo; không có bộ mã lỗi thứ hai.
 
 ## Kiểm tra dữ liệu
 
@@ -63,7 +66,9 @@ Giới hạn nhiều giai đoạn của solver không tự cấm phát hành m�
 
 ## Kiểm thử và việc nối tiếp
 
-`RoundReadinessPostgresTest`: 14 ca trên school/học kỳ riêng, trong DB PostgreSQL kiểm thử dùng riêng đã nạp schema/seed. Bật bằng `-Dplan.integration=true` cùng `plan.test.url/user/password`, như [PLAN_API.md](PLAN_API.md). Test commit dữ liệu vào DB kiểm thử; không dùng database thật của nhóm.
+`RoundReadinessPostgresTest`: 15 ca trên school/học kỳ riêng, gồm kiểm tra `scope_summaries` khi thành phần bắt buộc thiếu nhu cầu, trong DB PostgreSQL kiểm thử dùng riêng đã nạp schema/seed. Bật bằng `-Dplan.integration=true` cùng `plan.test.url/user/password`, như [PLAN_API.md](PLAN_API.md). Test commit dữ liệu vào DB kiểm thử; không dùng database thật của nhóm.
+
+Kiểm chứng ghép PR #12 vào `dev` ngày 19/11/2026: Maven test mặc định đạt; PostgreSQL tạm với schema/seed của project đạt 15/15 readiness và 47/47 solver-run integration test, không có failure/error. Máy kiểm thử dùng JDK 21 với `-Denforcer.skip=true`; chưa kiểm chứng runtime JDK 17 cho lần ghép này.
 
 Kiểm chứng 11/11/2026: **36/36 test đạt** bằng JUnit Jupiter Engine từ cache: 14 readiness, 11 plan, 2 fixture solver, 6 HTTP/OpenAPI dữ liệu đầu vào và 3 khởi tạo Spring/JPA. Đã biên dịch toàn bộ source backend/solver với `--release 17`, kiểm tra OpenAPI 44 URL và các bean mới. Runtime kiểm thử hiện có là JDK 21, Spring Boot 3.5.14; **chưa xác nhận chạy trực tiếp trên JDK 17** hoặc toàn bộ Maven `verify` do thiếu cache plugin/mạng trước đó. Không coi kiểm chứng bytecode 17 là kiểm chứng runtime JDK 17.
 

@@ -82,7 +82,7 @@ public class RoundReadinessServiceImpl implements RoundReadinessService {
         return new RoundReadinessDto(roundId,context.sourceToken(),configId,rulesId,context.startsOn(),context.endsOn(),
             current==null?null:current.versionId(),current==null?null:current.revisionNo(),canRun,
             releaseReady && "DRAFT".equals(current.status()),releaseReady && "READY_TO_EXPORT".equals(current.status()),
-            true,false,coverage,issues);
+            true,false,coverage,issues,context.semesterId(),source.scopeSummaries(roundId));
     }
 
     private static void add(List<Issue> issues,String code,String severity,String category,long roundId) {

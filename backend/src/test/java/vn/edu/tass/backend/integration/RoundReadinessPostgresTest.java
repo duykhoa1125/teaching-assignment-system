@@ -86,16 +86,34 @@ class RoundReadinessPostgresTest {
         assertFalse(result.canExport());
         assertTrue(result.preflightOnly());
         assertFalse(result.solverInputValidated());
+        assertEquals(semester,result.semesterId());
+        assertEquals(1,result.scopeSummaries().size());
+        var summary=result.scopeSummaries().get(0);
+        assertEquals(scope,summary.scopeId());
+        assertTrue(summary.confirmed());
+        assertEquals(1,summary.classCount());
+        assertEquals(1,summary.applicableCount());
+        assertEquals(0,summary.applicableMissingDemandCount());
         assertTrue(has(result,"ANNUAL_WORKLOAD_NOT_VALIDATED"));
         assertFalse(has(result,"EXPERIENCE_UNKNOWN"));
         assertEquals(1,result.coverage().missingPlanRow());
         var body=mvc.perform(get("/api/assignment-rounds/{id}/readiness",round).principal(principal)
             .param("optimization_config_id","1").param("rule_set_version_id","1"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.can_run_solver").value(true))
+            .andExpect(jsonPath("$.scope_summaries[0].applicable_count").value(1))
             .andExpect(jsonPath("$.can_open_feedback").value(false)).andReturn().getResponse().getContentAsString();
         assertEquals(result.sourceRevisionToken(),json.readTree(body).path("source_revision_token").asText());
         assertEquals(snapshots,jdbc.queryForObject("SELECT count(*) FROM input_snapshot",Long.class));
         assertEquals(result.sourceRevisionToken(),jdbc.queryForObject("SELECT source_revision_token FROM assignment_round WHERE id=?",String.class,round));
+    }
+
+    @Test
+    void scopeSummaryReportsMissingRequiredDemand() {
+        jdbc.update("UPDATE required_demand_component SET demand_id=NULL WHERE applicability_id=?",applicability);
+        var result=check();
+        assertEquals(1,result.scopeSummaries().get(0).applicableMissingDemandCount());
+        assertTrue(has(result,"MISSING_OR_INVALID_REQUIRED_DEMAND"));
+        assertFalse(result.canRunSolver());
     }
 
     @Test
