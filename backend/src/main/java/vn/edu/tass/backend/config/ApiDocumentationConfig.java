@@ -53,8 +53,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên và kiểm tra chuẩn bị đợt. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền và các API phương án/solver. "
+            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên, readiness và phương án. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền, xem/sửa/khóa phân công và solver. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -139,6 +139,10 @@ public class ApiDocumentationConfig {
                     "warnings", List.of()));
             return;
         }
+        if (path.equals("/api/assignment-rounds/{id}/plan")) {
+            documentPlan(item);
+            return;
+        }
         String resource = path.substring("/api/".length()).split("/")[0];
         String label = RESOURCES.get(resource);
         if (label == null) return;
@@ -154,6 +158,52 @@ public class ApiDocumentationConfig {
             }
             documentResponses(operation, method, byId);
         });
+    }
+
+    private static void documentPlan(PathItem item) {
+        Map<String, Object> example = Map.of(
+            "id", 1, "round_id", 1, "plan_code", "DEMO_PLAN_HK1", "created_by", 1,
+            "created_at", "2026-08-01T09:00:00+07:00",
+            "current_version", Map.of(
+                "id", 2, "version_no", 2, "status", "DRAFT", "revision_no", 10,
+                "input_snapshot_id", 2, "source_revision_token", "token-cua-snapshot",
+                "optimization_config_id", 1, "rule_set_version_id", 1,
+                "created_by", 1, "created_at", "2026-08-01T09:00:00+07:00"));
+        Operation get = item.getGet();
+        get.setTags(List.of("Phương án đợt"));
+        get.setSummary("Xem phương án duy nhất và phiên bản hiện hành của đợt");
+        get.setDescription("Trả 404 nếu đợt hoặc phương án chưa tồn tại. source_revision_token là token lúc chụp snapshot; đối chiếu với readiness để biết dữ liệu nguồn đã thay đổi hay chưa.");
+        documentParameters(get);
+        documentResponses(get, PathItem.HttpMethod.GET, true);
+        setPlanExample(get.getResponses().get("200"), example);
+
+        Operation post = item.getPost();
+        post.setTags(List.of("Phương án đợt"));
+        post.setSummary("Khởi tạo phương án và phiên bản DRAFT đầu tiên");
+        post.setDescription("Một đợt chỉ có một phương án. Backend kiểm tra source_revision_token, tài khoản cùng trường, cấu hình và bộ quy tắc đã xác nhận, rồi chụp snapshot trong cùng transaction. "
+            + "created_by là trường tạm trong giai đoạn chưa có authentication; về sau phải lấy từ principal. Snapshot hiện dùng hàm demo của schema và chưa chứng nhận đủ điều kiện chạy solver.");
+        documentParameters(post);
+        documentResponses(post, PathItem.HttpMethod.POST, true);
+        addRequestExample(post, Map.of("plan_code", "HK1_2026", "created_by", 1,
+            "optimization_config_id", 1, "rule_set_version_id", 1,
+            "source_revision_token", "token-lay-tu-readiness"));
+        setPlanExample(post.getResponses().get("201"), example);
+        post.getResponses().addApiResponse("409", error("Phương án đã tồn tại hoặc token dữ liệu nguồn đã cũ.",
+            "Conflict", "PLAN_ALREADY_EXISTS"));
+    }
+
+    private static void setPlanExample(ApiResponse response, Map<String, Object> example) {
+        Content content = response.getContent();
+        if (content == null) {
+            content = new Content();
+            response.setContent(content);
+        }
+        MediaType json = content.get("application/json");
+        if (json == null) {
+            json = new MediaType().schema(new Schema<>().$ref("#/components/schemas/AssignmentPlanDto"));
+            content.addMediaType("application/json", json);
+        }
+        json.setExample(example);
     }
 
     private static String summary(PathItem.HttpMethod method, boolean byId, String label) {

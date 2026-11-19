@@ -25,6 +25,11 @@ public class ApiExceptionHandler {
         return error(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", e.getMessage());
     }
 
+    @ExceptionHandler(PlanConflictException.class)
+    ResponseEntity<ApiErrorResponse> planConflict(PlanConflictException e) {
+        return error(HttpStatus.CONFLICT, e.getCode(), e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiErrorResponse> invalidFields(MethodArgumentNotValidException e) {
         var first = e.getBindingResult().getFieldError();

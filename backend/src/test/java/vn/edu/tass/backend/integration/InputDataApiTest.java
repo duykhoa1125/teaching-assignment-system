@@ -39,7 +39,7 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(42, spec.path("paths").size());
+        assertEquals(43, spec.path("paths").size());
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",
@@ -92,6 +92,15 @@ class InputDataApiTest {
             .path("properties").has("scope_summaries"));
         assertTrue(spec.path("components").path("schemas").path("ReadinessScopeDto")
             .path("properties").has("applicable_missing_demand_count"));
+        JsonNode plan = spec.path("paths").path("/api/assignment-rounds/{id}/plan");
+        assertTrue(plan.path("get").path("responses").has("200"));
+        assertTrue(plan.path("get").path("responses").has("404"));
+        assertTrue(plan.path("post").path("responses").has("201"));
+        assertTrue(plan.path("post").path("responses").has("409"));
+        assertEquals("HK1_2026", plan.path("post").path("requestBody").path("content")
+            .path("application/json").path("example").path("plan_code").asText());
+        assertTrue(spec.path("components").path("schemas").path("AssignmentPlanDto")
+            .path("properties").has("current_version"));
         assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
             .path("properties").has("code"));
         assertTrue(spec.path("paths").path("/api/departments").path("get")
@@ -106,6 +115,20 @@ class InputDataApiTest {
             .andExpect(status().isBadRequest());
         mvc.perform(get("/api/assignment-rounds/999999/readiness"))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void planRejectsInvalidRequestBeforeDatabaseAccess() throws Exception {
+        mvc.perform(get("/api/assignment-rounds/0/plan")).andExpect(status().isBadRequest());
+        mvc.perform(post("/api/assignment-rounds/1/plan")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}"))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.code").value("INVALID_REQUEST"));
+        mvc.perform(post("/api/assignment-rounds/1/plan")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"plan_code\":\"X\",\"created_by\":1,\"optimization_config_id\":1,\"rule_set_version_id\":1,\"source_revision_token\":\"t\",\"input_snapshot_id\":1}"))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên và chuẩn bị đợt
+# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên và phương án đợt
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3, gồm 42 URL và 102 tổ hợp method/URL. Các API đăng nhập, phương án, phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3 và phương án của mục 4, gồm 43 URL và 104 tổ hợp method/URL. Các API đăng nhập, xem/sửa/khóa phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -76,6 +76,26 @@ Ví dụ response rút gọn cho đợt chưa hoàn tất:
 
 Danh sách có thể chứa nhiều lỗi của cùng một lớp hoặc nhu cầu. Sửa dữ liệu nguồn sẽ làm PostgreSQL đổi `source_revision_token`; kết quả readiness cũ không còn đại diện cho dữ liệu mới.
 
+## Phương án của đợt
+
+`GET /api/assignment-rounds/{id}/plan` trả phương án duy nhất của đợt và `current_version`: `id`, `version_no`, `status`, `revision_no`, `input_snapshot_id`, token dữ liệu nguồn khi chụp snapshot, cấu hình, bộ quy tắc, người tạo và thời điểm. Đợt hoặc phương án chưa tồn tại trả `404`.
+
+`POST /api/assignment-rounds/{id}/plan` tạo phương án và phiên bản đầu tiên với `status=DRAFT`, `version_no=1`, `revision_no=0`. Trả `201` cùng `Location` trỏ tới URL GET ở trên. Request mẫu:
+
+```json
+{
+  "plan_code": "HK1_2026",
+  "created_by": 1,
+  "optimization_config_id": 1,
+  "rule_set_version_id": 1,
+  "source_revision_token": "token-lay-tu-readiness"
+}
+```
+
+Lấy token từ `GET /api/assignment-rounds/{id}/readiness` ngay trước khi tạo. Backend khóa đợt, so token, kiểm tra tài khoản cùng trường, cấu hình và bộ quy tắc đã xác nhận/còn hiệu lực, sau đó tự tạo `input_snapshot`, `assignment_plan` và `plan_version` trong một transaction. Client không gửi snapshot, PASS hay kết quả tối ưu. Có thể khởi tạo DRAFT khi readiness còn lỗi; việc tạo plan không đồng nghĩa đủ điều kiện chạy solver. Không tạo `plan_demand` trong mục 4; thao tác ghi phân công thuộc mục 6–7.
+
+Tạo trùng trả `409 PLAN_ALREADY_EXISTS`; token cũ trả `409 STALE_SOURCE_REVISION`; ID/tài khoản/cấu hình/quy tắc không hợp lệ trả `400` hoặc `404`. `created_by` hiện do client gửi vì chưa có authentication; chưa thể xác minh danh tính/quyền Academic Manager. Trước khi dùng trong môi trường thật, trường này phải lấy từ principal ở backend. Schema hiện cung cấp `tass_capture_snapshot` dưới dạng **demo builder**; snapshot tạo được nhưng chưa chứng nhận tính đầy đủ pháp lý, chuẩn hóa tải C/R/F hay khả năng chạy solver. Các bước đó cần bổ sung ở phase tiếp theo.
+
 ## Quy ước chung
 
 Base path: `http://127.0.0.1:8080/api`. Body và response dùng JSON `snake_case` với `Content-Type: application/json`. Ngày dùng `YYYY-MM-DD`; thời điểm dùng ISO 8601 có múi giờ, ví dụ `2026-11-01T09:00:00+07:00`. Trường ID trong URL phải là số nguyên dương.
@@ -132,7 +152,7 @@ Body lỗi có dạng:
 {"error":"Bad Request","code":"INVALID_REQUEST","message":"valid_to must be on or after valid_from"}
 ```
 
-`code` là mã ổn định để client xử lý: `INVALID_REQUEST` (400), `RESOURCE_NOT_FOUND` (404), `DUPLICATE_RESOURCE`, `REFERENCE_CONFLICT`, `OVERLAPPING_PERIOD` (409) và `DATA_CONSTRAINT` (422). Thông điệp `message` phụ thuộc lỗi thực tế. Lỗi `400` do JSON/Bean Validation có thể trả thông điệp chung. Các trường `updated_by`, `recorded_by`, `verified_by`, `confirmed_by` hiện là ID do client gửi; **chưa có xác thực/phân quyền**, nên chúng chưa chứng minh danh tính người gọi.
+`code` là mã ổn định để client xử lý: `INVALID_REQUEST` (400), `RESOURCE_NOT_FOUND` (404), `DUPLICATE_RESOURCE`, `REFERENCE_CONFLICT`, `OVERLAPPING_PERIOD`, `PLAN_ALREADY_EXISTS`, `STALE_SOURCE_REVISION` (409) và `DATA_CONSTRAINT` (422). Thông điệp `message` phụ thuộc lỗi thực tế. Lỗi `400` do JSON/Bean Validation có thể trả thông điệp chung. Các trường `updated_by`, `recorded_by`, `verified_by`, `confirmed_by`, `created_by` hiện là ID do client gửi; **chưa có xác thực/phân quyền**, nên chúng chưa chứng minh danh tính người gọi.
 
 ## Danh mục 20 tài nguyên
 
