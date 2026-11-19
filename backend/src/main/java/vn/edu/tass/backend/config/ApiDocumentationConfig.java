@@ -15,6 +15,7 @@ import io.swagger.v3.oas.models.PathItem;
 import io.swagger.v3.oas.models.Operation;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.Content;
+import io.swagger.v3.oas.models.media.ArraySchema;
 import io.swagger.v3.oas.models.media.MediaType;
 import io.swagger.v3.oas.models.media.ObjectSchema;
 import io.swagger.v3.oas.models.media.Schema;
@@ -53,8 +54,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên, readiness và phương án. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền, xem/sửa/khóa phân công và solver. "
+            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên, readiness, phương án và xem phân công. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền, sửa/khóa phân công và solver. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -143,6 +144,10 @@ public class ApiDocumentationConfig {
             documentPlan(item);
             return;
         }
+        if (path.equals("/api/plan-versions/{id}/assignments")) {
+            documentAssignments(item);
+            return;
+        }
         String resource = path.substring("/api/".length()).split("/")[0];
         String label = RESOURCES.get(resource);
         if (label == null) return;
@@ -204,6 +209,32 @@ public class ApiDocumentationConfig {
             content.addMediaType("application/json", json);
         }
         json.setExample(example);
+    }
+
+    private static void documentAssignments(PathItem item) {
+        Operation get = item.getGet();
+        get.setTags(List.of("Phân công theo phiên bản"));
+        get.setSummary("Xem các thành phần phân công theo giáo viên hoặc lớp");
+        get.setDescription("Đọc loại tiết, hiệu lực, số tiết và tên từ snapshot của đúng phiên bản, kể cả phiên bản lịch sử. "
+            + "Bao gồm thành phần bắt buộc chưa có nhu cầu (MISSING_DEMAND), chưa có dòng phương án (MISSING_PLAN_ROW), "
+            + "đã có dòng nhưng chưa gán (UNASSIGNED) và đã gán (ASSIGNED). Lý do chưa gán chỉ có khi được lưu trong plan_demand; "
+            + "không suy diễn lý do cho dòng còn thiếu. teacher_id chỉ trả các dòng đã gán cho giáo viên đó. "
+            + "as_of lọc ngày hiệu lực bao gồm hai đầu; kết quả có thứ tự ổn định và dùng limit/offset.");
+        documentParameters(get);
+        documentResponses(get, PathItem.HttpMethod.GET, true);
+        get.getResponses().get("200").setDescription("Danh sách phân công và thành phần còn thiếu của phiên bản.");
+        Map<String, Object> example = Map.ofEntries(
+            Map.entry("required_component_id", 1), Map.entry("plan_demand_id", 11),
+            Map.entry("demand_id", 1), Map.entry("class_id", 1),
+            Map.entry("class_code", "10A1"), Map.entry("subject_id", 1),
+            Map.entry("subject_code", "VAT_LY"), Map.entry("demand_type", "STANDARD"),
+            Map.entry("valid_from", "2026-08-01"), Map.entry("valid_to", "2026-12-31"),
+            Map.entry("periods_per_week", 2), Map.entry("unit", "PERIOD_PER_WEEK"),
+            Map.entry("teacher_id", 1), Map.entry("coverage_status", "ASSIGNED"),
+            Map.entry("is_locked", true));
+        get.getResponses().get("200").setContent(new Content().addMediaType("application/json",
+            new MediaType().schema(new ArraySchema().items(new Schema<>().$ref("#/components/schemas/PlanAssignmentDto")))
+                .example(List.of(example))));
     }
 
     private static String summary(PathItem.HttpMethod method, boolean byId, String label) {

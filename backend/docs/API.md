@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên và phương án đợt
+# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên phương án đợt và xem phân công
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3 và phương án của mục 4, gồm 43 URL và 104 tổ hợp method/URL. Các API đăng nhập, xem/sửa/khóa phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3 và phương án của mục 4 và xem phân công của mục 5, gồm 44 URL và 105 tổ hợp method/URL. Các API đăng nhập, sửa/khóa phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -95,6 +95,21 @@ Danh sách có thể chứa nhiều lỗi của cùng một lớp hoặc nhu c�
 Lấy token từ `GET /api/assignment-rounds/{id}/readiness` ngay trước khi tạo. Backend khóa đợt, so token, kiểm tra tài khoản cùng trường, cấu hình và bộ quy tắc đã xác nhận/còn hiệu lực, sau đó tự tạo `input_snapshot`, `assignment_plan` và `plan_version` trong một transaction. Client không gửi snapshot, PASS hay kết quả tối ưu. Có thể khởi tạo DRAFT khi readiness còn lỗi; việc tạo plan không đồng nghĩa đủ điều kiện chạy solver. Không tạo `plan_demand` trong mục 4; thao tác ghi phân công thuộc mục 6–7.
 
 Tạo trùng trả `409 PLAN_ALREADY_EXISTS`; token cũ trả `409 STALE_SOURCE_REVISION`; ID/tài khoản/cấu hình/quy tắc không hợp lệ trả `400` hoặc `404`. `created_by` hiện do client gửi vì chưa có authentication; chưa thể xác minh danh tính/quyền Academic Manager. Trước khi dùng trong môi trường thật, trường này phải lấy từ principal ở backend. Schema hiện cung cấp `tass_capture_snapshot` dưới dạng **demo builder**; snapshot tạo được nhưng chưa chứng nhận tính đầy đủ pháp lý, chuẩn hóa tải C/R/F hay khả năng chạy solver. Các bước đó cần bổ sung ở phase tiếp theo.
+
+## Xem phân công theo phiên bản
+
+`GET /api/plan-versions/{id}/assignments` trả **mảng JSON** của các thành phần bắt buộc trong snapshot phiên bản và các dòng `plan_demand` đã lưu ngoài tập đó. Phiên bản lịch sử vẫn dùng snapshot của chính nó; thay đổi dữ liệu nguồn hiện tại không viết lại tên lớp/môn/giáo viên, số tiết hoặc hiệu lực đã chụp. ID phiên bản không tồn tại trả `404`.
+
+Mỗi dòng có `required_component_id`, `plan_demand_id`, `demand_id`, lớp/môn, `demand_type` (`STANDARD`, `SPECIALIZED_TOPIC`, `ENRICHMENT`), `valid_from`, `valid_to`, `periods_per_week`, `unit`, giáo viên, `coverage_status`, thông tin khóa và `unassigned_reason_code`/`unassigned_reason_text`. Trường không có dữ liệu trả `null`; số tiết thiếu không bị thay bằng `0`. Chuẩn và chuyên đề là hai dòng độc lập, có thể do hai giáo viên khác nhau dạy; KHTN giữ nguyên một môn.
+
+| `coverage_status` | Ý nghĩa |
+| --- | --- |
+| `MISSING_DEMAND` | Thành phần bắt buộc chưa liên kết được nhu cầu trong snapshot; `periods_per_week` và `demand_id` có thể `null`. |
+| `MISSING_PLAN_ROW` | Có nhu cầu trong snapshot nhưng chưa có dòng `plan_demand`; `is_locked` và lý do chưa gán là `null`. |
+| `UNASSIGNED` | Có dòng `plan_demand` với `teacher_id=null`; trả nguyên mã và nội dung lý do đã lưu. |
+| `ASSIGNED` | Có dòng `plan_demand` với giáo viên; trả `is_locked`, `locked_by`, `locked_at`, `lock_reason` theo dữ liệu đã lưu. |
+
+Bộ lọc tùy chọn: `teacher_id`, `class_id`, `subject_id`, `demand_type`, `as_of` (ngày YYYY-MM-DD, tính cả hai biên), `limit` (1–100, mặc định 20), `offset` (không âm, mặc định 0). Có thể kết hợp bộ lọc; `teacher_id` chỉ trả các dòng đã gán cho giáo viên đó. Thứ tự ổn định theo lớp, môn, ngày bắt đầu, loại tiết và ID thành phần/nhu cầu. API này **chỉ đọc**, không tạo dòng phân công hoặc lý do giả cho thành phần còn thiếu. Chưa có authentication nên chưa giới hạn người xem theo vai trò; API xem phân công cá nhân của Teacher thuộc giai đoạn sau.
 
 ## Quy ước chung
 
