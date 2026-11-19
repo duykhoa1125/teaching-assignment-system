@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -45,6 +46,21 @@ class PostgresCrudIntegrationTest {
         "class-subject-applicabilities", "required-demand-components",
         "teacher-workload-bases", "teaching-histories", "teacher-duties"
     );
+
+    @Test
+    @Transactional
+    void teacherProfileReadsSeededHistoryAndCurrentSemesterData() throws Exception {
+        mvc.perform(get("/api/teachers/1/profile").param("semester_id", "1"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.teacher.teacher_code").value("GV_A"))
+            .andExpect(jsonPath("$.semester.id").value(1))
+            .andExpect(jsonPath("$.employments.length()").value(1))
+            .andExpect(jsonPath("$.qualifications.length()").value(1))
+            .andExpect(jsonPath("$.experiences[0].years_of_experience").value(3))
+            .andExpect(jsonPath("$.teaching_histories.length()").value(2))
+            .andExpect(jsonPath("$.workload_bases.length()").value(1))
+            .andExpect(jsonPath("$.duties.length()").value(1));
+    }
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("resources")

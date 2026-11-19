@@ -40,7 +40,8 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(56, spec.path("paths").size());
+        assertEquals(57, spec.path("paths").size());
+        assertTrue(spec.path("paths").path("/api/teachers/{id}/profile").has("get"));
         for(String suffix:java.util.List.of("/{assignmentId}","/{assignmentId}/lock","/{assignmentId}/unlock","/locks","/unlocks")) {
             var operation=spec.path("paths").path("/api/plan-versions/{id}/assignments"+suffix).path(suffix.equals("/{assignmentId}")?"patch":"post");
             for(String code:java.util.List.of("200","400","401","403","404","409","422")) assertTrue(operation.path("responses").has(code),suffix+" response "+code);

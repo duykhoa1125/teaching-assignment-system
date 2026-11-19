@@ -53,7 +53,7 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào và API plan/current DRAFT/refresh snapshot/readiness, sửa/khóa/mở khóa phân công theo dòng hoặc nhóm, đọc tải/metadata và lưu validation. JSON dùng snake_case; ngày YYYY-MM-DD; "
+            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ tổng hợp giáo viên theo học kỳ và API plan/current DRAFT/refresh snapshot/readiness, sửa/khóa/mở khóa phân công theo dòng hoặc nhóm, đọc tải/metadata và lưu validation. JSON dùng snake_case; ngày YYYY-MM-DD; "
                 + "thời điểm ISO 8601 có múi giờ. API plan/solver yêu cầu principal tin cậy; có async run/poll/cancel và apply nghiệm có hậu kiểm/transaction; chưa có login. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }

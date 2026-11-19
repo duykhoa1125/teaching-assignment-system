@@ -1,6 +1,6 @@
-# TASS backend: CRUD dữ liệu đầu vào
+# TASS backend: CRUD dữ liệu đầu vào, hồ sơ giáo viên và API phương án
 
-Backend cung cấp REST API cho 20 bảng dữ liệu đầu vào trong `sql/01_schema.sql`. Schema có 48 bảng; các bảng snapshot, lượt chạy, kiểm tra và nhật ký được quản lý qua luồng nghiệp vụ, không có CRUD trực tiếp.
+Backend cung cấp REST API cho 20 bảng dữ liệu đầu vào trong `sql/01_schema.sql` và `GET /api/teachers/{id}/profile?semester_id=...` để xem hồ sơ tổng hợp theo học kỳ. Schema có 48 bảng; các bảng snapshot, lượt chạy, kiểm tra và nhật ký được quản lý qua luồng nghiệp vụ, không có CRUD trực tiếp.
 
 Backend đã nối thư viện CP-SAT và validator vào Spring (SOL-01). Xem [tích hợp solver](docs/SOLVER_INTEGRATION.md) về build, native runtime và kiểm chứng fixture.
 
@@ -26,15 +26,15 @@ Mã nguồn nằm tại `src/main/java/vn/edu/tass/backend` và được tổ ch
 
 | Package | Nội dung |
 | --- | --- |
-| `controller` | 20 controller CRUD cùng controller plan, readiness, solver run và kết quả/validation |
+| `controller` | 20 controller CRUD cùng controller hồ sơ giáo viên, plan, readiness, solver run và kết quả/validation |
 | `entity` | 20 JPA entity, mỗi bảng một file |
 | `mapper` | 20 mapper thủ công, mỗi bảng một file; ánh xạ request/entity/DTO theo từng trường |
 | `exception` | Ngoại lệ và ánh xạ lỗi HTTP |
 | `payload/request` | 20 request class có validation |
-| `payload/dto` | 20 response DTO và DTO lỗi |
+| `payload/dto` | 20 response DTO CRUD, DTO hồ sơ giáo viên và DTO lỗi |
 | `repository` | 20 JPA repository CRUD và SQL repository cho plan/readiness |
-| `service` | 20 service CRUD, service plan/readiness và giao diện lấy actor |
-| `service/impl` | 20 service CRUD, service plan/readiness có transaction và adapter principal |
+| `service` | 20 service CRUD, service hồ sơ giáo viên, plan/readiness và giao diện lấy actor |
+| `service/impl` | 20 service CRUD, service hồ sơ giáo viên, plan/readiness có transaction và adapter principal |
 | `utils` | Kiểm tra tham số và phân trang theo `limit`/`offset` |
 
 Ví dụ: `TeacherController` → `TeacherService` → `TeacherServiceImpl` → `TeacherRepository` → `Teacher`; `TeacherServiceImpl` dùng `TeacherMapper` để ánh xạ thủ công từng trường. Mapper có `toEntity`, `applyRequest` và `toDto`; `applyRequest` dùng cho cả tạo mới và cập nhật. JPA chỉ truy cập schema có sẵn; `spring.jpa.hibernate.ddl-auto=none`, nên ứng dụng không tự tạo hoặc sửa bảng PostgreSQL.
