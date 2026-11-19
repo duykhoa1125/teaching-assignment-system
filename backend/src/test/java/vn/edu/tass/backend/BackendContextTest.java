@@ -31,8 +31,8 @@ class BackendContextTest {
 
     @Test
     void registersCrudProfileReadinessAndPlanComponents() {
-        assertEquals(23, context.getBeansWithAnnotation(RestController.class).size());
-        assertEquals(23, context.getBeansWithAnnotation(Service.class).size());
+        assertEquals(24, context.getBeansWithAnnotation(RestController.class).size());
+        assertEquals(24, context.getBeansWithAnnotation(Service.class).size());
         assertEquals(20, context.getBeanNamesForType(org.springframework.data.jpa.repository.JpaRepository.class).length);
     }
 

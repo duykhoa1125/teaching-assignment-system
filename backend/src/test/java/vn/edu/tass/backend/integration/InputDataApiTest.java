@@ -39,7 +39,7 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(43, spec.path("paths").size());
+        assertEquals(44, spec.path("paths").size());
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",
@@ -101,6 +101,16 @@ class InputDataApiTest {
             .path("application/json").path("example").path("plan_code").asText());
         assertTrue(spec.path("components").path("schemas").path("AssignmentPlanDto")
             .path("properties").has("current_version"));
+        JsonNode assignments = spec.path("paths").path("/api/plan-versions/{id}/assignments").path("get");
+        assertTrue(assignments.path("responses").has("200"));
+        assertTrue(assignments.path("responses").has("400"));
+        assertTrue(assignments.path("responses").has("404"));
+        assertTrue(assignments.path("parameters").toString().contains("teacher_id"));
+        assertTrue(assignments.path("parameters").toString().contains("class_id"));
+        assertTrue(spec.path("components").path("schemas").path("PlanAssignmentDto")
+            .path("properties").has("coverage_status"));
+        assertTrue(spec.path("components").path("schemas").path("PlanAssignmentDto")
+            .path("properties").has("unassigned_reason_code"));
         assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
             .path("properties").has("code"));
         assertTrue(spec.path("paths").path("/api/departments").path("get")
@@ -128,6 +138,22 @@ class InputDataApiTest {
         mvc.perform(post("/api/assignment-rounds/1/plan")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"plan_code\":\"X\",\"created_by\":1,\"optimization_config_id\":1,\"rule_set_version_id\":1,\"source_revision_token\":\"t\",\"input_snapshot_id\":1}"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void assignmentsRejectInvalidPageAndFilterBeforeDatabaseAccess() throws Exception {
+        mvc.perform(get("/api/plan-versions/0/assignments"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/plan-versions/1/assignments").param("limit", "101"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/plan-versions/1/assignments").param("offset", "-1"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/plan-versions/1/assignments").param("teacher_id", "0"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/plan-versions/1/assignments").param("demand_type", "OTHER"))
+            .andExpect(status().isBadRequest());
+        mvc.perform(get("/api/plan-versions/1/assignments").param("as_of", "invalid"))
             .andExpect(status().isBadRequest());
     }
 
