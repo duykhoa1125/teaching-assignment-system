@@ -31,6 +31,8 @@ class BackendContextTest {
 
     @Test
     void registersCrudPlanAndReadinessWithTwentyJpaRepositories() {
+        assertTrue(context.containsBean("teacherProfileController"));
+        assertTrue(context.containsBean("teacherProfileServiceImpl"));
         assertTrue(context.getBeansWithAnnotation(RestController.class).keySet().containsAll(java.util.List.of(
             "assignmentPlanController","roundReadinessController","solverRunController","planResultController","planAssignmentController")));
         assertTrue(context.containsBean("planAssignmentService"));

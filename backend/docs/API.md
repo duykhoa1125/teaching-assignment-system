@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào
+# TASS Backend API — dữ liệu đầu vào và hồ sơ giáo viên
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD (40 URL, 100 tổ hợp method/URL), 4 thao tác plan/version trên 3 URL, GET readiness, 3 thao tác async solver run/poll/cancel, 5 thao tác đọc kết quả/validation và 5 thao tác sửa/khóa/mở khóa phân công. Tổng cộng 56 URL, 118 tổ hợp method/URL. Worker có hậu kiểm/apply nghiệm nguyên tử, audit, revision thực và chặn stale. Đăng nhập, hồ sơ tổng hợp và workflow phản hồi/tăng nhu cầu chưa triển khai. Xem [PLAN_API.md](PLAN_API.md), [READINESS_API.md](READINESS_API.md), [SOLVER_RUN_API.md](SOLVER_RUN_API.md), [SOLVER_APPLY.md](SOLVER_APPLY.md), [PLAN_RESULTS_API.md](PLAN_RESULTS_API.md) và [ASSIGNMENT_MUTATION_API.md](ASSIGNMENT_MUTATION_API.md).
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD (40 URL, 100 tổ hợp method/URL), hồ sơ tổng hợp giáo viên, 4 thao tác plan/version trên 3 URL, GET readiness, 3 thao tác async solver run/poll/cancel, 5 thao tác đọc kết quả/validation và 5 thao tác sửa/khóa/mở khóa phân công. Tổng cộng 57 URL, 119 tổ hợp method/URL. Worker có hậu kiểm/apply nghiệm nguyên tử, audit, revision thực và chặn stale. Đăng nhập và workflow phản hồi/tăng nhu cầu chưa triển khai. Xem [PLAN_API.md](PLAN_API.md), [READINESS_API.md](READINESS_API.md), [SOLVER_RUN_API.md](SOLVER_RUN_API.md), [SOLVER_APPLY.md](SOLVER_APPLY.md), [PLAN_RESULTS_API.md](PLAN_RESULTS_API.md) và [ASSIGNMENT_MUTATION_API.md](ASSIGNMENT_MUTATION_API.md).
 
 ## Xem trực tiếp
 
@@ -44,11 +44,37 @@ $spec.info
 $spec.paths.PSObject.Properties.Count
 ```
 
-Checkout hiện có 56 URL trong đặc tả. CRUD đầu vào có thể thử trực tiếp; API plan/solver/kết quả/sửa phân công yêu cầu Principal tin cậy, nên sẽ trả 401 khi chưa nối auth của nhóm. Không truyền actor hoặc tự tạo header user để bỏ qua kiểm tra này.
+Checkout hiện có 57 URL trong đặc tả. CRUD đầu vào và hồ sơ giáo viên có thể thử trực tiếp; API plan/solver/kết quả/sửa phân công yêu cầu Principal tin cậy, nên sẽ trả 401 khi chưa nối auth của nhóm. Không truyền actor hoặc tự tạo header user để bỏ qua kiểm tra này.
 
 Nếu gặp hàng loạt `cannot find symbol` cho getter/setter (`getId`, `getConfirmedBy`, ...), kiểm tra `mvn -version` trước. Đã tái hiện lỗi này khi Maven dùng JDK 23 với cấu hình Lombok hiện tại. `<java.version>17</java.version>` chọn Java release đầu ra, không tự đổi JDK mà Maven đang chạy. JDK 23 yêu cầu bật annotation processing tường minh ([Oracle release notes](https://www.oracle.com/java/technologies/javase/23-relnote-issues.html)); dự án dùng JDK 17 theo chuẩn nhóm. Sau khi sửa JAVA_HOME/PATH, mở terminal mới hoặc dot-source script trên rồi `mvn clean compile`.
 
 Compose chỉ nạp schema/seed khi tạo volume mới. Với DB/volume được tạo từ code cũ, cần kiểm tra và áp migration 04–09 theo thứ tự trước khi chạy luồng solver/validation/sửa phân công; `docker compose up -d` không tự cập nhật schema. Không cần xóa volume để giải quyết lỗi Java/Lombok.
+
+## Hồ sơ giáo viên theo học kỳ
+
+`GET /api/teachers/{id}/profile?semester_id={semester_id}` trả một object gồm `teacher`, `semester` và sáu danh sách: `employments` (công tác), `qualifications` (chuyên môn), `experiences` (kinh nghiệm), `teaching_histories` (lịch sử thực dạy), `workload_bases` (cơ sở định mức) và `duties` (nhiệm vụ). Mỗi phần tử trong danh sách dùng cùng cấu trúc DTO với API CRUD của tài nguyên tương ứng. Danh sách chưa có dữ liệu trả `[]`; trạng thái xác nhận của từng bản ghi được giữ nguyên, kể cả `PENDING` và `REJECTED`.
+
+`semester_id` là tham số bắt buộc, phải là ID dương của học kỳ thuộc trường của giáo viên. API trả `400` nếu thiếu/sai tham số hoặc học kỳ thuộc trường khác; trả `404` nếu không tìm thấy giáo viên hoặc học kỳ.
+
+- Công tác, cơ sở định mức và nhiệm vụ: lấy bản ghi của giáo viên **đúng học kỳ được chọn**, có khoảng hiệu lực giao với học kỳ (tính cả hai ngày biên).
+- Chuyên môn: lấy bản ghi của giáo viên có khoảng hiệu lực giao với học kỳ, kể cả bản ghi bắt đầu trước học kỳ hoặc có `valid_to` rỗng.
+- Kinh nghiệm: mỗi cặp `subject_id`/`grade_id` lấy bản ghi có `as_of_date` mới nhất không sau ngày kết thúc học kỳ. API không cộng dồn số năm giữa các bản ghi.
+- Lịch sử thực dạy: lấy cả các học kỳ trước, với `taught_to` không sau ngày kết thúc học kỳ được chọn; sắp từ lần dạy gần nhất đến cũ nhất.
+
+Ví dụ response rút gọn:
+
+```json
+{
+  "teacher": {"id": 12, "school_id": 1, "teacher_code": "GV012", "full_name": "Nguyễn Văn A"},
+  "semester": {"id": 3, "academic_year_id": 2, "semester_no": 1, "starts_on": "2026-08-01", "ends_on": "2026-12-31"},
+  "employments": [{"id": 8, "teacher_id": 12, "department_id": 2, "semester_id": 3, "employment_status": "TEACHING", "position_code": "TEACHER", "valid_from": "2026-08-01", "valid_to": null}],
+  "qualifications": [{"id": 21, "teacher_id": 12, "subject_id": 4, "education_level_id": 2, "verification_status": "VERIFIED", "verified_by": 1, "verified_at": "2026-08-02T09:00:00+07:00", "evidence_ref": "hoso:21", "valid_from": "2026-08-01", "valid_to": null}],
+  "experiences": [{"id": 15, "teacher_id": 12, "subject_id": 4, "grade_id": 10, "experience_status": "HAS_EXPERIENCE", "years_of_experience": 3, "as_of_date": "2026-08-01", "evidence_ref": "hoso:15", "source_import_id": null, "verified_by": 1, "verified_at": "2026-08-02T09:00:00+07:00", "recorded_by": 1, "recorded_at": "2026-08-02T09:00:00+07:00"}],
+  "teaching_histories": [],
+  "workload_bases": [],
+  "duties": []
+}
+```
 
 ## Quy ước chung
 
