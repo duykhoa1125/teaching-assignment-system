@@ -30,6 +30,11 @@ public class ApiExceptionHandler {
         return error(HttpStatus.CONFLICT, e.getCode(), e.getMessage());
     }
 
+    @ExceptionHandler(PlanValidationException.class)
+    ResponseEntity<ApiErrorResponse> planValidation(PlanValidationException e) {
+        return error(HttpStatus.UNPROCESSABLE_ENTITY, e.getCode(), e.getMessage());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ResponseEntity<ApiErrorResponse> invalidFields(MethodArgumentNotValidException e) {
         var first = e.getBindingResult().getFieldError();

@@ -39,7 +39,7 @@ class InputDataApiTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         JsonNode spec = json.readTree(response);
         assertEquals("TASS Backend API", spec.path("info").path("title").asText());
-        assertEquals(44, spec.path("paths").size());
+        assertEquals(45, spec.path("paths").size());
         for (String resource : new String[]{
                 "schools", "academic-years", "semesters", "education-levels", "grades",
                 "classes", "subjects", "teachers", "teaching-demands", "departments",
@@ -111,6 +111,17 @@ class InputDataApiTest {
             .path("properties").has("coverage_status"));
         assertTrue(spec.path("components").path("schemas").path("PlanAssignmentDto")
             .path("properties").has("unassigned_reason_code"));
+        JsonNode mutation = spec.path("paths")
+            .path("/api/plan-versions/{id}/assignments/{demand_id}").path("patch");
+        assertTrue(mutation.path("responses").has("200"));
+        assertTrue(mutation.path("responses").has("409"));
+        assertTrue(mutation.path("responses").has("422"));
+        assertEquals(10, mutation.path("requestBody").path("content")
+            .path("application/json").path("example").path("expected_revision_no").asInt());
+        assertTrue(spec.path("components").path("schemas").path("UpdatePlanAssignmentRequest")
+            .path("properties").has("source_revision_token"));
+        assertTrue(spec.path("components").path("schemas").path("PlanAssignmentUpdateDto")
+            .path("properties").has("revision_no"));
         assertTrue(spec.path("components").path("schemas").path("ApiErrorResponse")
             .path("properties").has("code"));
         assertTrue(spec.path("paths").path("/api/departments").path("get")

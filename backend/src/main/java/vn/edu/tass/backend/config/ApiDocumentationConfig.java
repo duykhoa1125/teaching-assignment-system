@@ -54,8 +54,8 @@ public class ApiDocumentationConfig {
         return new OpenAPI().info(new Info()
             .title("TASS Backend API")
             .version("0.1.0")
-            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên, readiness, phương án và xem phân công. JSON dùng snake_case; ngày YYYY-MM-DD; "
-                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền, sửa/khóa phân công và solver. "
+            .description("20 nhóm CRUD dữ liệu đầu vào, hồ sơ giáo viên, readiness, phương án, xem và sửa phân công. JSON dùng snake_case; ngày YYYY-MM-DD; "
+                + "thời điểm ISO 8601 có múi giờ. Chưa triển khai đăng nhập, phân quyền, khóa phân công và solver. "
                 + "Xem backend/docs/API.md để biết quy tắc, bộ lọc và ví dụ."));
     }
 
@@ -148,6 +148,10 @@ public class ApiDocumentationConfig {
             documentAssignments(item);
             return;
         }
+        if (path.equals("/api/plan-versions/{id}/assignments/{demand_id}")) {
+            documentAssignmentUpdate(item);
+            return;
+        }
         String resource = path.substring("/api/".length()).split("/")[0];
         String label = RESOURCES.get(resource);
         if (label == null) return;
@@ -235,6 +239,38 @@ public class ApiDocumentationConfig {
         get.getResponses().get("200").setContent(new Content().addMediaType("application/json",
             new MediaType().schema(new ArraySchema().items(new Schema<>().$ref("#/components/schemas/PlanAssignmentDto")))
                 .example(List.of(example))));
+    }
+
+    private static void documentAssignmentUpdate(PathItem item) {
+        Operation patch = item.getPatch();
+        patch.setTags(List.of("Phân công theo phiên bản"));
+        patch.setSummary("Gán, đổi hoặc bỏ gán giáo viên trên DRAFT hiện hành");
+        patch.setDescription("FR-14: kiểm tra phiên bản hiện hành, DRAFT, expected_revision_no và source_revision_token "
+            + "trong một transaction; tạo dòng mới chỉ cho thành phần bắt buộc trong snapshot, "
+            + "còn dòng đã lưu ngoài tập bắt buộc vẫn được sửa để xử lý dữ liệu cũ. "
+            + "Kiểm tra chuyên môn/hiệu lực và tải tuần theo giới hạn cấu hình trong snapshot; "
+            + "giới hạn 25 tiết của seed chỉ là demo, không phải ngưỡng pháp lý. "
+            + "Bỏ gán giữ dòng plan_demand và bắt buộc có mã/nội dung lý do. "
+            + "Phân công đã khóa phải mở khóa ở API riêng. PostgreSQL tự tăng revision và ghi audit. "
+            + "Chưa có authentication nên audit hiện chưa xác định actor; phải lấy actor từ principal khi triển khai xác thực.");
+        documentParameters(patch);
+        addRequestExample(patch, Map.of(
+            "expected_revision_no", 10,
+            "source_revision_token", "token-cua-snapshot",
+            "teacher_id", 2));
+        ApiResponses responses = patch.getResponses();
+        responses.get("200").setDescription("Phân công sau khi lưu và revision mới.");
+        responses.get("200").setContent(new Content().addMediaType("application/json",
+            new MediaType().schema(new Schema<>().$ref("#/components/schemas/PlanAssignmentUpdateDto"))
+                .example(Map.of("plan_version_id", 2, "revision_no", 11,
+                    "plan_demand_id", 12, "demand_id", 2, "teacher_id", 2,
+                    "coverage_status", "ASSIGNED", "is_locked", false))));
+        responses.addApiResponse("400", error("Request hoặc tham số không hợp lệ.", "Bad Request", "INVALID_REQUEST"));
+        responses.addApiResponse("404", error("Không tìm thấy phiên bản.", "Not Found", "RESOURCE_NOT_FOUND"));
+        responses.addApiResponse("409", error("Phiên bản/revision/token đã cũ hoặc phân công bị khóa.",
+            "Conflict", "STALE_REVISION"));
+        responses.addApiResponse("422", error("Giáo viên, nhu cầu hoặc dữ liệu tải không hợp lệ.",
+            "Unprocessable Entity", "TEACHER_INELIGIBLE"));
     }
 
     private static String summary(PathItem.HttpMethod method, boolean byId, String label) {
