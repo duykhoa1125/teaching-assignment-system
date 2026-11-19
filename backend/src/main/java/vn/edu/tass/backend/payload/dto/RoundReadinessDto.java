@@ -10,9 +10,13 @@ public record RoundReadinessDto(
     long roundId, String sourceRevisionToken, Long optimizationConfigId, Long ruleSetVersionId,
     LocalDate startsOn, LocalDate endsOn, Long currentVersionId, Long revisionNo,
     boolean canRunSolver, boolean canOpenFeedback, boolean canExport,
-    boolean preflightOnly, boolean solverInputValidated, Coverage coverage, List<Issue> issues
+    boolean preflightOnly, boolean solverInputValidated, Coverage coverage, List<Issue> issues,
+    Long semesterId, List<ReadinessScopeDto> scopeSummaries
 ) {
-    public RoundReadinessDto { issues = List.copyOf(issues); }
+    public RoundReadinessDto {
+        issues = List.copyOf(issues);
+        scopeSummaries = List.copyOf(scopeSummaries);
+    }
 
     @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
     public record Coverage(long requiredComponents, long assigned, long unassigned,

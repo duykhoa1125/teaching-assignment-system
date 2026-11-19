@@ -11,10 +11,11 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 import vn.edu.tass.backend.payload.dto.RoundReadinessDto.Coverage;
+import vn.edu.tass.backend.payload.dto.ReadinessScopeDto;
 
 @Repository
 public class RoundReadinessRepository {
-    public record Context(String sourceToken, LocalDate startsOn, LocalDate endsOn,
+    public record Context(long semesterId, String sourceToken, LocalDate startsOn, LocalDate endsOn,
                           boolean validationAllowsRelease, boolean pendingFeedback) {}
     public record Finding(String code, String severity, String category, String entityType, Long entityId, Long relatedId) {}
 
@@ -36,7 +37,7 @@ public class RoundReadinessRepository {
                     SELECT 1 FROM round_subject_scope sc JOIN class_subject_applicability a ON a.scope_id=sc.id
                     WHERE sc.round_id=rr.id AND sc.subject_id=d.subject_id AND a.class_id=d.class_id AND a.status='APPLICABLE')
             )
-            SELECT r.source_revision_token,
+            SELECT r.semester_id,r.source_revision_token,
                 coalesce((SELECT min(valid_from) FROM scoped),se.starts_on) starts_on,
                 coalesce((SELECT max(valid_to) FROM scoped),se.ends_on) ends_on,
                 EXISTS(SELECT 1 FROM validation_run vr WHERE vr.plan_version_id=p.current_version_id
@@ -49,8 +50,41 @@ public class RoundReadinessRepository {
                 EXISTS(SELECT 1 FROM feedback f WHERE f.plan_id=p.id AND f.status='PENDING') pending_feedback
             FROM assignment_round r JOIN semester se ON se.id=r.semester_id
             LEFT JOIN assignment_plan p ON p.round_id=r.id WHERE r.id=?
-            """, (rs, row) -> new Context(rs.getString("source_revision_token"),rs.getObject("starts_on",LocalDate.class),
+            """, (rs, row) -> new Context(rs.getLong("semester_id"),rs.getString("source_revision_token"),rs.getObject("starts_on",LocalDate.class),
                 rs.getObject("ends_on",LocalDate.class),rs.getBoolean("validation_ready"),rs.getBoolean("pending_feedback")), roundId,roundId);
+    }
+
+    public List<ReadinessScopeDto> scopeSummaries(long roundId) {
+        return jdbc.query("""
+            SELECT sc.id scope_id,sc.grade_id,sc.subject_id,
+                (sc.confirmed_by IS NOT NULL AND sc.confirmed_at IS NOT NULL) confirmed,
+                count(c.id) class_count,
+                count(c.id) FILTER (WHERE a.status='APPLICABLE') applicable_count,
+                count(c.id) FILTER (WHERE a.status='NOT_APPLICABLE') not_applicable_count,
+                count(c.id) FILTER (WHERE a.status='UNDETERMINED') undetermined_count,
+                count(c.id) FILTER (WHERE a.id IS NULL) missing_applicability_count,
+                count(c.id) FILTER (WHERE a.status='APPLICABLE' AND
+                    (NOT EXISTS (SELECT 1 FROM required_demand_component rc WHERE rc.applicability_id=a.id)
+                     OR EXISTS (SELECT 1 FROM required_demand_component rc
+                         LEFT JOIN teaching_demand d ON d.id=rc.demand_id
+                         WHERE rc.applicability_id=a.id AND (rc.confirmed_by IS NULL OR rc.confirmed_at IS NULL
+                             OR d.id IS NULL OR d.status<>'ACTIVE' OR d.class_id<>c.id
+                             OR d.subject_id<>sc.subject_id OR d.semester_id<>r.semester_id
+                             OR d.demand_type<>rc.demand_type OR d.valid_from<>rc.valid_from
+                             OR d.valid_to<>rc.valid_to OR d.periods_per_week IS NULL
+                             OR d.periods_per_week<=0)))) applicable_missing_demand_count
+            FROM round_subject_scope sc JOIN assignment_round r ON r.id=sc.round_id
+            JOIN semester se ON se.id=r.semester_id
+            LEFT JOIN school_class c ON c.grade_id=sc.grade_id AND c.academic_year_id=se.academic_year_id
+            LEFT JOIN class_subject_applicability a ON a.scope_id=sc.id AND a.class_id=c.id
+            WHERE sc.round_id=?
+            GROUP BY sc.id,sc.grade_id,sc.subject_id,sc.confirmed_by,sc.confirmed_at,r.semester_id
+            ORDER BY sc.id
+            """, (rs,row) -> new ReadinessScopeDto(rs.getLong("scope_id"),rs.getLong("grade_id"),
+                rs.getLong("subject_id"),rs.getBoolean("confirmed"),rs.getLong("class_count"),
+                rs.getLong("applicable_count"),rs.getLong("not_applicable_count"),
+                rs.getLong("undetermined_count"),rs.getLong("missing_applicability_count"),
+                rs.getLong("applicable_missing_demand_count")), roundId);
     }
 
     public Coverage coverage(long roundId) {

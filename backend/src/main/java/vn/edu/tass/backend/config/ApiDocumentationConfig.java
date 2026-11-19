@@ -156,6 +156,7 @@ public class ApiDocumentationConfig {
         operation.setTags(List.of("Chuẩn bị phân công"));
         operation.setSummary("Kiểm tra dữ liệu và phạm vi có thể chạy solver");
         operation.setDescription("Đọc nhất quán theo source token, không tạo snapshot hoặc sửa dữ liệu. "
+            + "semester_id và scope_summaries tổng hợp trạng thái lớp–môn, thành phần bắt buộc theo từng phạm vi môn–khối. "
             + "Gửi cả optimization_config_id và rule_set_version_id hoặc bỏ cả hai để dùng current snapshot. "
             + "Thiếu ứng viên là cảnh báo; thiếu tải tuần hoặc khoảng hiệu lực chưa hỗ trợ chặn solver. "
             + "can_run_solver là tiền kiểm nguồn (preflight_only=true), chưa thay InputValidator/hậu kiểm; "
