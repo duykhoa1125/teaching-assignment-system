@@ -5,12 +5,17 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.edu.tass.backend.payload.dto.PlanAssignmentDto;
+import vn.edu.tass.backend.payload.dto.PlanAssignmentUpdateDto;
+import vn.edu.tass.backend.payload.request.UpdatePlanAssignmentRequest;
 import vn.edu.tass.backend.service.PlanAssignmentService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/plan-versions/{id}/assignments")
@@ -31,4 +36,10 @@ public class PlanAssignmentController {
         return service.retrieve(id, limit, offset, teacherId, classId, subjectId, demandType, asOf);
     }
 
+    @PatchMapping("/{demand_id}")
+    public PlanAssignmentUpdateDto update(@PathVariable long id,
+            @PathVariable(name = "demand_id") long demandId,
+            @Valid @RequestBody UpdatePlanAssignmentRequest request) {
+        return service.update(id, demandId, request);
+    }
 }

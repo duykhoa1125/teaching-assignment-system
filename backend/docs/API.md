@@ -1,6 +1,6 @@
-# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên phương án đợt và xem phân công
+# TASS Backend API — dữ liệu đầu vào, hồ sơ giáo viên phương án đợt, xem và sửa phân công
 
-Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3 và phương án của mục 4 và xem phân công của mục 5, gồm 44 URL và 105 tổ hợp method/URL. Các API đăng nhập, sửa/khóa phân công và solver chưa được triển khai nên không có trong đặc tả này.
+Tài liệu này mô tả **các API đã triển khai**: 20 tài nguyên CRUD của phase 2 mục 1, hồ sơ giáo viên của mục 2 và readiness của mục 3 và phương án của mục 4 và xem phân công của mục 5 và sửa phân công của mục 6, gồm 45 URL và 106 tổ hợp method/URL. Các API đăng nhập, khóa/mở khóa phân công và solver chưa được triển khai nên không có trong đặc tả này.
 
 ## Xem trực tiếp
 
@@ -110,6 +110,56 @@ Mỗi dòng có `required_component_id`, `plan_demand_id`, `demand_id`, lớp/m�
 | `ASSIGNED` | Có dòng `plan_demand` với giáo viên; trả `is_locked`, `locked_by`, `locked_at`, `lock_reason` theo dữ liệu đã lưu. |
 
 Bộ lọc tùy chọn: `teacher_id`, `class_id`, `subject_id`, `demand_type`, `as_of` (ngày YYYY-MM-DD, tính cả hai biên), `limit` (1–100, mặc định 20), `offset` (không âm, mặc định 0). Có thể kết hợp bộ lọc; `teacher_id` chỉ trả các dòng đã gán cho giáo viên đó. Thứ tự ổn định theo lớp, môn, ngày bắt đầu, loại tiết và ID thành phần/nhu cầu. API này **chỉ đọc**, không tạo dòng phân công hoặc lý do giả cho thành phần còn thiếu. Chưa có authentication nên chưa giới hạn người xem theo vai trò; API xem phân công cá nhân của Teacher thuộc giai đoạn sau.
+
+## Sửa phân công trên DRAFT hiện hành
+
+`PATCH /api/plan-versions/{id}/assignments/{demand_id}` gán, đổi hoặc bỏ gán giáo viên cho nhu cầu trong snapshot của phiên bản. Tạo dòng `plan_demand` mới chỉ cho nhu cầu liên kết thành phần bắt buộc; dòng đã lưu ngoài tập đó vẫn được sửa hoặc bỏ gán để xử lý dữ liệu cũ. Chỉ phiên bản DRAFT hiện hành được sửa. Mỗi request gửi `expected_revision_no` từ plan hiện hành và `source_revision_token` từ snapshot/readiness. Backend khóa plan, version và đợt trong cùng transaction rồi so revision và token; khi đã cũ, request bị từ chối và không ghi đè.
+
+Gán/đổi giáo viên:
+
+```json
+{
+  "expected_revision_no": 10,
+  "source_revision_token": "token-cua-snapshot",
+  "teacher_id": 2
+}
+```
+
+Bỏ gán phải giữ dòng `plan_demand` và ghi lý do:
+
+```json
+{
+  "expected_revision_no": 10,
+  "source_revision_token": "token-cua-snapshot",
+  "teacher_id": null,
+  "unassigned_reason_code": "MANUAL_REVIEW",
+  "unassigned_reason_text": "Cần xem lại phân công"
+}
+```
+
+Response `200` trả `plan_version_id`, `revision_no`, `plan_demand_id`, `demand_id`, `teacher_id`, `coverage_status`, `is_locked` và lý do chưa gán nếu có. Một thay đổi thực sự làm PostgreSQL tăng `revision_no` đúng một lần và ghi `audit_log`; request không đổi nội dung trả revision hiện tại. Phân công đã khóa phải mở khóa qua luồng mục 7 trước khi đổi/bỏ gán.
+
+Ví dụ response sau khi gán:
+
+```json
+{
+  "plan_version_id": 2,
+  "revision_no": 11,
+  "plan_demand_id": 12,
+  "demand_id": 2,
+  "teacher_id": 2,
+  "coverage_status": "ASSIGNED",
+  "is_locked": false,
+  "unassigned_reason_code": null,
+  "unassigned_reason_text": null
+}
+```
+
+Backend kiểm tra công tác/chuyên môn đã xác nhận và hiệu lực theo môn, cấp học của chính nhu cầu. Với giáo viên mới, backend tính tải tuần tại từng ngày hiệu lực bằng dữ liệu snapshot và các dòng phân công hiện hành. Nếu thiếu dữ liệu tải hoặc giới hạn tuần trong snapshot, request gán bị từ chối; dữ liệu thiếu không được xem là `0` hoặc PASS. Giới hạn `25` tiết/tuần trong seed là **cấu hình demo**, không phải ngưỡng pháp lý. Kiểm tra trần năm/pháp lý đầy đủ cần bộ kiểm tra của mục 8 trước khi dùng production. KHTN là một môn độc lập; tiết thường và chuyên đề vẫn là hai nhu cầu có thể giao hai giáo viên khác nhau.
+
+`400 INVALID_REQUEST`: body/lý do không hợp lệ. `404 RESOURCE_NOT_FOUND`: phiên bản không tồn tại. `409 PLAN_VERSION_NOT_CURRENT`, `PLAN_VERSION_NOT_DRAFT`, `STALE_REVISION`, `STALE_SOURCE_REVISION` hoặc `LOCK_CONFLICT`: xung đột trạng thái/đồng thời/khóa. `422 DEMAND_NOT_IN_SNAPSHOT`, `DEMAND_NOT_IN_REQUIRED_SNAPSHOT`, `TEACHER_INELIGIBLE`, `INSUFFICIENT_WORKLOAD_DATA`, `LOAD_RULE_UNAVAILABLE` hoặc `WORKLOAD_LIMIT_EXCEEDED`: không đủ điều kiện nghiệp vụ. Chưa có authentication nên chưa thể xác nhận quyền Academic Manager hoặc actor trong audit; không nhận actor từ request.
+
+Contract request/response và chính sách xử lý tải còn cần đối chiếu với Khoa. Đã xác minh report chính thức trên GitHub nhánh `dev` tại commit `f354a98`; nội dung report có blob SHA `dd206601a3a101a31f06cf2143d11e643a644d62`.
 
 ## Quy ước chung
 
